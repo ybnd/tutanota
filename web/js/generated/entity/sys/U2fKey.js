@@ -12,6 +12,7 @@ tutao.entity.sys.U2fKey = function(parent, data) {
     this.updateData(parent, data);
   } else {
     this.__id = tutao.entity.EntityHelper.generateAggregateId();
+    this._appId = null;
     this._keyHandle = null;
     this._secondFactor = null;
   }
@@ -26,6 +27,7 @@ tutao.entity.sys.U2fKey = function(parent, data) {
  */
 tutao.entity.sys.U2fKey.prototype.updateData = function(parent, data) {
   this.__id = data._id;
+  this._appId = data.appId;
   this._keyHandle = data.keyHandle;
   this._secondFactor = data.secondFactor;
 };
@@ -37,6 +39,7 @@ tutao.entity.sys.U2fKey.prototype.updateData = function(parent, data) {
 tutao.entity.sys.U2fKey.prototype.toJsonData = function() {
   return {
     _id: this.__id, 
+    appId: this._appId, 
     keyHandle: this._keyHandle, 
     secondFactor: this._secondFactor
   };
@@ -57,6 +60,23 @@ tutao.entity.sys.U2fKey.prototype.setId = function(id) {
  */
 tutao.entity.sys.U2fKey.prototype.getId = function() {
   return this.__id;
+};
+
+/**
+ * Sets the appId of this U2fKey.
+ * @param {string} appId The appId of this U2fKey.
+ */
+tutao.entity.sys.U2fKey.prototype.setAppId = function(appId) {
+  this._appId = appId;
+  return this;
+};
+
+/**
+ * Provides the appId of this U2fKey.
+ * @return {string} The appId of this U2fKey.
+ */
+tutao.entity.sys.U2fKey.prototype.getAppId = function() {
+  return this._appId;
 };
 
 /**

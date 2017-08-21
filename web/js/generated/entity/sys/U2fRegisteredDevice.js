@@ -12,6 +12,7 @@ tutao.entity.sys.U2fRegisteredDevice = function(parent, data) {
     this.updateData(parent, data);
   } else {
     this.__id = tutao.entity.EntityHelper.generateAggregateId();
+    this._appId = null;
     this._compromised = null;
     this._counter = null;
     this._keyHandle = null;
@@ -28,6 +29,7 @@ tutao.entity.sys.U2fRegisteredDevice = function(parent, data) {
  */
 tutao.entity.sys.U2fRegisteredDevice.prototype.updateData = function(parent, data) {
   this.__id = data._id;
+  this._appId = data.appId;
   this._compromised = data.compromised;
   this._counter = data.counter;
   this._keyHandle = data.keyHandle;
@@ -41,6 +43,7 @@ tutao.entity.sys.U2fRegisteredDevice.prototype.updateData = function(parent, dat
 tutao.entity.sys.U2fRegisteredDevice.prototype.toJsonData = function() {
   return {
     _id: this.__id, 
+    appId: this._appId, 
     compromised: this._compromised, 
     counter: this._counter, 
     keyHandle: this._keyHandle, 
@@ -63,6 +66,23 @@ tutao.entity.sys.U2fRegisteredDevice.prototype.setId = function(id) {
  */
 tutao.entity.sys.U2fRegisteredDevice.prototype.getId = function() {
   return this.__id;
+};
+
+/**
+ * Sets the appId of this U2fRegisteredDevice.
+ * @param {string} appId The appId of this U2fRegisteredDevice.
+ */
+tutao.entity.sys.U2fRegisteredDevice.prototype.setAppId = function(appId) {
+  this._appId = appId;
+  return this;
+};
+
+/**
+ * Provides the appId of this U2fRegisteredDevice.
+ * @return {string} The appId of this U2fRegisteredDevice.
+ */
+tutao.entity.sys.U2fRegisteredDevice.prototype.getAppId = function() {
+  return this._appId;
 };
 
 /**

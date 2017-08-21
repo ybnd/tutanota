@@ -52,7 +52,7 @@ tutao.entity.sys.SecondFactor.PATH = '/rest/sys/secondfactor';
  * The id of the root instance reference.
  * @const
  */
-tutao.entity.sys.SecondFactor.ROOT_INSTANCE_ID = 'A3N5cwAEkA';
+tutao.entity.sys.SecondFactor.ROOT_INSTANCE_ID = 'A3N5cwAEkQ';
 
 /**
  * The generated id type flag.

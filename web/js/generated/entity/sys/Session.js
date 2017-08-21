@@ -73,7 +73,7 @@ tutao.entity.sys.Session.PATH = '/rest/sys/session';
  * The id of the root instance reference.
  * @const
  */
-tutao.entity.sys.Session.ROOT_INSTANCE_ID = 'A3N5cwAEpQ';
+tutao.entity.sys.Session.ROOT_INSTANCE_ID = 'A3N5cwAEpw';
 
 /**
  * The generated id type flag.
