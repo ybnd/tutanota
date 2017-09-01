@@ -18,6 +18,7 @@ tutao.entity.sys.PushIdentifier = function(data) {
     this.__permissions = null;
     this._identifier = null;
     this._language = null;
+    this._lastNotificationDate = null;
     this._pushServiceType = null;
   }
   this._entityHelper = new tutao.entity.EntityHelper(this);
@@ -37,6 +38,7 @@ tutao.entity.sys.PushIdentifier.prototype.updateData = function(data) {
   this.__permissions = data._permissions;
   this._identifier = data.identifier;
   this._language = data.language;
+  this._lastNotificationDate = data.lastNotificationDate;
   this._pushServiceType = data.pushServiceType;
 };
 
@@ -44,7 +46,7 @@ tutao.entity.sys.PushIdentifier.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.PushIdentifier.MODEL_VERSION = '23';
+tutao.entity.sys.PushIdentifier.MODEL_VERSION = '24';
 
 /**
  * The url path to the resource.
@@ -84,6 +86,7 @@ tutao.entity.sys.PushIdentifier.prototype.toJsonData = function() {
     _permissions: this.__permissions, 
     identifier: this._identifier, 
     language: this._language, 
+    lastNotificationDate: this._lastNotificationDate, 
     pushServiceType: this._pushServiceType
   };
 };
@@ -216,6 +219,33 @@ tutao.entity.sys.PushIdentifier.prototype.getLanguage = function() {
 };
 
 /**
+ * Sets the lastNotificationDate of this PushIdentifier.
+ * @param {Date} lastNotificationDate The lastNotificationDate of this PushIdentifier.
+ */
+tutao.entity.sys.PushIdentifier.prototype.setLastNotificationDate = function(lastNotificationDate) {
+  if (lastNotificationDate == null) {
+    this._lastNotificationDate = null;
+  } else {
+    this._lastNotificationDate = String(lastNotificationDate.getTime());
+  }
+  return this;
+};
+
+/**
+ * Provides the lastNotificationDate of this PushIdentifier.
+ * @return {Date} The lastNotificationDate of this PushIdentifier.
+ */
+tutao.entity.sys.PushIdentifier.prototype.getLastNotificationDate = function() {
+  if (this._lastNotificationDate == null) {
+    return null;
+  }
+  if (isNaN(this._lastNotificationDate)) {
+    throw new tutao.InvalidDataError('invalid time data: ' + this._lastNotificationDate);
+  }
+  return new Date(Number(this._lastNotificationDate));
+};
+
+/**
  * Sets the pushServiceType of this PushIdentifier.
  * @param {string} pushServiceType The pushServiceType of this PushIdentifier.
  */
@@ -238,7 +268,7 @@ tutao.entity.sys.PushIdentifier.prototype.getPushServiceType = function() {
  * @return {Promise.<tutao.entity.sys.PushIdentifier>} Resolves to the PushIdentifier or an exception if the loading failed.
  */
 tutao.entity.sys.PushIdentifier.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.PushIdentifier, tutao.entity.sys.PushIdentifier.PATH, id[1], id[0], {"v" : "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.PushIdentifier, tutao.entity.sys.PushIdentifier.PATH, id[1], id[0], {"v" : "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -249,7 +279,7 @@ tutao.entity.sys.PushIdentifier.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.PushIdentifier>>} Resolves to an array of PushIdentifier or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.PushIdentifier.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.PushIdentifier, tutao.entity.sys.PushIdentifier.PATH, ids, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.PushIdentifier, tutao.entity.sys.PushIdentifier.PATH, ids, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -262,7 +292,7 @@ tutao.entity.sys.PushIdentifier.loadMultiple = function(ids) {
 tutao.entity.sys.PushIdentifier.prototype.setup = function(listId) {
   var self = this;
   self._entityHelper.notifyObservers(false);
-  return tutao.locator.entityRestClient.postElement(tutao.entity.sys.PushIdentifier.PATH, self, listId, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.postElement(tutao.entity.sys.PushIdentifier.PATH, self, listId, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     self.__id = [listId, entity.getGeneratedId()];
     self.setPermissions(entity.getPermissionListId());
   });
@@ -274,7 +304,7 @@ tutao.entity.sys.PushIdentifier.prototype.setup = function(listId) {
  */
 tutao.entity.sys.PushIdentifier.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.PushIdentifier.PATH, this, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.PushIdentifier.PATH, this, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -285,7 +315,7 @@ tutao.entity.sys.PushIdentifier.prototype.update = function() {
  */
 tutao.entity.sys.PushIdentifier.prototype.erase = function() {
   var self = this;
-  return tutao.locator.entityRestClient.deleteElement(tutao.entity.sys.PushIdentifier.PATH, this.__id[1], this.__id[0], {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(data) {
+  return tutao.locator.entityRestClient.deleteElement(tutao.entity.sys.PushIdentifier.PATH, this.__id[1], this.__id[0], {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(data) {
     self._entityHelper.notifyObservers(true);
   });
 };
@@ -297,7 +327,7 @@ tutao.entity.sys.PushIdentifier.prototype.erase = function() {
  */
 tutao.entity.sys.PushIdentifier.createList = function(ownerGroupId) {
   var params = tutao.entity.EntityHelper.createPostListPermissionMap(ownerGroupId);
-  params["v"] = "23";
+  params["v"] = "24";
   return tutao.locator.entityRestClient.postList(tutao.entity.sys.PushIdentifier.PATH, params, tutao.entity.EntityHelper.createAuthHeaders()).then(function(returnEntity) {
     return returnEntity.getGeneratedId();
   });
@@ -312,7 +342,7 @@ tutao.entity.sys.PushIdentifier.createList = function(ownerGroupId) {
  * @return {Promise.<Array.<tutao.entity.sys.PushIdentifier>>} Resolves to an array of PushIdentifier or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.PushIdentifier.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.PushIdentifier, tutao.entity.sys.PushIdentifier.PATH, listId, start, count, reverse, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.PushIdentifier, tutao.entity.sys.PushIdentifier.PATH, listId, start, count, reverse, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return entities;
   });
 };

@@ -61,7 +61,7 @@ tutao.entity.sys.Session.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.Session.MODEL_VERSION = '23';
+tutao.entity.sys.Session.MODEL_VERSION = '24';
 
 /**
  * The url path to the resource.
@@ -398,7 +398,7 @@ tutao.entity.sys.Session.prototype.loadUser = function() {
  * @return {Promise.<tutao.entity.sys.Session>} Resolves to the Session or an exception if the loading failed.
  */
 tutao.entity.sys.Session.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.Session, tutao.entity.sys.Session.PATH, id[1], id[0], {"v" : "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.Session, tutao.entity.sys.Session.PATH, id[1], id[0], {"v" : "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity._entityHelper.loadSessionKey();
   });
 };
@@ -409,7 +409,7 @@ tutao.entity.sys.Session.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.Session>>} Resolves to an array of Session or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.Session.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.Session, tutao.entity.sys.Session.PATH, ids, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.Session, tutao.entity.sys.Session.PATH, ids, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return tutao.entity.EntityHelper.loadSessionKeys(entities);
   });
 };
@@ -421,7 +421,7 @@ tutao.entity.sys.Session.loadMultiple = function(ids) {
 tutao.entity.sys.Session.prototype.updateOwnerEncSessionKey = function() {
   var params = {};
   params[tutao.rest.ResourceConstants.UPDATE_OWNER_ENC_SESSION_KEY] = "true";
-  params["v"] = "23";
+  params["v"] = "24";
   return tutao.locator.entityRestClient.putElement(tutao.entity.sys.Session.PATH, this, params, tutao.entity.EntityHelper.createAuthHeaders());
 };
 
@@ -431,7 +431,7 @@ tutao.entity.sys.Session.prototype.updateOwnerEncSessionKey = function() {
  */
 tutao.entity.sys.Session.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.Session.PATH, this, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.Session.PATH, this, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -442,7 +442,7 @@ tutao.entity.sys.Session.prototype.update = function() {
  */
 tutao.entity.sys.Session.prototype.erase = function() {
   var self = this;
-  return tutao.locator.entityRestClient.deleteElement(tutao.entity.sys.Session.PATH, this.__id[1], this.__id[0], {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(data) {
+  return tutao.locator.entityRestClient.deleteElement(tutao.entity.sys.Session.PATH, this.__id[1], this.__id[0], {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(data) {
     self._entityHelper.notifyObservers(true);
   });
 };
@@ -456,7 +456,7 @@ tutao.entity.sys.Session.prototype.erase = function() {
  * @return {Promise.<Array.<tutao.entity.sys.Session>>} Resolves to an array of Session or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.Session.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.Session, tutao.entity.sys.Session.PATH, listId, start, count, reverse, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.Session, tutao.entity.sys.Session.PATH, listId, start, count, reverse, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return tutao.entity.EntityHelper.loadSessionKeys(entities);
   });
 };

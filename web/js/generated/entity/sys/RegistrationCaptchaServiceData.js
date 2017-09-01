@@ -32,7 +32,7 @@ tutao.entity.sys.RegistrationCaptchaServiceData.prototype.updateData = function(
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.RegistrationCaptchaServiceData.MODEL_VERSION = '23';
+tutao.entity.sys.RegistrationCaptchaServiceData.MODEL_VERSION = '24';
 
 /**
  * The url path to the resource.
@@ -119,7 +119,7 @@ tutao.entity.sys.RegistrationCaptchaServiceData.prototype.setup = function(param
   if (!headers) {
     headers = tutao.entity.EntityHelper.createAuthHeaders();
   }
-  parameters["v"] = "23";
+  parameters["v"] = "24";
   this._entityHelper.notifyObservers(false);
   return tutao.locator.entityRestClient.postService(tutao.entity.sys.RegistrationCaptchaServiceData.PATH, this, parameters, headers, null);
 };

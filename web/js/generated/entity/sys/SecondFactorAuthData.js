@@ -11,6 +11,7 @@ tutao.entity.sys.SecondFactorAuthData = function(data) {
     this.updateData(data);
   } else {
     this.__format = "0";
+    this._otpCode = null;
     this._type = null;
     this._session = null;
     this._u2f = null;
@@ -25,6 +26,7 @@ tutao.entity.sys.SecondFactorAuthData = function(data) {
  */
 tutao.entity.sys.SecondFactorAuthData.prototype.updateData = function(data) {
   this.__format = data._format;
+  this._otpCode = data.otpCode;
   this._type = data.type;
   this._session = data.session;
   this._u2f = (data.u2f) ? new tutao.entity.sys.U2fResponseData(this, data.u2f) : null;
@@ -34,7 +36,7 @@ tutao.entity.sys.SecondFactorAuthData.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.SecondFactorAuthData.MODEL_VERSION = '23';
+tutao.entity.sys.SecondFactorAuthData.MODEL_VERSION = '24';
 
 /**
  * The url path to the resource.
@@ -55,6 +57,7 @@ tutao.entity.sys.SecondFactorAuthData.prototype.ENCRYPTED = false;
 tutao.entity.sys.SecondFactorAuthData.prototype.toJsonData = function() {
   return {
     _format: this.__format, 
+    otpCode: this._otpCode, 
     type: this._type, 
     session: this._session, 
     u2f: tutao.entity.EntityHelper.aggregatesToJsonData(this._u2f)
@@ -76,6 +79,23 @@ tutao.entity.sys.SecondFactorAuthData.prototype.setFormat = function(format) {
  */
 tutao.entity.sys.SecondFactorAuthData.prototype.getFormat = function() {
   return this.__format;
+};
+
+/**
+ * Sets the otpCode of this SecondFactorAuthData.
+ * @param {string} otpCode The otpCode of this SecondFactorAuthData.
+ */
+tutao.entity.sys.SecondFactorAuthData.prototype.setOtpCode = function(otpCode) {
+  this._otpCode = otpCode;
+  return this;
+};
+
+/**
+ * Provides the otpCode of this SecondFactorAuthData.
+ * @return {string} The otpCode of this SecondFactorAuthData.
+ */
+tutao.entity.sys.SecondFactorAuthData.prototype.getOtpCode = function() {
+  return this._otpCode;
 };
 
 /**
@@ -147,7 +167,7 @@ tutao.entity.sys.SecondFactorAuthData.prototype.setup = function(parameters, hea
   if (!headers) {
     headers = tutao.entity.EntityHelper.createAuthHeaders();
   }
-  parameters["v"] = "23";
+  parameters["v"] = "24";
   this._entityHelper.notifyObservers(false);
   return tutao.locator.entityRestClient.postService(tutao.entity.sys.SecondFactorAuthData.PATH, this, parameters, headers, null);
 };

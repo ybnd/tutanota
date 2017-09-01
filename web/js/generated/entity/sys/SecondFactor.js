@@ -15,6 +15,7 @@ tutao.entity.sys.SecondFactor = function(data) {
     this.__ownerGroup = null;
     this.__permissions = null;
     this._name = null;
+    this._otpSecret = null;
     this._type = null;
     this._u2f = null;
   }
@@ -32,6 +33,7 @@ tutao.entity.sys.SecondFactor.prototype.updateData = function(data) {
   this.__ownerGroup = data._ownerGroup;
   this.__permissions = data._permissions;
   this._name = data.name;
+  this._otpSecret = data.otpSecret;
   this._type = data.type;
   this._u2f = (data.u2f) ? new tutao.entity.sys.U2fRegisteredDevice(this, data.u2f) : null;
 };
@@ -40,7 +42,7 @@ tutao.entity.sys.SecondFactor.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.SecondFactor.MODEL_VERSION = '23';
+tutao.entity.sys.SecondFactor.MODEL_VERSION = '24';
 
 /**
  * The url path to the resource.
@@ -77,6 +79,7 @@ tutao.entity.sys.SecondFactor.prototype.toJsonData = function() {
     _ownerGroup: this.__ownerGroup, 
     _permissions: this.__permissions, 
     name: this._name, 
+    otpSecret: this._otpSecret, 
     type: this._type, 
     u2f: tutao.entity.EntityHelper.aggregatesToJsonData(this._u2f)
   };
@@ -159,6 +162,23 @@ tutao.entity.sys.SecondFactor.prototype.getName = function() {
 };
 
 /**
+ * Sets the otpSecret of this SecondFactor.
+ * @param {string} otpSecret The otpSecret of this SecondFactor.
+ */
+tutao.entity.sys.SecondFactor.prototype.setOtpSecret = function(otpSecret) {
+  this._otpSecret = otpSecret;
+  return this;
+};
+
+/**
+ * Provides the otpSecret of this SecondFactor.
+ * @return {string} The otpSecret of this SecondFactor.
+ */
+tutao.entity.sys.SecondFactor.prototype.getOtpSecret = function() {
+  return this._otpSecret;
+};
+
+/**
  * Sets the type of this SecondFactor.
  * @param {string} type The type of this SecondFactor.
  */
@@ -198,7 +218,7 @@ tutao.entity.sys.SecondFactor.prototype.getU2f = function() {
  * @return {Promise.<tutao.entity.sys.SecondFactor>} Resolves to the SecondFactor or an exception if the loading failed.
  */
 tutao.entity.sys.SecondFactor.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.SecondFactor, tutao.entity.sys.SecondFactor.PATH, id[1], id[0], {"v" : "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.SecondFactor, tutao.entity.sys.SecondFactor.PATH, id[1], id[0], {"v" : "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -209,7 +229,7 @@ tutao.entity.sys.SecondFactor.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.SecondFactor>>} Resolves to an array of SecondFactor or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.SecondFactor.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.SecondFactor, tutao.entity.sys.SecondFactor.PATH, ids, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.SecondFactor, tutao.entity.sys.SecondFactor.PATH, ids, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -222,7 +242,7 @@ tutao.entity.sys.SecondFactor.loadMultiple = function(ids) {
 tutao.entity.sys.SecondFactor.prototype.setup = function(listId) {
   var self = this;
   self._entityHelper.notifyObservers(false);
-  return tutao.locator.entityRestClient.postElement(tutao.entity.sys.SecondFactor.PATH, self, listId, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.postElement(tutao.entity.sys.SecondFactor.PATH, self, listId, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     self.__id = [listId, entity.getGeneratedId()];
     self.setPermissions(entity.getPermissionListId());
   });
@@ -234,7 +254,7 @@ tutao.entity.sys.SecondFactor.prototype.setup = function(listId) {
  */
 tutao.entity.sys.SecondFactor.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.SecondFactor.PATH, this, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.SecondFactor.PATH, this, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -246,7 +266,7 @@ tutao.entity.sys.SecondFactor.prototype.update = function() {
  */
 tutao.entity.sys.SecondFactor.createList = function(ownerGroupId) {
   var params = tutao.entity.EntityHelper.createPostListPermissionMap(ownerGroupId);
-  params["v"] = "23";
+  params["v"] = "24";
   return tutao.locator.entityRestClient.postList(tutao.entity.sys.SecondFactor.PATH, params, tutao.entity.EntityHelper.createAuthHeaders()).then(function(returnEntity) {
     return returnEntity.getGeneratedId();
   });
@@ -261,7 +281,7 @@ tutao.entity.sys.SecondFactor.createList = function(ownerGroupId) {
  * @return {Promise.<Array.<tutao.entity.sys.SecondFactor>>} Resolves to an array of SecondFactor or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.SecondFactor.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.SecondFactor, tutao.entity.sys.SecondFactor.PATH, listId, start, count, reverse, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.SecondFactor, tutao.entity.sys.SecondFactor.PATH, listId, start, count, reverse, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return entities;
   });
 };

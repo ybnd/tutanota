@@ -15,6 +15,7 @@ tutao.entity.sys.BrandingTheme = function(data) {
     this.__ownerGroup = null;
     this.__permissions = null;
     this._jsonTheme = null;
+    this._disabledFeatures = [];
   }
   this._entityHelper = new tutao.entity.EntityHelper(this);
   this.prototype = tutao.entity.sys.BrandingTheme.prototype;
@@ -30,13 +31,17 @@ tutao.entity.sys.BrandingTheme.prototype.updateData = function(data) {
   this.__ownerGroup = data._ownerGroup;
   this.__permissions = data._permissions;
   this._jsonTheme = data.jsonTheme;
+  this._disabledFeatures = [];
+  for (var i=0; i < data.disabledFeatures.length; i++) {
+    this._disabledFeatures.push(new tutao.entity.sys.DisabledFeature(this, data.disabledFeatures[i]));
+  }
 };
 
 /**
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.BrandingTheme.MODEL_VERSION = '23';
+tutao.entity.sys.BrandingTheme.MODEL_VERSION = '24';
 
 /**
  * The url path to the resource.
@@ -72,7 +77,8 @@ tutao.entity.sys.BrandingTheme.prototype.toJsonData = function() {
     _id: this.__id, 
     _ownerGroup: this.__ownerGroup, 
     _permissions: this.__permissions, 
-    jsonTheme: this._jsonTheme
+    jsonTheme: this._jsonTheme, 
+    disabledFeatures: tutao.entity.EntityHelper.aggregatesToJsonData(this._disabledFeatures)
   };
 };
 
@@ -153,12 +159,20 @@ tutao.entity.sys.BrandingTheme.prototype.getJsonTheme = function() {
 };
 
 /**
+ * Provides the disabledFeatures of this BrandingTheme.
+ * @return {Array.<tutao.entity.sys.DisabledFeature>} The disabledFeatures of this BrandingTheme.
+ */
+tutao.entity.sys.BrandingTheme.prototype.getDisabledFeatures = function() {
+  return this._disabledFeatures;
+};
+
+/**
  * Loads a BrandingTheme from the server.
  * @param {string} id The id of the BrandingTheme.
  * @return {Promise.<tutao.entity.sys.BrandingTheme>} Resolves to the BrandingTheme or an exception if the loading failed.
  */
 tutao.entity.sys.BrandingTheme.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.BrandingTheme, tutao.entity.sys.BrandingTheme.PATH, id, null, {"v" : "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.BrandingTheme, tutao.entity.sys.BrandingTheme.PATH, id, null, {"v" : "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -169,7 +183,7 @@ tutao.entity.sys.BrandingTheme.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.BrandingTheme>>} Resolves to an array of BrandingTheme or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.BrandingTheme.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.BrandingTheme, tutao.entity.sys.BrandingTheme.PATH, ids, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.BrandingTheme, tutao.entity.sys.BrandingTheme.PATH, ids, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -180,7 +194,7 @@ tutao.entity.sys.BrandingTheme.loadMultiple = function(ids) {
  */
 tutao.entity.sys.BrandingTheme.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.BrandingTheme.PATH, this, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.BrandingTheme.PATH, this, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };

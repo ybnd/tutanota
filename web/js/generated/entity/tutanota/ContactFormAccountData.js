@@ -13,6 +13,7 @@ tutao.entity.tutanota.ContactFormAccountData = function(data) {
     this.__format = "0";
     this._contactForm = null;
     this._statisticFields = [];
+    this._statistics = null;
     this._userData = null;
     this._userGroupData = null;
   }
@@ -31,6 +32,7 @@ tutao.entity.tutanota.ContactFormAccountData.prototype.updateData = function(dat
   for (var i=0; i < data.statisticFields.length; i++) {
     this._statisticFields.push(new tutao.entity.tutanota.ContactFormStatisticField(this, data.statisticFields[i]));
   }
+  this._statistics = (data.statistics) ? new tutao.entity.tutanota.ContactFormStatisticEntry(this, data.statistics) : null;
   this._userData = (data.userData) ? new tutao.entity.tutanota.ContactFormUserData(this, data.userData) : null;
   this._userGroupData = (data.userGroupData) ? new tutao.entity.tutanota.InternalGroupData(this, data.userGroupData) : null;
 };
@@ -39,7 +41,7 @@ tutao.entity.tutanota.ContactFormAccountData.prototype.updateData = function(dat
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.ContactFormAccountData.MODEL_VERSION = '21';
+tutao.entity.tutanota.ContactFormAccountData.MODEL_VERSION = '22';
 
 /**
  * The url path to the resource.
@@ -62,6 +64,7 @@ tutao.entity.tutanota.ContactFormAccountData.prototype.toJsonData = function() {
     _format: this.__format, 
     contactForm: this._contactForm, 
     statisticFields: tutao.entity.EntityHelper.aggregatesToJsonData(this._statisticFields), 
+    statistics: tutao.entity.EntityHelper.aggregatesToJsonData(this._statistics), 
     userData: tutao.entity.EntityHelper.aggregatesToJsonData(this._userData), 
     userGroupData: tutao.entity.EntityHelper.aggregatesToJsonData(this._userGroupData)
   };
@@ -118,6 +121,23 @@ tutao.entity.tutanota.ContactFormAccountData.prototype.getStatisticFields = func
 };
 
 /**
+ * Sets the statistics of this ContactFormAccountData.
+ * @param {tutao.entity.tutanota.ContactFormStatisticEntry} statistics The statistics of this ContactFormAccountData.
+ */
+tutao.entity.tutanota.ContactFormAccountData.prototype.setStatistics = function(statistics) {
+  this._statistics = statistics;
+  return this;
+};
+
+/**
+ * Provides the statistics of this ContactFormAccountData.
+ * @return {tutao.entity.tutanota.ContactFormStatisticEntry} The statistics of this ContactFormAccountData.
+ */
+tutao.entity.tutanota.ContactFormAccountData.prototype.getStatistics = function() {
+  return this._statistics;
+};
+
+/**
  * Sets the userData of this ContactFormAccountData.
  * @param {tutao.entity.tutanota.ContactFormUserData} userData The userData of this ContactFormAccountData.
  */
@@ -161,7 +181,7 @@ tutao.entity.tutanota.ContactFormAccountData.prototype.setup = function(paramete
   if (!headers) {
     headers = tutao.entity.EntityHelper.createAuthHeaders();
   }
-  parameters["v"] = "21";
+  parameters["v"] = "22";
   this._entityHelper.notifyObservers(false);
   return tutao.locator.entityRestClient.postService(tutao.entity.tutanota.ContactFormAccountData.PATH, this, parameters, headers, tutao.entity.tutanota.ContactFormAccountReturn);
 };

@@ -13,6 +13,7 @@ tutao.entity.sys.Challenge = function(parent, data) {
   } else {
     this.__id = tutao.entity.EntityHelper.generateAggregateId();
     this._type = null;
+    this._otp = null;
     this._u2f = null;
   }
   this._parent = parent;
@@ -27,6 +28,7 @@ tutao.entity.sys.Challenge = function(parent, data) {
 tutao.entity.sys.Challenge.prototype.updateData = function(parent, data) {
   this.__id = data._id;
   this._type = data.type;
+  this._otp = (data.otp) ? new tutao.entity.sys.OtpChallenge(parent, data.otp) : null;
   this._u2f = (data.u2f) ? new tutao.entity.sys.U2fChallenge(parent, data.u2f) : null;
 };
 
@@ -38,6 +40,7 @@ tutao.entity.sys.Challenge.prototype.toJsonData = function() {
   return {
     _id: this.__id, 
     type: this._type, 
+    otp: tutao.entity.EntityHelper.aggregatesToJsonData(this._otp), 
     u2f: tutao.entity.EntityHelper.aggregatesToJsonData(this._u2f)
   };
 };
@@ -74,6 +77,23 @@ tutao.entity.sys.Challenge.prototype.setType = function(type) {
  */
 tutao.entity.sys.Challenge.prototype.getType = function() {
   return this._type;
+};
+
+/**
+ * Sets the otp of this Challenge.
+ * @param {tutao.entity.sys.OtpChallenge} otp The otp of this Challenge.
+ */
+tutao.entity.sys.Challenge.prototype.setOtp = function(otp) {
+  this._otp = otp;
+  return this;
+};
+
+/**
+ * Provides the otp of this Challenge.
+ * @return {tutao.entity.sys.OtpChallenge} The otp of this Challenge.
+ */
+tutao.entity.sys.Challenge.prototype.getOtp = function() {
+  return this._otp;
 };
 
 /**

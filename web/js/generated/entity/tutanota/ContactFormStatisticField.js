@@ -12,8 +12,8 @@ tutao.entity.tutanota.ContactFormStatisticField = function(parent, data) {
     this.updateData(parent, data);
   } else {
     this.__id = tutao.entity.EntityHelper.generateAggregateId();
-    this._name = null;
-    this._value = null;
+    this._encryptedName = null;
+    this._encryptedValue = null;
   }
   this._parent = parent;
   this.prototype = tutao.entity.tutanota.ContactFormStatisticField.prototype;
@@ -26,8 +26,8 @@ tutao.entity.tutanota.ContactFormStatisticField = function(parent, data) {
  */
 tutao.entity.tutanota.ContactFormStatisticField.prototype.updateData = function(parent, data) {
   this.__id = data._id;
-  this._name = data.name;
-  this._value = data.value;
+  this._encryptedName = data.encryptedName;
+  this._encryptedValue = data.encryptedValue;
 };
 
 /**
@@ -37,8 +37,8 @@ tutao.entity.tutanota.ContactFormStatisticField.prototype.updateData = function(
 tutao.entity.tutanota.ContactFormStatisticField.prototype.toJsonData = function() {
   return {
     _id: this.__id, 
-    name: this._name, 
-    value: this._value
+    encryptedName: this._encryptedName, 
+    encryptedValue: this._encryptedValue
   };
 };
 
@@ -60,37 +60,37 @@ tutao.entity.tutanota.ContactFormStatisticField.prototype.getId = function() {
 };
 
 /**
- * Sets the name of this ContactFormStatisticField.
- * @param {string} name The name of this ContactFormStatisticField.
+ * Sets the encryptedName of this ContactFormStatisticField.
+ * @param {string} encryptedName The encryptedName of this ContactFormStatisticField.
  */
-tutao.entity.tutanota.ContactFormStatisticField.prototype.setName = function(name) {
-  this._name = name;
+tutao.entity.tutanota.ContactFormStatisticField.prototype.setEncryptedName = function(encryptedName) {
+  this._encryptedName = encryptedName;
   return this;
 };
 
 /**
- * Provides the name of this ContactFormStatisticField.
- * @return {string} The name of this ContactFormStatisticField.
+ * Provides the encryptedName of this ContactFormStatisticField.
+ * @return {string} The encryptedName of this ContactFormStatisticField.
  */
-tutao.entity.tutanota.ContactFormStatisticField.prototype.getName = function() {
-  return this._name;
+tutao.entity.tutanota.ContactFormStatisticField.prototype.getEncryptedName = function() {
+  return this._encryptedName;
 };
 
 /**
- * Sets the value of this ContactFormStatisticField.
- * @param {string} value The value of this ContactFormStatisticField.
+ * Sets the encryptedValue of this ContactFormStatisticField.
+ * @param {string} encryptedValue The encryptedValue of this ContactFormStatisticField.
  */
-tutao.entity.tutanota.ContactFormStatisticField.prototype.setValue = function(value) {
-  this._value = value;
+tutao.entity.tutanota.ContactFormStatisticField.prototype.setEncryptedValue = function(encryptedValue) {
+  this._encryptedValue = encryptedValue;
   return this;
 };
 
 /**
- * Provides the value of this ContactFormStatisticField.
- * @return {string} The value of this ContactFormStatisticField.
+ * Provides the encryptedValue of this ContactFormStatisticField.
+ * @return {string} The encryptedValue of this ContactFormStatisticField.
  */
-tutao.entity.tutanota.ContactFormStatisticField.prototype.getValue = function() {
-  return this._value;
+tutao.entity.tutanota.ContactFormStatisticField.prototype.getEncryptedValue = function() {
+  return this._encryptedValue;
 };
 /**
  * Provides the entity helper of this entity.
