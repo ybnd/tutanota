@@ -64,7 +64,7 @@ tutao.entity.sys.PaymentDataServicePutData.prototype.updateData = function(data)
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.PaymentDataServicePutData.MODEL_VERSION = '24';
+tutao.entity.sys.PaymentDataServicePutData.MODEL_VERSION = '25';
 
 /**
  * The url path to the resource.
@@ -462,7 +462,7 @@ tutao.entity.sys.PaymentDataServicePutData.prototype.update = function(parameter
   if (!headers) {
     headers = tutao.entity.EntityHelper.createAuthHeaders();
   }
-  parameters["v"] = "24";
+  parameters["v"] = "25";
   return tutao.locator.entityRestClient.putService(tutao.entity.sys.PaymentDataServicePutData.PATH, this, parameters, headers, tutao.entity.sys.PaymentDataServicePutReturn);
 };
 /**

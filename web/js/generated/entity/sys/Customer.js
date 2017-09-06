@@ -25,6 +25,7 @@ tutao.entity.sys.Customer = function(data) {
     this._customerGroup = null;
     this._customerGroups = null;
     this._customerInfo = null;
+    this._customizations = [];
     this._properties = null;
     this._serverProperties = null;
     this._teamGroups = null;
@@ -55,6 +56,10 @@ tutao.entity.sys.Customer.prototype.updateData = function(data) {
   this._customerGroup = data.customerGroup;
   this._customerGroups = data.customerGroups;
   this._customerInfo = data.customerInfo;
+  this._customizations = [];
+  for (var i=0; i < data.customizations.length; i++) {
+    this._customizations.push(new tutao.entity.sys.Feature(this, data.customizations[i]));
+  }
   this._properties = data.properties;
   this._serverProperties = data.serverProperties;
   this._teamGroups = data.teamGroups;
@@ -66,7 +71,7 @@ tutao.entity.sys.Customer.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.Customer.MODEL_VERSION = '24';
+tutao.entity.sys.Customer.MODEL_VERSION = '25';
 
 /**
  * The url path to the resource.
@@ -113,6 +118,7 @@ tutao.entity.sys.Customer.prototype.toJsonData = function() {
     customerGroup: this._customerGroup, 
     customerGroups: this._customerGroups, 
     customerInfo: this._customerInfo, 
+    customizations: tutao.entity.EntityHelper.aggregatesToJsonData(this._customizations), 
     properties: this._properties, 
     serverProperties: this._serverProperties, 
     teamGroups: this._teamGroups, 
@@ -392,6 +398,14 @@ tutao.entity.sys.Customer.prototype.loadCustomerInfo = function() {
 };
 
 /**
+ * Provides the customizations of this Customer.
+ * @return {Array.<tutao.entity.sys.Feature>} The customizations of this Customer.
+ */
+tutao.entity.sys.Customer.prototype.getCustomizations = function() {
+  return this._customizations;
+};
+
+/**
  * Sets the properties of this Customer.
  * @param {string} properties The properties of this Customer.
  */
@@ -498,7 +512,7 @@ tutao.entity.sys.Customer.prototype.getUserGroups = function() {
  * @return {Promise.<tutao.entity.sys.Customer>} Resolves to the Customer or an exception if the loading failed.
  */
 tutao.entity.sys.Customer.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.Customer, tutao.entity.sys.Customer.PATH, id, null, {"v" : "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.Customer, tutao.entity.sys.Customer.PATH, id, null, {"v" : "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -509,7 +523,7 @@ tutao.entity.sys.Customer.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.Customer>>} Resolves to an array of Customer or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.Customer.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.Customer, tutao.entity.sys.Customer.PATH, ids, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.Customer, tutao.entity.sys.Customer.PATH, ids, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -520,7 +534,7 @@ tutao.entity.sys.Customer.loadMultiple = function(ids) {
  */
 tutao.entity.sys.Customer.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.Customer.PATH, this, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.Customer.PATH, this, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };

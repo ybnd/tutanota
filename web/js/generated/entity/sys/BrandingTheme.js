@@ -41,7 +41,7 @@ tutao.entity.sys.BrandingTheme.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.BrandingTheme.MODEL_VERSION = '24';
+tutao.entity.sys.BrandingTheme.MODEL_VERSION = '25';
 
 /**
  * The url path to the resource.
@@ -172,7 +172,7 @@ tutao.entity.sys.BrandingTheme.prototype.getDisabledFeatures = function() {
  * @return {Promise.<tutao.entity.sys.BrandingTheme>} Resolves to the BrandingTheme or an exception if the loading failed.
  */
 tutao.entity.sys.BrandingTheme.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.BrandingTheme, tutao.entity.sys.BrandingTheme.PATH, id, null, {"v" : "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.BrandingTheme, tutao.entity.sys.BrandingTheme.PATH, id, null, {"v" : "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -183,7 +183,7 @@ tutao.entity.sys.BrandingTheme.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.BrandingTheme>>} Resolves to an array of BrandingTheme or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.BrandingTheme.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.BrandingTheme, tutao.entity.sys.BrandingTheme.PATH, ids, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.BrandingTheme, tutao.entity.sys.BrandingTheme.PATH, ids, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -194,7 +194,7 @@ tutao.entity.sys.BrandingTheme.loadMultiple = function(ids) {
  */
 tutao.entity.sys.BrandingTheme.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.BrandingTheme.PATH, this, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.BrandingTheme.PATH, this, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };

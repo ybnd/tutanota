@@ -33,7 +33,7 @@ tutao.entity.sys.MigrateGroupInfosData.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.MigrateGroupInfosData.MODEL_VERSION = '24';
+tutao.entity.sys.MigrateGroupInfosData.MODEL_VERSION = '25';
 
 /**
  * The url path to the resource.
@@ -93,7 +93,7 @@ tutao.entity.sys.MigrateGroupInfosData.prototype.setup = function(parameters, he
   if (!headers) {
     headers = tutao.entity.EntityHelper.createAuthHeaders();
   }
-  parameters["v"] = "24";
+  parameters["v"] = "25";
   this._entityHelper.notifyObservers(false);
   return tutao.locator.entityRestClient.postService(tutao.entity.sys.MigrateGroupInfosData.PATH, this, parameters, headers, null);
 };
