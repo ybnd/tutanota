@@ -30,7 +30,7 @@ tutao.entity.tutanota.PasswordMessagingReturn.prototype.updateData = function(da
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.PasswordMessagingReturn.MODEL_VERSION = '22';
+tutao.entity.tutanota.PasswordMessagingReturn.MODEL_VERSION = '23';
 
 /**
  * The encrypted flag.

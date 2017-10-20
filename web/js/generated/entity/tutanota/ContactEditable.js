@@ -13,16 +13,23 @@ tutao.entity.tutanota.ContactEditable = function(contact) {
 	this._area = ko.observable(contact.getArea());
 	this._owner = ko.observable(contact.getOwner());
 	this.autoTransmitPassword = ko.observable(contact.getAutoTransmitPassword());
-	this.birthday = ko.observable(contact.getBirthday());
 	this.comment = ko.observable(contact.getComment());
 	this.company = ko.observable(contact.getCompany());
 	this.firstName = ko.observable(contact.getFirstName());
 	this.lastName = ko.observable(contact.getLastName());
+	this.nickname = ko.observable(contact.getNickname());
+	this.oldBirthday = ko.observable(contact.getOldBirthday());
 	this.presharedPassword = ko.observable(contact.getPresharedPassword());
+	this.role = ko.observable(contact.getRole());
 	this.title = ko.observable(contact.getTitle());
 	this.addresses = ko.observableArray();
 	for (var i = 0; i < contact.getAddresses().length; i++) {
 		this.addresses.push(new tutao.entity.tutanota.ContactAddressEditable(contact.getAddresses()[i]));
+	}
+	if (contact.getBirthday()) {
+		this.birthday = ko.observable(new tutao.entity.tutanota.BirthdayEditable(contact.getBirthday()));
+	} else {
+	    this.birthday = ko.observable(null);
 	}
 	this.mailAddresses = ko.observableArray();
 	for (var i = 0; i < contact.getMailAddresses().length; i++) {
@@ -59,18 +66,26 @@ tutao.entity.tutanota.ContactEditable.prototype.update = function() {
 	this._entity.setArea(this._area());
 	this._entity.setOwner(this._owner());
 	this._entity.setAutoTransmitPassword(this.autoTransmitPassword());
-	this._entity.setBirthday(this.birthday());
 	this._entity.setComment(this.comment());
 	this._entity.setCompany(this.company());
 	this._entity.setFirstName(this.firstName());
 	this._entity.setLastName(this.lastName());
+	this._entity.setNickname(this.nickname());
+	this._entity.setOldBirthday(this.oldBirthday());
 	this._entity.setPresharedPassword(this.presharedPassword());
+	this._entity.setRole(this.role());
 	this._entity.setTitle(this.title());
 	this._entity.getAddresses().length = 0;
 	for (var i = 0; i < this.addresses().length; i++) {
 		this.addresses()[i].update();
 		this._entity.getAddresses().push(this.addresses()[i].getContactAddress());
 	}
+		if (this.birthday()) {
+			this.birthday().update();
+			this._entity.setBirthday(this.birthday().getBirthday());
+		} else {
+			this._entity.setBirthday(null);
+		}
 	this._entity.getMailAddresses().length = 0;
 	for (var i = 0; i < this.mailAddresses().length; i++) {
 		this.mailAddresses()[i].update();
