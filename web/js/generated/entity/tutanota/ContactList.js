@@ -16,6 +16,7 @@ tutao.entity.tutanota.ContactList = function(data) {
     this.__ownerGroup = null;
     this.__permissions = null;
     this._contacts = null;
+    this._photos = null;
   }
   this._entityHelper = new tutao.entity.EntityHelper(this);
   this.prototype = tutao.entity.tutanota.ContactList.prototype;
@@ -32,13 +33,14 @@ tutao.entity.tutanota.ContactList.prototype.updateData = function(data) {
   this.__ownerGroup = data._ownerGroup;
   this.__permissions = data._permissions;
   this._contacts = data.contacts;
+  this._photos = (data.photos) ? new tutao.entity.tutanota.PhotosRef(this, data.photos) : null;
 };
 
 /**
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.ContactList.MODEL_VERSION = '22';
+tutao.entity.tutanota.ContactList.MODEL_VERSION = '23';
 
 /**
  * The url path to the resource.
@@ -75,7 +77,8 @@ tutao.entity.tutanota.ContactList.prototype.toJsonData = function() {
     _ownerEncSessionKey: this.__ownerEncSessionKey, 
     _ownerGroup: this.__ownerGroup, 
     _permissions: this.__permissions, 
-    contacts: this._contacts
+    contacts: this._contacts, 
+    photos: tutao.entity.EntityHelper.aggregatesToJsonData(this._photos)
   };
 };
 
@@ -173,12 +176,29 @@ tutao.entity.tutanota.ContactList.prototype.getContacts = function() {
 };
 
 /**
+ * Sets the photos of this ContactList.
+ * @param {tutao.entity.tutanota.PhotosRef} photos The photos of this ContactList.
+ */
+tutao.entity.tutanota.ContactList.prototype.setPhotos = function(photos) {
+  this._photos = photos;
+  return this;
+};
+
+/**
+ * Provides the photos of this ContactList.
+ * @return {tutao.entity.tutanota.PhotosRef} The photos of this ContactList.
+ */
+tutao.entity.tutanota.ContactList.prototype.getPhotos = function() {
+  return this._photos;
+};
+
+/**
  * Loads a ContactList from the server.
  * @param {string} id The id of the ContactList.
  * @return {Promise.<tutao.entity.tutanota.ContactList>} Resolves to the ContactList or an exception if the loading failed.
  */
 tutao.entity.tutanota.ContactList.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.ContactList, tutao.entity.tutanota.ContactList.PATH, id, null, {"v" : "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.ContactList, tutao.entity.tutanota.ContactList.PATH, id, null, {"v" : "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity._entityHelper.loadSessionKey();
   });
 };
@@ -189,7 +209,7 @@ tutao.entity.tutanota.ContactList.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.tutanota.ContactList>>} Resolves to an array of ContactList or rejects with an exception if the loading failed.
  */
 tutao.entity.tutanota.ContactList.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.ContactList, tutao.entity.tutanota.ContactList.PATH, ids, {"v": "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.ContactList, tutao.entity.tutanota.ContactList.PATH, ids, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return tutao.entity.EntityHelper.loadSessionKeys(entities);
   });
 };
@@ -201,7 +221,7 @@ tutao.entity.tutanota.ContactList.loadMultiple = function(ids) {
 tutao.entity.tutanota.ContactList.prototype.updateOwnerEncSessionKey = function() {
   var params = {};
   params[tutao.rest.ResourceConstants.UPDATE_OWNER_ENC_SESSION_KEY] = "true";
-  params["v"] = "22";
+  params["v"] = "23";
   return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.ContactList.PATH, this, params, tutao.entity.EntityHelper.createAuthHeaders());
 };
 
@@ -211,7 +231,7 @@ tutao.entity.tutanota.ContactList.prototype.updateOwnerEncSessionKey = function(
  */
 tutao.entity.tutanota.ContactList.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.ContactList.PATH, this, {"v": "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.ContactList.PATH, this, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };

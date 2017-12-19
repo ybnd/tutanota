@@ -57,7 +57,7 @@ tutao.entity.tutanota.ContactForm.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.ContactForm.MODEL_VERSION = '22';
+tutao.entity.tutanota.ContactForm.MODEL_VERSION = '23';
 
 /**
  * The url path to the resource.
@@ -338,7 +338,7 @@ tutao.entity.tutanota.ContactForm.prototype.loadTargetMailGroup_removed = functi
  * @return {Promise.<tutao.entity.tutanota.ContactForm>} Resolves to the ContactForm or an exception if the loading failed.
  */
 tutao.entity.tutanota.ContactForm.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.ContactForm, tutao.entity.tutanota.ContactForm.PATH, id[1], id[0], {"v" : "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.ContactForm, tutao.entity.tutanota.ContactForm.PATH, id[1], id[0], {"v" : "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -349,7 +349,7 @@ tutao.entity.tutanota.ContactForm.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.tutanota.ContactForm>>} Resolves to an array of ContactForm or rejects with an exception if the loading failed.
  */
 tutao.entity.tutanota.ContactForm.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.ContactForm, tutao.entity.tutanota.ContactForm.PATH, ids, {"v": "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.ContactForm, tutao.entity.tutanota.ContactForm.PATH, ids, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -362,7 +362,7 @@ tutao.entity.tutanota.ContactForm.loadMultiple = function(ids) {
 tutao.entity.tutanota.ContactForm.prototype.setup = function(listId) {
   var self = this;
   self._entityHelper.notifyObservers(false);
-  return tutao.locator.entityRestClient.postElement(tutao.entity.tutanota.ContactForm.PATH, self, listId, {"v": "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.postElement(tutao.entity.tutanota.ContactForm.PATH, self, listId, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     self.setPermissions(entity.getPermissionListId());
   });
 };
@@ -373,7 +373,7 @@ tutao.entity.tutanota.ContactForm.prototype.setup = function(listId) {
  */
 tutao.entity.tutanota.ContactForm.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.ContactForm.PATH, this, {"v": "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.ContactForm.PATH, this, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -384,7 +384,7 @@ tutao.entity.tutanota.ContactForm.prototype.update = function() {
  */
 tutao.entity.tutanota.ContactForm.prototype.erase = function() {
   var self = this;
-  return tutao.locator.entityRestClient.deleteElement(tutao.entity.tutanota.ContactForm.PATH, this.__id[1], this.__id[0], {"v": "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(data) {
+  return tutao.locator.entityRestClient.deleteElement(tutao.entity.tutanota.ContactForm.PATH, this.__id[1], this.__id[0], {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(data) {
     self._entityHelper.notifyObservers(true);
   });
 };
@@ -396,7 +396,7 @@ tutao.entity.tutanota.ContactForm.prototype.erase = function() {
  */
 tutao.entity.tutanota.ContactForm.createList = function(ownerGroupId) {
   var params = tutao.entity.EntityHelper.createPostListPermissionMap(ownerGroupId);
-  params["v"] = "22";
+  params["v"] = "23";
   return tutao.locator.entityRestClient.postList(tutao.entity.tutanota.ContactForm.PATH, params, tutao.entity.EntityHelper.createAuthHeaders()).then(function(returnEntity) {
     return returnEntity.getGeneratedId();
   });
@@ -411,7 +411,7 @@ tutao.entity.tutanota.ContactForm.createList = function(ownerGroupId) {
  * @return {Promise.<Array.<tutao.entity.tutanota.ContactForm>>} Resolves to an array of ContactForm or rejects with an exception if the loading failed.
  */
 tutao.entity.tutanota.ContactForm.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.tutanota.ContactForm, tutao.entity.tutanota.ContactForm.PATH, listId, start, count, reverse, {"v": "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.tutanota.ContactForm, tutao.entity.tutanota.ContactForm.PATH, listId, start, count, reverse, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return entities;
   });
 };

@@ -32,7 +32,7 @@ tutao.entity.tutanota.DeleteGroupData.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.DeleteGroupData.MODEL_VERSION = '22';
+tutao.entity.tutanota.DeleteGroupData.MODEL_VERSION = '23';
 
 /**
  * The url path to the resource.
@@ -127,7 +127,7 @@ tutao.entity.tutanota.DeleteGroupData.prototype.erase = function(parameters, hea
   if (!headers) {
     headers = tutao.entity.EntityHelper.createAuthHeaders();
   }
-  parameters["v"] = "22";
+  parameters["v"] = "23";
   this._entityHelper.notifyObservers(false);
   return tutao.locator.entityRestClient.deleteService(tutao.entity.tutanota.DeleteGroupData.PATH, this, parameters, headers, null);
 };

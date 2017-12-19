@@ -13,14 +13,12 @@ tutao.entity.tutanota.Contact = function(data) {
     this.__area = null;
     this.__format = "0";
     this.__id = null;
-    this.__ownerEncSessionKey = null;
     this.__owner = null;
+    this.__ownerEncSessionKey = null;
     this.__ownerGroup = null;
     this.__permissions = null;
     this._autoTransmitPassword = null;
     this._autoTransmitPassword_ = null;
-    this._birthday = null;
-    this._birthday_ = null;
     this._comment = null;
     this._comment_ = null;
     this._company = null;
@@ -29,13 +27,21 @@ tutao.entity.tutanota.Contact = function(data) {
     this._firstName_ = null;
     this._lastName = null;
     this._lastName_ = null;
+    this._nickname = null;
+    this._nickname_ = null;
+    this._oldBirthday = null;
+    this._oldBirthday_ = null;
     this._presharedPassword = null;
     this._presharedPassword_ = null;
+    this._role = null;
+    this._role_ = null;
     this._title = null;
     this._title_ = null;
     this._addresses = [];
+    this._birthday = null;
     this._mailAddresses = [];
     this._phoneNumbers = [];
+    this._photo = null;
     this._socialIds = [];
   }
   this._entityHelper = new tutao.entity.EntityHelper(this);
@@ -50,14 +56,12 @@ tutao.entity.tutanota.Contact.prototype.updateData = function(data) {
   this.__area = data._area;
   this.__format = data._format;
   this.__id = data._id;
-  this.__ownerEncSessionKey = data._ownerEncSessionKey;
   this.__owner = data._owner;
+  this.__ownerEncSessionKey = data._ownerEncSessionKey;
   this.__ownerGroup = data._ownerGroup;
   this.__permissions = data._permissions;
   this._autoTransmitPassword = data.autoTransmitPassword;
   this._autoTransmitPassword_ = null;
-  this._birthday = data.birthday;
-  this._birthday_ = null;
   this._comment = data.comment;
   this._comment_ = null;
   this._company = data.company;
@@ -66,14 +70,21 @@ tutao.entity.tutanota.Contact.prototype.updateData = function(data) {
   this._firstName_ = null;
   this._lastName = data.lastName;
   this._lastName_ = null;
+  this._nickname = data.nickname;
+  this._nickname_ = null;
+  this._oldBirthday = data.oldBirthday;
+  this._oldBirthday_ = null;
   this._presharedPassword = data.presharedPassword;
   this._presharedPassword_ = null;
+  this._role = data.role;
+  this._role_ = null;
   this._title = data.title;
   this._title_ = null;
   this._addresses = [];
   for (var i=0; i < data.addresses.length; i++) {
     this._addresses.push(new tutao.entity.tutanota.ContactAddress(this, data.addresses[i]));
   }
+  this._birthday = (data.birthday) ? new tutao.entity.tutanota.Birthday(this, data.birthday) : null;
   this._mailAddresses = [];
   for (var i=0; i < data.mailAddresses.length; i++) {
     this._mailAddresses.push(new tutao.entity.tutanota.ContactMailAddress(this, data.mailAddresses[i]));
@@ -82,6 +93,7 @@ tutao.entity.tutanota.Contact.prototype.updateData = function(data) {
   for (var i=0; i < data.phoneNumbers.length; i++) {
     this._phoneNumbers.push(new tutao.entity.tutanota.ContactPhoneNumber(this, data.phoneNumbers[i]));
   }
+  this._photo = data.photo;
   this._socialIds = [];
   for (var i=0; i < data.socialIds.length; i++) {
     this._socialIds.push(new tutao.entity.tutanota.ContactSocialId(this, data.socialIds[i]));
@@ -92,7 +104,7 @@ tutao.entity.tutanota.Contact.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.Contact.MODEL_VERSION = '22';
+tutao.entity.tutanota.Contact.MODEL_VERSION = '23';
 
 /**
  * The url path to the resource.
@@ -127,21 +139,25 @@ tutao.entity.tutanota.Contact.prototype.toJsonData = function() {
     _area: this.__area, 
     _format: this.__format, 
     _id: this.__id, 
-    _ownerEncSessionKey: this.__ownerEncSessionKey, 
     _owner: this.__owner, 
+    _ownerEncSessionKey: this.__ownerEncSessionKey, 
     _ownerGroup: this.__ownerGroup, 
     _permissions: this.__permissions, 
     autoTransmitPassword: this._autoTransmitPassword, 
-    birthday: this._birthday, 
     comment: this._comment, 
     company: this._company, 
     firstName: this._firstName, 
     lastName: this._lastName, 
+    nickname: this._nickname, 
+    oldBirthday: this._oldBirthday, 
     presharedPassword: this._presharedPassword, 
+    role: this._role, 
     title: this._title, 
     addresses: tutao.entity.EntityHelper.aggregatesToJsonData(this._addresses), 
+    birthday: tutao.entity.EntityHelper.aggregatesToJsonData(this._birthday), 
     mailAddresses: tutao.entity.EntityHelper.aggregatesToJsonData(this._mailAddresses), 
     phoneNumbers: tutao.entity.EntityHelper.aggregatesToJsonData(this._phoneNumbers), 
+    photo: this._photo, 
     socialIds: tutao.entity.EntityHelper.aggregatesToJsonData(this._socialIds)
   };
 };
@@ -189,23 +205,6 @@ tutao.entity.tutanota.Contact.prototype.getFormat = function() {
 };
 
 /**
- * Sets the ownerEncSessionKey of this Contact.
- * @param {string} ownerEncSessionKey The ownerEncSessionKey of this Contact.
- */
-tutao.entity.tutanota.Contact.prototype.setOwnerEncSessionKey = function(ownerEncSessionKey) {
-  this.__ownerEncSessionKey = ownerEncSessionKey;
-  return this;
-};
-
-/**
- * Provides the ownerEncSessionKey of this Contact.
- * @return {string} The ownerEncSessionKey of this Contact.
- */
-tutao.entity.tutanota.Contact.prototype.getOwnerEncSessionKey = function() {
-  return this.__ownerEncSessionKey;
-};
-
-/**
  * Sets the owner of this Contact.
  * @param {string} owner The owner of this Contact.
  */
@@ -220,6 +219,23 @@ tutao.entity.tutanota.Contact.prototype.setOwner = function(owner) {
  */
 tutao.entity.tutanota.Contact.prototype.getOwner = function() {
   return this.__owner;
+};
+
+/**
+ * Sets the ownerEncSessionKey of this Contact.
+ * @param {string} ownerEncSessionKey The ownerEncSessionKey of this Contact.
+ */
+tutao.entity.tutanota.Contact.prototype.setOwnerEncSessionKey = function(ownerEncSessionKey) {
+  this.__ownerEncSessionKey = ownerEncSessionKey;
+  return this;
+};
+
+/**
+ * Provides the ownerEncSessionKey of this Contact.
+ * @return {string} The ownerEncSessionKey of this Contact.
+ */
+tutao.entity.tutanota.Contact.prototype.getOwnerEncSessionKey = function() {
+  return this.__ownerEncSessionKey;
 };
 
 /**
@@ -286,51 +302,6 @@ tutao.entity.tutanota.Contact.prototype.getAutoTransmitPassword = function() {
     if (e instanceof tutao.crypto.CryptoError) {
       this.getEntityHelper().invalidateSessionKey();
       return "";
-    } else {
-      throw e;
-    }
-  }
-};
-
-/**
- * Sets the birthday of this Contact.
- * @param {Date} birthday The birthday of this Contact.
- */
-tutao.entity.tutanota.Contact.prototype.setBirthday = function(birthday) {
-  if (birthday == null) {
-    this._birthday = null;
-    this._birthday_ = null;
-  } else {
-    var dataToEncrypt = String(birthday.getTime());
-    this._birthday = tutao.locator.aesCrypter.encryptUtf8(this._entityHelper.getSessionKey(), dataToEncrypt);
-    this._birthday_ = birthday;
-  }
-  return this;
-};
-
-/**
- * Provides the birthday of this Contact.
- * @return {Date} The birthday of this Contact.
- */
-tutao.entity.tutanota.Contact.prototype.getBirthday = function() {
-  if (this._birthday == null || !this._entityHelper.getSessionKey()) {
-    return null;
-  }
-  if (this._birthday_ != null) {
-    return this._birthday_;
-  }
-  try {
-    var value = tutao.locator.aesCrypter.decryptUtf8(this._entityHelper.getSessionKey(), this._birthday);
-    if (isNaN(value)) {
-      this.getEntityHelper().invalidateSessionKey();
-      return new Date(0);
-    }
-    this._birthday_ = new Date(Number(value));
-    return this._birthday_;
-  } catch (e) {
-    if (e instanceof tutao.crypto.CryptoError) {
-      this.getEntityHelper().invalidateSessionKey();
-      return new Date(0);
     } else {
       throw e;
     }
@@ -482,6 +453,92 @@ tutao.entity.tutanota.Contact.prototype.getLastName = function() {
 };
 
 /**
+ * Sets the nickname of this Contact.
+ * @param {string} nickname The nickname of this Contact.
+ */
+tutao.entity.tutanota.Contact.prototype.setNickname = function(nickname) {
+  if (nickname == null) {
+    this._nickname = null;
+    this._nickname_ = null;
+  } else {
+    var dataToEncrypt = nickname;
+    this._nickname = tutao.locator.aesCrypter.encryptUtf8(this._entityHelper.getSessionKey(), dataToEncrypt);
+    this._nickname_ = nickname;
+  }
+  return this;
+};
+
+/**
+ * Provides the nickname of this Contact.
+ * @return {string} The nickname of this Contact.
+ */
+tutao.entity.tutanota.Contact.prototype.getNickname = function() {
+  if (this._nickname == null || !this._entityHelper.getSessionKey()) {
+    return null;
+  }
+  if (this._nickname_ != null) {
+    return this._nickname_;
+  }
+  try {
+    var value = tutao.locator.aesCrypter.decryptUtf8(this._entityHelper.getSessionKey(), this._nickname);
+    this._nickname_ = value;
+    return value;
+  } catch (e) {
+    if (e instanceof tutao.crypto.CryptoError) {
+      this.getEntityHelper().invalidateSessionKey();
+      return "";
+    } else {
+      throw e;
+    }
+  }
+};
+
+/**
+ * Sets the oldBirthday of this Contact.
+ * @param {Date} oldBirthday The oldBirthday of this Contact.
+ */
+tutao.entity.tutanota.Contact.prototype.setOldBirthday = function(oldBirthday) {
+  if (oldBirthday == null) {
+    this._oldBirthday = null;
+    this._oldBirthday_ = null;
+  } else {
+    var dataToEncrypt = String(oldBirthday.getTime());
+    this._oldBirthday = tutao.locator.aesCrypter.encryptUtf8(this._entityHelper.getSessionKey(), dataToEncrypt);
+    this._oldBirthday_ = oldBirthday;
+  }
+  return this;
+};
+
+/**
+ * Provides the oldBirthday of this Contact.
+ * @return {Date} The oldBirthday of this Contact.
+ */
+tutao.entity.tutanota.Contact.prototype.getOldBirthday = function() {
+  if (this._oldBirthday == null || !this._entityHelper.getSessionKey()) {
+    return null;
+  }
+  if (this._oldBirthday_ != null) {
+    return this._oldBirthday_;
+  }
+  try {
+    var value = tutao.locator.aesCrypter.decryptUtf8(this._entityHelper.getSessionKey(), this._oldBirthday);
+    if (isNaN(value)) {
+      this.getEntityHelper().invalidateSessionKey();
+      return new Date(0);
+    }
+    this._oldBirthday_ = new Date(Number(value));
+    return this._oldBirthday_;
+  } catch (e) {
+    if (e instanceof tutao.crypto.CryptoError) {
+      this.getEntityHelper().invalidateSessionKey();
+      return new Date(0);
+    } else {
+      throw e;
+    }
+  }
+};
+
+/**
  * Sets the presharedPassword of this Contact.
  * @param {string} presharedPassword The presharedPassword of this Contact.
  */
@@ -523,13 +580,54 @@ tutao.entity.tutanota.Contact.prototype.getPresharedPassword = function() {
 };
 
 /**
+ * Sets the role of this Contact.
+ * @param {string} role The role of this Contact.
+ */
+tutao.entity.tutanota.Contact.prototype.setRole = function(role) {
+  var dataToEncrypt = role;
+  this._role = tutao.locator.aesCrypter.encryptUtf8(this._entityHelper.getSessionKey(), dataToEncrypt);
+  this._role_ = role;
+  return this;
+};
+
+/**
+ * Provides the role of this Contact.
+ * @return {string} The role of this Contact.
+ */
+tutao.entity.tutanota.Contact.prototype.getRole = function() {
+  if (this._role_ != null) {
+    return this._role_;
+  }
+  if (this._role == "" || !this._entityHelper.getSessionKey()) {
+    return "";
+  }
+  try {
+    var value = tutao.locator.aesCrypter.decryptUtf8(this._entityHelper.getSessionKey(), this._role);
+    this._role_ = value;
+    return value;
+  } catch (e) {
+    if (e instanceof tutao.crypto.CryptoError) {
+      this.getEntityHelper().invalidateSessionKey();
+      return "";
+    } else {
+      throw e;
+    }
+  }
+};
+
+/**
  * Sets the title of this Contact.
  * @param {string} title The title of this Contact.
  */
 tutao.entity.tutanota.Contact.prototype.setTitle = function(title) {
-  var dataToEncrypt = title;
-  this._title = tutao.locator.aesCrypter.encryptUtf8(this._entityHelper.getSessionKey(), dataToEncrypt);
-  this._title_ = title;
+  if (title == null) {
+    this._title = null;
+    this._title_ = null;
+  } else {
+    var dataToEncrypt = title;
+    this._title = tutao.locator.aesCrypter.encryptUtf8(this._entityHelper.getSessionKey(), dataToEncrypt);
+    this._title_ = title;
+  }
   return this;
 };
 
@@ -538,11 +636,11 @@ tutao.entity.tutanota.Contact.prototype.setTitle = function(title) {
  * @return {string} The title of this Contact.
  */
 tutao.entity.tutanota.Contact.prototype.getTitle = function() {
+  if (this._title == null || !this._entityHelper.getSessionKey()) {
+    return null;
+  }
   if (this._title_ != null) {
     return this._title_;
-  }
-  if (this._title == "" || !this._entityHelper.getSessionKey()) {
-    return "";
   }
   try {
     var value = tutao.locator.aesCrypter.decryptUtf8(this._entityHelper.getSessionKey(), this._title);
@@ -567,6 +665,23 @@ tutao.entity.tutanota.Contact.prototype.getAddresses = function() {
 };
 
 /**
+ * Sets the birthday of this Contact.
+ * @param {tutao.entity.tutanota.Birthday} birthday The birthday of this Contact.
+ */
+tutao.entity.tutanota.Contact.prototype.setBirthday = function(birthday) {
+  this._birthday = birthday;
+  return this;
+};
+
+/**
+ * Provides the birthday of this Contact.
+ * @return {tutao.entity.tutanota.Birthday} The birthday of this Contact.
+ */
+tutao.entity.tutanota.Contact.prototype.getBirthday = function() {
+  return this._birthday;
+};
+
+/**
  * Provides the mailAddresses of this Contact.
  * @return {Array.<tutao.entity.tutanota.ContactMailAddress>} The mailAddresses of this Contact.
  */
@@ -583,6 +698,31 @@ tutao.entity.tutanota.Contact.prototype.getPhoneNumbers = function() {
 };
 
 /**
+ * Sets the photo of this Contact.
+ * @param {Array.<string>} photo The photo of this Contact.
+ */
+tutao.entity.tutanota.Contact.prototype.setPhoto = function(photo) {
+  this._photo = photo;
+  return this;
+};
+
+/**
+ * Provides the photo of this Contact.
+ * @return {Array.<string>} The photo of this Contact.
+ */
+tutao.entity.tutanota.Contact.prototype.getPhoto = function() {
+  return this._photo;
+};
+
+/**
+ * Loads the photo of this Contact.
+ * @return {Promise.<tutao.entity.tutanota.File>} Resolves to the loaded photo of this Contact or an exception if the loading failed.
+ */
+tutao.entity.tutanota.Contact.prototype.loadPhoto = function() {
+  return tutao.entity.tutanota.File.load(this._photo);
+};
+
+/**
  * Provides the socialIds of this Contact.
  * @return {Array.<tutao.entity.tutanota.ContactSocialId>} The socialIds of this Contact.
  */
@@ -596,7 +736,7 @@ tutao.entity.tutanota.Contact.prototype.getSocialIds = function() {
  * @return {Promise.<tutao.entity.tutanota.Contact>} Resolves to the Contact or an exception if the loading failed.
  */
 tutao.entity.tutanota.Contact.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.Contact, tutao.entity.tutanota.Contact.PATH, id[1], id[0], {"v" : "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.Contact, tutao.entity.tutanota.Contact.PATH, id[1], id[0], {"v" : "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity._entityHelper.loadSessionKey();
   });
 };
@@ -609,7 +749,7 @@ tutao.entity.tutanota.Contact.load = function(id) {
 tutao.entity.tutanota.Contact.prototype.loadVersion = function(versionId) {
   var map = {};
   map["version"] = versionId;
-  map["v"] = "22";
+  map["v"] = "23";
   return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.Contact, tutao.entity.tutanota.Contact.PATH, this.getId()[1], this.getId()[0], map, tutao.entity.EntityHelper.createAuthHeaders());
 };
 
@@ -632,7 +772,7 @@ tutao.entity.tutanota.Contact.prototype.loadVersionInfo = function() {
  * @return {Promise.<Array.<tutao.entity.tutanota.Contact>>} Resolves to an array of Contact or rejects with an exception if the loading failed.
  */
 tutao.entity.tutanota.Contact.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.Contact, tutao.entity.tutanota.Contact.PATH, ids, {"v": "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.Contact, tutao.entity.tutanota.Contact.PATH, ids, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return tutao.entity.EntityHelper.loadSessionKeys(entities);
   });
 };
@@ -645,7 +785,7 @@ tutao.entity.tutanota.Contact.loadMultiple = function(ids) {
 tutao.entity.tutanota.Contact.prototype.setup = function(listId) {
   var self = this;
   self._entityHelper.notifyObservers(false);
-  return tutao.locator.entityRestClient.postElement(tutao.entity.tutanota.Contact.PATH, self, listId, {"v": "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.postElement(tutao.entity.tutanota.Contact.PATH, self, listId, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     self.__id = [listId, entity.getGeneratedId()];
     self.setPermissions(entity.getPermissionListId());
   });
@@ -658,7 +798,7 @@ tutao.entity.tutanota.Contact.prototype.setup = function(listId) {
 tutao.entity.tutanota.Contact.prototype.updateOwnerEncSessionKey = function() {
   var params = {};
   params[tutao.rest.ResourceConstants.UPDATE_OWNER_ENC_SESSION_KEY] = "true";
-  params["v"] = "22";
+  params["v"] = "23";
   return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.Contact.PATH, this, params, tutao.entity.EntityHelper.createAuthHeaders());
 };
 
@@ -668,7 +808,7 @@ tutao.entity.tutanota.Contact.prototype.updateOwnerEncSessionKey = function() {
  */
 tutao.entity.tutanota.Contact.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.Contact.PATH, this, {"v": "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.Contact.PATH, this, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -679,7 +819,7 @@ tutao.entity.tutanota.Contact.prototype.update = function() {
  */
 tutao.entity.tutanota.Contact.prototype.erase = function() {
   var self = this;
-  return tutao.locator.entityRestClient.deleteElement(tutao.entity.tutanota.Contact.PATH, this.__id[1], this.__id[0], {"v": "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(data) {
+  return tutao.locator.entityRestClient.deleteElement(tutao.entity.tutanota.Contact.PATH, this.__id[1], this.__id[0], {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(data) {
     self._entityHelper.notifyObservers(true);
   });
 };
@@ -691,7 +831,7 @@ tutao.entity.tutanota.Contact.prototype.erase = function() {
  */
 tutao.entity.tutanota.Contact.createList = function(ownerGroupId) {
   var params = tutao.entity.EntityHelper.createPostListPermissionMap(ownerGroupId);
-  params["v"] = "22";
+  params["v"] = "23";
   return tutao.locator.entityRestClient.postList(tutao.entity.tutanota.Contact.PATH, params, tutao.entity.EntityHelper.createAuthHeaders()).then(function(returnEntity) {
     return returnEntity.getGeneratedId();
   });
@@ -706,7 +846,7 @@ tutao.entity.tutanota.Contact.createList = function(ownerGroupId) {
  * @return {Promise.<Array.<tutao.entity.tutanota.Contact>>} Resolves to an array of Contact or rejects with an exception if the loading failed.
  */
 tutao.entity.tutanota.Contact.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.tutanota.Contact, tutao.entity.tutanota.Contact.PATH, listId, start, count, reverse, {"v": "22"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.tutanota.Contact, tutao.entity.tutanota.Contact.PATH, listId, start, count, reverse, {"v": "23"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return tutao.entity.EntityHelper.loadSessionKeys(entities);
   });
 };
