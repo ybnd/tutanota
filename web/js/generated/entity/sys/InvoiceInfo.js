@@ -15,6 +15,9 @@ tutao.entity.sys.InvoiceInfo = function(data) {
     this.__ownerGroup = null;
     this.__permissions = null;
     this._publishInvoices = null;
+    this._specialPriceBrandingPerUser = null;
+    this._specialPriceContactFormSingle = null;
+    this._specialPriceSharedGroupSingle = null;
     this._specialPriceUserSingle = null;
     this._specialPriceUserTotal = null;
     this._invoices = null;
@@ -33,6 +36,9 @@ tutao.entity.sys.InvoiceInfo.prototype.updateData = function(data) {
   this.__ownerGroup = data._ownerGroup;
   this.__permissions = data._permissions;
   this._publishInvoices = data.publishInvoices;
+  this._specialPriceBrandingPerUser = data.specialPriceBrandingPerUser;
+  this._specialPriceContactFormSingle = data.specialPriceContactFormSingle;
+  this._specialPriceSharedGroupSingle = data.specialPriceSharedGroupSingle;
   this._specialPriceUserSingle = data.specialPriceUserSingle;
   this._specialPriceUserTotal = data.specialPriceUserTotal;
   this._invoices = data.invoices;
@@ -42,7 +48,7 @@ tutao.entity.sys.InvoiceInfo.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.InvoiceInfo.MODEL_VERSION = '25';
+tutao.entity.sys.InvoiceInfo.MODEL_VERSION = '26';
 
 /**
  * The url path to the resource.
@@ -79,6 +85,9 @@ tutao.entity.sys.InvoiceInfo.prototype.toJsonData = function() {
     _ownerGroup: this.__ownerGroup, 
     _permissions: this.__permissions, 
     publishInvoices: this._publishInvoices, 
+    specialPriceBrandingPerUser: this._specialPriceBrandingPerUser, 
+    specialPriceContactFormSingle: this._specialPriceContactFormSingle, 
+    specialPriceSharedGroupSingle: this._specialPriceSharedGroupSingle, 
     specialPriceUserSingle: this._specialPriceUserSingle, 
     specialPriceUserTotal: this._specialPriceUserTotal, 
     invoices: this._invoices
@@ -162,6 +171,57 @@ tutao.entity.sys.InvoiceInfo.prototype.getPublishInvoices = function() {
 };
 
 /**
+ * Sets the specialPriceBrandingPerUser of this InvoiceInfo.
+ * @param {string} specialPriceBrandingPerUser The specialPriceBrandingPerUser of this InvoiceInfo.
+ */
+tutao.entity.sys.InvoiceInfo.prototype.setSpecialPriceBrandingPerUser = function(specialPriceBrandingPerUser) {
+  this._specialPriceBrandingPerUser = specialPriceBrandingPerUser;
+  return this;
+};
+
+/**
+ * Provides the specialPriceBrandingPerUser of this InvoiceInfo.
+ * @return {string} The specialPriceBrandingPerUser of this InvoiceInfo.
+ */
+tutao.entity.sys.InvoiceInfo.prototype.getSpecialPriceBrandingPerUser = function() {
+  return this._specialPriceBrandingPerUser;
+};
+
+/**
+ * Sets the specialPriceContactFormSingle of this InvoiceInfo.
+ * @param {string} specialPriceContactFormSingle The specialPriceContactFormSingle of this InvoiceInfo.
+ */
+tutao.entity.sys.InvoiceInfo.prototype.setSpecialPriceContactFormSingle = function(specialPriceContactFormSingle) {
+  this._specialPriceContactFormSingle = specialPriceContactFormSingle;
+  return this;
+};
+
+/**
+ * Provides the specialPriceContactFormSingle of this InvoiceInfo.
+ * @return {string} The specialPriceContactFormSingle of this InvoiceInfo.
+ */
+tutao.entity.sys.InvoiceInfo.prototype.getSpecialPriceContactFormSingle = function() {
+  return this._specialPriceContactFormSingle;
+};
+
+/**
+ * Sets the specialPriceSharedGroupSingle of this InvoiceInfo.
+ * @param {string} specialPriceSharedGroupSingle The specialPriceSharedGroupSingle of this InvoiceInfo.
+ */
+tutao.entity.sys.InvoiceInfo.prototype.setSpecialPriceSharedGroupSingle = function(specialPriceSharedGroupSingle) {
+  this._specialPriceSharedGroupSingle = specialPriceSharedGroupSingle;
+  return this;
+};
+
+/**
+ * Provides the specialPriceSharedGroupSingle of this InvoiceInfo.
+ * @return {string} The specialPriceSharedGroupSingle of this InvoiceInfo.
+ */
+tutao.entity.sys.InvoiceInfo.prototype.getSpecialPriceSharedGroupSingle = function() {
+  return this._specialPriceSharedGroupSingle;
+};
+
+/**
  * Sets the specialPriceUserSingle of this InvoiceInfo.
  * @param {string} specialPriceUserSingle The specialPriceUserSingle of this InvoiceInfo.
  */
@@ -218,7 +278,7 @@ tutao.entity.sys.InvoiceInfo.prototype.getInvoices = function() {
  * @return {Promise.<tutao.entity.sys.InvoiceInfo>} Resolves to the InvoiceInfo or an exception if the loading failed.
  */
 tutao.entity.sys.InvoiceInfo.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.InvoiceInfo, tutao.entity.sys.InvoiceInfo.PATH, id, null, {"v" : "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.InvoiceInfo, tutao.entity.sys.InvoiceInfo.PATH, id, null, {"v" : "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -229,7 +289,7 @@ tutao.entity.sys.InvoiceInfo.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.InvoiceInfo>>} Resolves to an array of InvoiceInfo or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.InvoiceInfo.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.InvoiceInfo, tutao.entity.sys.InvoiceInfo.PATH, ids, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.InvoiceInfo, tutao.entity.sys.InvoiceInfo.PATH, ids, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -240,7 +300,7 @@ tutao.entity.sys.InvoiceInfo.loadMultiple = function(ids) {
  */
 tutao.entity.sys.InvoiceInfo.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.InvoiceInfo.PATH, this, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.InvoiceInfo.PATH, this, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };

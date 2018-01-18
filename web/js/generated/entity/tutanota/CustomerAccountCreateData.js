@@ -14,6 +14,7 @@ tutao.entity.tutanota.CustomerAccountCreateData = function(data) {
     this._adminEncAccountingInfoSessionKey = null;
     this._adminEncCustomerServerPropertiesSessionKey = null;
     this._authToken = null;
+    this._code = null;
     this._date = null;
     this._lang = null;
     this._systemAdminPubEncAccountingInfoSessionKey = null;
@@ -37,6 +38,7 @@ tutao.entity.tutanota.CustomerAccountCreateData.prototype.updateData = function(
   this._adminEncAccountingInfoSessionKey = data.adminEncAccountingInfoSessionKey;
   this._adminEncCustomerServerPropertiesSessionKey = data.adminEncCustomerServerPropertiesSessionKey;
   this._authToken = data.authToken;
+  this._code = data.code;
   this._date = data.date;
   this._lang = data.lang;
   this._systemAdminPubEncAccountingInfoSessionKey = data.systemAdminPubEncAccountingInfoSessionKey;
@@ -52,7 +54,7 @@ tutao.entity.tutanota.CustomerAccountCreateData.prototype.updateData = function(
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.CustomerAccountCreateData.MODEL_VERSION = '23';
+tutao.entity.tutanota.CustomerAccountCreateData.MODEL_VERSION = '24';
 
 /**
  * The url path to the resource.
@@ -76,6 +78,7 @@ tutao.entity.tutanota.CustomerAccountCreateData.prototype.toJsonData = function(
     adminEncAccountingInfoSessionKey: this._adminEncAccountingInfoSessionKey, 
     adminEncCustomerServerPropertiesSessionKey: this._adminEncCustomerServerPropertiesSessionKey, 
     authToken: this._authToken, 
+    code: this._code, 
     date: this._date, 
     lang: this._lang, 
     systemAdminPubEncAccountingInfoSessionKey: this._systemAdminPubEncAccountingInfoSessionKey, 
@@ -154,6 +157,23 @@ tutao.entity.tutanota.CustomerAccountCreateData.prototype.setAuthToken = functio
  */
 tutao.entity.tutanota.CustomerAccountCreateData.prototype.getAuthToken = function() {
   return this._authToken;
+};
+
+/**
+ * Sets the code of this CustomerAccountCreateData.
+ * @param {string} code The code of this CustomerAccountCreateData.
+ */
+tutao.entity.tutanota.CustomerAccountCreateData.prototype.setCode = function(code) {
+  this._code = code;
+  return this;
+};
+
+/**
+ * Provides the code of this CustomerAccountCreateData.
+ * @return {string} The code of this CustomerAccountCreateData.
+ */
+tutao.entity.tutanota.CustomerAccountCreateData.prototype.getCode = function() {
+  return this._code;
 };
 
 /**
@@ -329,7 +349,7 @@ tutao.entity.tutanota.CustomerAccountCreateData.prototype.setup = function(param
   if (!headers) {
     headers = tutao.entity.EntityHelper.createAuthHeaders();
   }
-  parameters["v"] = "23";
+  parameters["v"] = "24";
   this._entityHelper.notifyObservers(false);
   return tutao.locator.entityRestClient.postService(tutao.entity.tutanota.CustomerAccountCreateData.PATH, this, parameters, headers, null);
 };

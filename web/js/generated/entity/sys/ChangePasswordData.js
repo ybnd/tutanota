@@ -38,7 +38,7 @@ tutao.entity.sys.ChangePasswordData.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.ChangePasswordData.MODEL_VERSION = '25';
+tutao.entity.sys.ChangePasswordData.MODEL_VERSION = '26';
 
 /**
  * The url path to the resource.
@@ -179,7 +179,7 @@ tutao.entity.sys.ChangePasswordData.prototype.setup = function(parameters, heade
   if (!headers) {
     headers = tutao.entity.EntityHelper.createAuthHeaders();
   }
-  parameters["v"] = "25";
+  parameters["v"] = "26";
   this._entityHelper.notifyObservers(false);
   return tutao.locator.entityRestClient.postService(tutao.entity.sys.ChangePasswordData.PATH, this, parameters, headers, null);
 };

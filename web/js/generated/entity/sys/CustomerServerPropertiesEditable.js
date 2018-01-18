@@ -11,9 +11,14 @@ tutao.entity.sys.CustomerServerPropertiesEditable = function(customerserverprope
 	tutao.util.FunctionUtils.bindPrototypeMethodsToThis(this);
 	this._entity = customerserverproperties;
 	this.requirePasswordUpdateAfterReset = ko.observable(customerserverproperties.getRequirePasswordUpdateAfterReset());
+	this.whitelabelCode = ko.observable(customerserverproperties.getWhitelabelCode());
 	this.emailSenderList = ko.observableArray();
 	for (var i = 0; i < customerserverproperties.getEmailSenderList().length; i++) {
 		this.emailSenderList.push(new tutao.entity.sys.EmailSenderListElementEditable(customerserverproperties.getEmailSenderList()[i]));
+	}
+	this.whitelabelRegistrationDomains = ko.observableArray();
+	for (var i = 0; i < customerserverproperties.getWhitelabelRegistrationDomains().length; i++) {
+		this.whitelabelRegistrationDomains.push(new tutao.entity.sys.StringWrapperEditable(customerserverproperties.getWhitelabelRegistrationDomains()[i]));
 	}
 	if (customerserverproperties.getWhitelistedDomains()) {
 		this.whitelistedDomains = ko.observable(new tutao.entity.sys.DomainsRefEditable(customerserverproperties.getWhitelistedDomains()));
@@ -41,10 +46,16 @@ tutao.entity.sys.CustomerServerPropertiesEditable.prototype.getCustomerServerPro
  */
 tutao.entity.sys.CustomerServerPropertiesEditable.prototype.update = function() {
 	this._entity.setRequirePasswordUpdateAfterReset(this.requirePasswordUpdateAfterReset());
+	this._entity.setWhitelabelCode(this.whitelabelCode());
 	this._entity.getEmailSenderList().length = 0;
 	for (var i = 0; i < this.emailSenderList().length; i++) {
 		this.emailSenderList()[i].update();
 		this._entity.getEmailSenderList().push(this.emailSenderList()[i].getEmailSenderListElement());
+	}
+	this._entity.getWhitelabelRegistrationDomains().length = 0;
+	for (var i = 0; i < this.whitelabelRegistrationDomains().length; i++) {
+		this.whitelabelRegistrationDomains()[i].update();
+		this._entity.getWhitelabelRegistrationDomains().push(this.whitelabelRegistrationDomains()[i].getStringWrapper());
 	}
 		if (this.whitelistedDomains()) {
 			this.whitelistedDomains().update();

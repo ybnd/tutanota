@@ -42,7 +42,7 @@ tutao.entity.sys.SecondFactor.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.SecondFactor.MODEL_VERSION = '25';
+tutao.entity.sys.SecondFactor.MODEL_VERSION = '26';
 
 /**
  * The url path to the resource.
@@ -218,7 +218,7 @@ tutao.entity.sys.SecondFactor.prototype.getU2f = function() {
  * @return {Promise.<tutao.entity.sys.SecondFactor>} Resolves to the SecondFactor or an exception if the loading failed.
  */
 tutao.entity.sys.SecondFactor.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.SecondFactor, tutao.entity.sys.SecondFactor.PATH, id[1], id[0], {"v" : "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.SecondFactor, tutao.entity.sys.SecondFactor.PATH, id[1], id[0], {"v" : "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -229,7 +229,7 @@ tutao.entity.sys.SecondFactor.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.SecondFactor>>} Resolves to an array of SecondFactor or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.SecondFactor.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.SecondFactor, tutao.entity.sys.SecondFactor.PATH, ids, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.SecondFactor, tutao.entity.sys.SecondFactor.PATH, ids, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -242,7 +242,7 @@ tutao.entity.sys.SecondFactor.loadMultiple = function(ids) {
 tutao.entity.sys.SecondFactor.prototype.setup = function(listId) {
   var self = this;
   self._entityHelper.notifyObservers(false);
-  return tutao.locator.entityRestClient.postElement(tutao.entity.sys.SecondFactor.PATH, self, listId, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.postElement(tutao.entity.sys.SecondFactor.PATH, self, listId, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     self.__id = [listId, entity.getGeneratedId()];
     self.setPermissions(entity.getPermissionListId());
   });
@@ -254,7 +254,7 @@ tutao.entity.sys.SecondFactor.prototype.setup = function(listId) {
  */
 tutao.entity.sys.SecondFactor.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.SecondFactor.PATH, this, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.SecondFactor.PATH, this, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -266,7 +266,7 @@ tutao.entity.sys.SecondFactor.prototype.update = function() {
  */
 tutao.entity.sys.SecondFactor.createList = function(ownerGroupId) {
   var params = tutao.entity.EntityHelper.createPostListPermissionMap(ownerGroupId);
-  params["v"] = "25";
+  params["v"] = "26";
   return tutao.locator.entityRestClient.postList(tutao.entity.sys.SecondFactor.PATH, params, tutao.entity.EntityHelper.createAuthHeaders()).then(function(returnEntity) {
     return returnEntity.getGeneratedId();
   });
@@ -281,7 +281,7 @@ tutao.entity.sys.SecondFactor.createList = function(ownerGroupId) {
  * @return {Promise.<Array.<tutao.entity.sys.SecondFactor>>} Resolves to an array of SecondFactor or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.SecondFactor.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.SecondFactor, tutao.entity.sys.SecondFactor.PATH, listId, start, count, reverse, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.SecondFactor, tutao.entity.sys.SecondFactor.PATH, listId, start, count, reverse, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return entities;
   });
 };

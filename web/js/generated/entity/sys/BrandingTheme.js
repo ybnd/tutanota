@@ -15,6 +15,7 @@ tutao.entity.sys.BrandingTheme = function(data) {
     this.__ownerGroup = null;
     this.__permissions = null;
     this._jsonTheme = null;
+    this._metaTags = null;
     this._disabledFeatures = [];
   }
   this._entityHelper = new tutao.entity.EntityHelper(this);
@@ -31,6 +32,7 @@ tutao.entity.sys.BrandingTheme.prototype.updateData = function(data) {
   this.__ownerGroup = data._ownerGroup;
   this.__permissions = data._permissions;
   this._jsonTheme = data.jsonTheme;
+  this._metaTags = data.metaTags;
   this._disabledFeatures = [];
   for (var i=0; i < data.disabledFeatures.length; i++) {
     this._disabledFeatures.push(new tutao.entity.sys.DisabledFeature(this, data.disabledFeatures[i]));
@@ -41,7 +43,7 @@ tutao.entity.sys.BrandingTheme.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.BrandingTheme.MODEL_VERSION = '25';
+tutao.entity.sys.BrandingTheme.MODEL_VERSION = '26';
 
 /**
  * The url path to the resource.
@@ -78,6 +80,7 @@ tutao.entity.sys.BrandingTheme.prototype.toJsonData = function() {
     _ownerGroup: this.__ownerGroup, 
     _permissions: this.__permissions, 
     jsonTheme: this._jsonTheme, 
+    metaTags: this._metaTags, 
     disabledFeatures: tutao.entity.EntityHelper.aggregatesToJsonData(this._disabledFeatures)
   };
 };
@@ -159,6 +162,23 @@ tutao.entity.sys.BrandingTheme.prototype.getJsonTheme = function() {
 };
 
 /**
+ * Sets the metaTags of this BrandingTheme.
+ * @param {string} metaTags The metaTags of this BrandingTheme.
+ */
+tutao.entity.sys.BrandingTheme.prototype.setMetaTags = function(metaTags) {
+  this._metaTags = metaTags;
+  return this;
+};
+
+/**
+ * Provides the metaTags of this BrandingTheme.
+ * @return {string} The metaTags of this BrandingTheme.
+ */
+tutao.entity.sys.BrandingTheme.prototype.getMetaTags = function() {
+  return this._metaTags;
+};
+
+/**
  * Provides the disabledFeatures of this BrandingTheme.
  * @return {Array.<tutao.entity.sys.DisabledFeature>} The disabledFeatures of this BrandingTheme.
  */
@@ -172,7 +192,7 @@ tutao.entity.sys.BrandingTheme.prototype.getDisabledFeatures = function() {
  * @return {Promise.<tutao.entity.sys.BrandingTheme>} Resolves to the BrandingTheme or an exception if the loading failed.
  */
 tutao.entity.sys.BrandingTheme.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.BrandingTheme, tutao.entity.sys.BrandingTheme.PATH, id, null, {"v" : "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.BrandingTheme, tutao.entity.sys.BrandingTheme.PATH, id, null, {"v" : "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -183,7 +203,7 @@ tutao.entity.sys.BrandingTheme.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.BrandingTheme>>} Resolves to an array of BrandingTheme or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.BrandingTheme.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.BrandingTheme, tutao.entity.sys.BrandingTheme.PATH, ids, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.BrandingTheme, tutao.entity.sys.BrandingTheme.PATH, ids, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -194,7 +214,7 @@ tutao.entity.sys.BrandingTheme.loadMultiple = function(ids) {
  */
 tutao.entity.sys.BrandingTheme.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.BrandingTheme.PATH, this, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.BrandingTheme.PATH, this, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };

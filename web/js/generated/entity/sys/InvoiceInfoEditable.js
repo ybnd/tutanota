@@ -11,6 +11,9 @@ tutao.entity.sys.InvoiceInfoEditable = function(invoiceinfo) {
 	tutao.util.FunctionUtils.bindPrototypeMethodsToThis(this);
 	this._entity = invoiceinfo;
 	this.publishInvoices = ko.observable(invoiceinfo.getPublishInvoices());
+	this.specialPriceBrandingPerUser = ko.observable(invoiceinfo.getSpecialPriceBrandingPerUser());
+	this.specialPriceContactFormSingle = ko.observable(invoiceinfo.getSpecialPriceContactFormSingle());
+	this.specialPriceSharedGroupSingle = ko.observable(invoiceinfo.getSpecialPriceSharedGroupSingle());
 	this.specialPriceUserSingle = ko.observable(invoiceinfo.getSpecialPriceUserSingle());
 	this.specialPriceUserTotal = ko.observable(invoiceinfo.getSpecialPriceUserTotal());
 
@@ -34,6 +37,9 @@ tutao.entity.sys.InvoiceInfoEditable.prototype.getInvoiceInfo = function() {
  */
 tutao.entity.sys.InvoiceInfoEditable.prototype.update = function() {
 	this._entity.setPublishInvoices(this.publishInvoices());
+	this._entity.setSpecialPriceBrandingPerUser(this.specialPriceBrandingPerUser());
+	this._entity.setSpecialPriceContactFormSingle(this.specialPriceContactFormSingle());
+	this._entity.setSpecialPriceSharedGroupSingle(this.specialPriceSharedGroupSingle());
 	this._entity.setSpecialPriceUserSingle(this.specialPriceUserSingle());
 	this._entity.setSpecialPriceUserTotal(this.specialPriceUserTotal());
 	this.lastUpdatedTimestamp(new Date().getTime());

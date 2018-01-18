@@ -31,6 +31,8 @@ tutao.entity.sys.Customer = function(data) {
     this._teamGroups = null;
     this._userAreaGroups = null;
     this._userGroups = null;
+    this._whitelabelChildren = null;
+    this._whitelabelParent = null;
   }
   this._entityHelper = new tutao.entity.EntityHelper(this);
   this.prototype = tutao.entity.sys.Customer.prototype;
@@ -65,13 +67,15 @@ tutao.entity.sys.Customer.prototype.updateData = function(data) {
   this._teamGroups = data.teamGroups;
   this._userAreaGroups = (data.userAreaGroups) ? new tutao.entity.sys.UserAreaGroups(this, data.userAreaGroups) : null;
   this._userGroups = data.userGroups;
+  this._whitelabelChildren = (data.whitelabelChildren) ? new tutao.entity.sys.WhitelabelChildrenRef(this, data.whitelabelChildren) : null;
+  this._whitelabelParent = (data.whitelabelParent) ? new tutao.entity.sys.WhitelabelParent(this, data.whitelabelParent) : null;
 };
 
 /**
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.Customer.MODEL_VERSION = '25';
+tutao.entity.sys.Customer.MODEL_VERSION = '26';
 
 /**
  * The url path to the resource.
@@ -123,7 +127,9 @@ tutao.entity.sys.Customer.prototype.toJsonData = function() {
     serverProperties: this._serverProperties, 
     teamGroups: this._teamGroups, 
     userAreaGroups: tutao.entity.EntityHelper.aggregatesToJsonData(this._userAreaGroups), 
-    userGroups: this._userGroups
+    userGroups: this._userGroups, 
+    whitelabelChildren: tutao.entity.EntityHelper.aggregatesToJsonData(this._whitelabelChildren), 
+    whitelabelParent: tutao.entity.EntityHelper.aggregatesToJsonData(this._whitelabelParent)
   };
 };
 
@@ -507,12 +513,46 @@ tutao.entity.sys.Customer.prototype.getUserGroups = function() {
 };
 
 /**
+ * Sets the whitelabelChildren of this Customer.
+ * @param {tutao.entity.sys.WhitelabelChildrenRef} whitelabelChildren The whitelabelChildren of this Customer.
+ */
+tutao.entity.sys.Customer.prototype.setWhitelabelChildren = function(whitelabelChildren) {
+  this._whitelabelChildren = whitelabelChildren;
+  return this;
+};
+
+/**
+ * Provides the whitelabelChildren of this Customer.
+ * @return {tutao.entity.sys.WhitelabelChildrenRef} The whitelabelChildren of this Customer.
+ */
+tutao.entity.sys.Customer.prototype.getWhitelabelChildren = function() {
+  return this._whitelabelChildren;
+};
+
+/**
+ * Sets the whitelabelParent of this Customer.
+ * @param {tutao.entity.sys.WhitelabelParent} whitelabelParent The whitelabelParent of this Customer.
+ */
+tutao.entity.sys.Customer.prototype.setWhitelabelParent = function(whitelabelParent) {
+  this._whitelabelParent = whitelabelParent;
+  return this;
+};
+
+/**
+ * Provides the whitelabelParent of this Customer.
+ * @return {tutao.entity.sys.WhitelabelParent} The whitelabelParent of this Customer.
+ */
+tutao.entity.sys.Customer.prototype.getWhitelabelParent = function() {
+  return this._whitelabelParent;
+};
+
+/**
  * Loads a Customer from the server.
  * @param {string} id The id of the Customer.
  * @return {Promise.<tutao.entity.sys.Customer>} Resolves to the Customer or an exception if the loading failed.
  */
 tutao.entity.sys.Customer.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.Customer, tutao.entity.sys.Customer.PATH, id, null, {"v" : "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.Customer, tutao.entity.sys.Customer.PATH, id, null, {"v" : "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -523,7 +563,7 @@ tutao.entity.sys.Customer.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.Customer>>} Resolves to an array of Customer or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.Customer.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.Customer, tutao.entity.sys.Customer.PATH, ids, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.Customer, tutao.entity.sys.Customer.PATH, ids, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -534,7 +574,7 @@ tutao.entity.sys.Customer.loadMultiple = function(ids) {
  */
 tutao.entity.sys.Customer.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.Customer.PATH, this, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.Customer.PATH, this, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };

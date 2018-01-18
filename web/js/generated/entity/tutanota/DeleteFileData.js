@@ -30,7 +30,7 @@ tutao.entity.tutanota.DeleteFileData.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.DeleteFileData.MODEL_VERSION = '23';
+tutao.entity.tutanota.DeleteFileData.MODEL_VERSION = '24';
 
 /**
  * The url path to the resource.
@@ -107,7 +107,7 @@ tutao.entity.tutanota.DeleteFileData.prototype.update = function(parameters, hea
   if (!headers) {
     headers = tutao.entity.EntityHelper.createAuthHeaders();
   }
-  parameters["v"] = "23";
+  parameters["v"] = "24";
   return tutao.locator.entityRestClient.putService(tutao.entity.tutanota.DeleteFileData.PATH, this, parameters, headers, null);
 };
 /**

@@ -17,6 +17,7 @@ tutao.entity.sys.PriceRequestData = function(parent, data) {
     this._count = null;
     this._featureType = null;
     this._paymentInterval = null;
+    this._reactivate = null;
   }
   this._parent = parent;
   this.prototype = tutao.entity.sys.PriceRequestData.prototype;
@@ -34,6 +35,7 @@ tutao.entity.sys.PriceRequestData.prototype.updateData = function(parent, data) 
   this._count = data.count;
   this._featureType = data.featureType;
   this._paymentInterval = data.paymentInterval;
+  this._reactivate = data.reactivate;
 };
 
 /**
@@ -47,7 +49,8 @@ tutao.entity.sys.PriceRequestData.prototype.toJsonData = function() {
     business: this._business, 
     count: this._count, 
     featureType: this._featureType, 
-    paymentInterval: this._paymentInterval
+    paymentInterval: this._paymentInterval, 
+    reactivate: this._reactivate
   };
 };
 
@@ -158,6 +161,23 @@ tutao.entity.sys.PriceRequestData.prototype.setPaymentInterval = function(paymen
  */
 tutao.entity.sys.PriceRequestData.prototype.getPaymentInterval = function() {
   return this._paymentInterval;
+};
+
+/**
+ * Sets the reactivate of this PriceRequestData.
+ * @param {boolean} reactivate The reactivate of this PriceRequestData.
+ */
+tutao.entity.sys.PriceRequestData.prototype.setReactivate = function(reactivate) {
+  this._reactivate = reactivate ? '1' : '0';
+  return this;
+};
+
+/**
+ * Provides the reactivate of this PriceRequestData.
+ * @return {boolean} The reactivate of this PriceRequestData.
+ */
+tutao.entity.sys.PriceRequestData.prototype.getReactivate = function() {
+  return this._reactivate != '0';
 };
 /**
  * Provides the entity helper of this entity.
