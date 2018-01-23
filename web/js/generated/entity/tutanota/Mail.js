@@ -356,14 +356,9 @@ tutao.entity.tutanota.Mail.prototype.getDifferentEnvelopeSender = function() {
  * @param {boolean} listUnsubscribe The listUnsubscribe of this Mail.
  */
 tutao.entity.tutanota.Mail.prototype.setListUnsubscribe = function(listUnsubscribe) {
-  if (listUnsubscribe == null) {
-    this._listUnsubscribe = null;
-    this._listUnsubscribe_ = null;
-  } else {
-    var dataToEncrypt = (listUnsubscribe) ? '1' : '0';
-    this._listUnsubscribe = tutao.locator.aesCrypter.encryptUtf8(this._entityHelper.getSessionKey(), dataToEncrypt);
-    this._listUnsubscribe_ = listUnsubscribe;
-  }
+  var dataToEncrypt = (listUnsubscribe) ? '1' : '0';
+  this._listUnsubscribe = tutao.locator.aesCrypter.encryptUtf8(this._entityHelper.getSessionKey(), dataToEncrypt);
+  this._listUnsubscribe_ = listUnsubscribe;
   return this;
 };
 
@@ -372,11 +367,11 @@ tutao.entity.tutanota.Mail.prototype.setListUnsubscribe = function(listUnsubscri
  * @return {boolean} The listUnsubscribe of this Mail.
  */
 tutao.entity.tutanota.Mail.prototype.getListUnsubscribe = function() {
-  if (this._listUnsubscribe == null || !this._entityHelper.getSessionKey()) {
-    return null;
-  }
   if (this._listUnsubscribe_ != null) {
     return this._listUnsubscribe_;
+  }
+  if (this._listUnsubscribe == "" || !this._entityHelper.getSessionKey()) {
+    return false;
   }
   try {
     var value = tutao.locator.aesCrypter.decryptUtf8(this._entityHelper.getSessionKey(), this._listUnsubscribe);
