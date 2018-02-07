@@ -13,9 +13,10 @@ tutao.entity.tutanota.InternalGroupData = function(parent, data) {
   } else {
     this.__id = tutao.entity.EntityHelper.generateAggregateId();
     this._adminEncGroupKey = null;
-    this._ownerEncGroupInfoSessionKey = null;
     this._groupEncPrivateKey = null;
+    this._ownerEncGroupInfoSessionKey = null;
     this._publicKey = null;
+    this._adminGroup = null;
   }
   this._parent = parent;
   this.prototype = tutao.entity.tutanota.InternalGroupData.prototype;
@@ -29,9 +30,10 @@ tutao.entity.tutanota.InternalGroupData = function(parent, data) {
 tutao.entity.tutanota.InternalGroupData.prototype.updateData = function(parent, data) {
   this.__id = data._id;
   this._adminEncGroupKey = data.adminEncGroupKey;
-  this._ownerEncGroupInfoSessionKey = data.ownerEncGroupInfoSessionKey;
   this._groupEncPrivateKey = data.groupEncPrivateKey;
+  this._ownerEncGroupInfoSessionKey = data.ownerEncGroupInfoSessionKey;
   this._publicKey = data.publicKey;
+  this._adminGroup = data.adminGroup;
 };
 
 /**
@@ -42,9 +44,10 @@ tutao.entity.tutanota.InternalGroupData.prototype.toJsonData = function() {
   return {
     _id: this.__id, 
     adminEncGroupKey: this._adminEncGroupKey, 
-    ownerEncGroupInfoSessionKey: this._ownerEncGroupInfoSessionKey, 
     groupEncPrivateKey: this._groupEncPrivateKey, 
-    publicKey: this._publicKey
+    ownerEncGroupInfoSessionKey: this._ownerEncGroupInfoSessionKey, 
+    publicKey: this._publicKey, 
+    adminGroup: this._adminGroup
   };
 };
 
@@ -83,23 +86,6 @@ tutao.entity.tutanota.InternalGroupData.prototype.getAdminEncGroupKey = function
 };
 
 /**
- * Sets the ownerEncGroupInfoSessionKey of this InternalGroupData.
- * @param {string} ownerEncGroupInfoSessionKey The ownerEncGroupInfoSessionKey of this InternalGroupData.
- */
-tutao.entity.tutanota.InternalGroupData.prototype.setOwnerEncGroupInfoSessionKey = function(ownerEncGroupInfoSessionKey) {
-  this._ownerEncGroupInfoSessionKey = ownerEncGroupInfoSessionKey;
-  return this;
-};
-
-/**
- * Provides the ownerEncGroupInfoSessionKey of this InternalGroupData.
- * @return {string} The ownerEncGroupInfoSessionKey of this InternalGroupData.
- */
-tutao.entity.tutanota.InternalGroupData.prototype.getOwnerEncGroupInfoSessionKey = function() {
-  return this._ownerEncGroupInfoSessionKey;
-};
-
-/**
  * Sets the groupEncPrivateKey of this InternalGroupData.
  * @param {string} groupEncPrivateKey The groupEncPrivateKey of this InternalGroupData.
  */
@@ -117,6 +103,23 @@ tutao.entity.tutanota.InternalGroupData.prototype.getGroupEncPrivateKey = functi
 };
 
 /**
+ * Sets the ownerEncGroupInfoSessionKey of this InternalGroupData.
+ * @param {string} ownerEncGroupInfoSessionKey The ownerEncGroupInfoSessionKey of this InternalGroupData.
+ */
+tutao.entity.tutanota.InternalGroupData.prototype.setOwnerEncGroupInfoSessionKey = function(ownerEncGroupInfoSessionKey) {
+  this._ownerEncGroupInfoSessionKey = ownerEncGroupInfoSessionKey;
+  return this;
+};
+
+/**
+ * Provides the ownerEncGroupInfoSessionKey of this InternalGroupData.
+ * @return {string} The ownerEncGroupInfoSessionKey of this InternalGroupData.
+ */
+tutao.entity.tutanota.InternalGroupData.prototype.getOwnerEncGroupInfoSessionKey = function() {
+  return this._ownerEncGroupInfoSessionKey;
+};
+
+/**
  * Sets the publicKey of this InternalGroupData.
  * @param {string} publicKey The publicKey of this InternalGroupData.
  */
@@ -131,6 +134,31 @@ tutao.entity.tutanota.InternalGroupData.prototype.setPublicKey = function(public
  */
 tutao.entity.tutanota.InternalGroupData.prototype.getPublicKey = function() {
   return this._publicKey;
+};
+
+/**
+ * Sets the adminGroup of this InternalGroupData.
+ * @param {string} adminGroup The adminGroup of this InternalGroupData.
+ */
+tutao.entity.tutanota.InternalGroupData.prototype.setAdminGroup = function(adminGroup) {
+  this._adminGroup = adminGroup;
+  return this;
+};
+
+/**
+ * Provides the adminGroup of this InternalGroupData.
+ * @return {string} The adminGroup of this InternalGroupData.
+ */
+tutao.entity.tutanota.InternalGroupData.prototype.getAdminGroup = function() {
+  return this._adminGroup;
+};
+
+/**
+ * Loads the adminGroup of this InternalGroupData.
+ * @return {Promise.<tutao.entity.tutanota.Group>} Resolves to the loaded adminGroup of this InternalGroupData or an exception if the loading failed.
+ */
+tutao.entity.tutanota.InternalGroupData.prototype.loadAdminGroup = function() {
+  return tutao.entity.tutanota.Group.load(this._adminGroup);
 };
 /**
  * Provides the entity helper of this entity.

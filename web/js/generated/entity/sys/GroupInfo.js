@@ -18,10 +18,12 @@ tutao.entity.sys.GroupInfo = function(data) {
     this.__permissions = null;
     this._created = null;
     this._deleted = null;
+    this._groupType = null;
     this._mailAddress = null;
     this._name = null;
     this._name_ = null;
     this._group = null;
+    this._localAdmin = null;
     this._mailAddressAliases = [];
   }
   this._entityHelper = new tutao.entity.EntityHelper(this);
@@ -41,10 +43,12 @@ tutao.entity.sys.GroupInfo.prototype.updateData = function(data) {
   this.__permissions = data._permissions;
   this._created = data.created;
   this._deleted = data.deleted;
+  this._groupType = data.groupType;
   this._mailAddress = data.mailAddress;
   this._name = data.name;
   this._name_ = null;
   this._group = data.group;
+  this._localAdmin = data.localAdmin;
   this._mailAddressAliases = [];
   for (var i=0; i < data.mailAddressAliases.length; i++) {
     this._mailAddressAliases.push(new tutao.entity.sys.MailAddressAlias(this, data.mailAddressAliases[i]));
@@ -55,7 +59,7 @@ tutao.entity.sys.GroupInfo.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.GroupInfo.MODEL_VERSION = '26';
+tutao.entity.sys.GroupInfo.MODEL_VERSION = '27';
 
 /**
  * The url path to the resource.
@@ -95,9 +99,11 @@ tutao.entity.sys.GroupInfo.prototype.toJsonData = function() {
     _permissions: this.__permissions, 
     created: this._created, 
     deleted: this._deleted, 
+    groupType: this._groupType, 
     mailAddress: this._mailAddress, 
     name: this._name, 
     group: this._group, 
+    localAdmin: this._localAdmin, 
     mailAddressAliases: tutao.entity.EntityHelper.aggregatesToJsonData(this._mailAddressAliases)
   };
 };
@@ -243,6 +249,23 @@ tutao.entity.sys.GroupInfo.prototype.getDeleted = function() {
 };
 
 /**
+ * Sets the groupType of this GroupInfo.
+ * @param {string} groupType The groupType of this GroupInfo.
+ */
+tutao.entity.sys.GroupInfo.prototype.setGroupType = function(groupType) {
+  this._groupType = groupType;
+  return this;
+};
+
+/**
+ * Provides the groupType of this GroupInfo.
+ * @return {string} The groupType of this GroupInfo.
+ */
+tutao.entity.sys.GroupInfo.prototype.getGroupType = function() {
+  return this._groupType;
+};
+
+/**
  * Sets the mailAddress of this GroupInfo.
  * @param {string} mailAddress The mailAddress of this GroupInfo.
  */
@@ -321,6 +344,31 @@ tutao.entity.sys.GroupInfo.prototype.loadGroup = function() {
 };
 
 /**
+ * Sets the localAdmin of this GroupInfo.
+ * @param {string} localAdmin The localAdmin of this GroupInfo.
+ */
+tutao.entity.sys.GroupInfo.prototype.setLocalAdmin = function(localAdmin) {
+  this._localAdmin = localAdmin;
+  return this;
+};
+
+/**
+ * Provides the localAdmin of this GroupInfo.
+ * @return {string} The localAdmin of this GroupInfo.
+ */
+tutao.entity.sys.GroupInfo.prototype.getLocalAdmin = function() {
+  return this._localAdmin;
+};
+
+/**
+ * Loads the localAdmin of this GroupInfo.
+ * @return {Promise.<tutao.entity.sys.Group>} Resolves to the loaded localAdmin of this GroupInfo or an exception if the loading failed.
+ */
+tutao.entity.sys.GroupInfo.prototype.loadLocalAdmin = function() {
+  return tutao.entity.sys.Group.load(this._localAdmin);
+};
+
+/**
  * Provides the mailAddressAliases of this GroupInfo.
  * @return {Array.<tutao.entity.sys.MailAddressAlias>} The mailAddressAliases of this GroupInfo.
  */
@@ -334,7 +382,7 @@ tutao.entity.sys.GroupInfo.prototype.getMailAddressAliases = function() {
  * @return {Promise.<tutao.entity.sys.GroupInfo>} Resolves to the GroupInfo or an exception if the loading failed.
  */
 tutao.entity.sys.GroupInfo.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.GroupInfo, tutao.entity.sys.GroupInfo.PATH, id[1], id[0], {"v" : "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.GroupInfo, tutao.entity.sys.GroupInfo.PATH, id[1], id[0], {"v" : "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity._entityHelper.loadSessionKey();
   });
 };
@@ -345,7 +393,7 @@ tutao.entity.sys.GroupInfo.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.GroupInfo>>} Resolves to an array of GroupInfo or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.GroupInfo.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.GroupInfo, tutao.entity.sys.GroupInfo.PATH, ids, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.GroupInfo, tutao.entity.sys.GroupInfo.PATH, ids, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return tutao.entity.EntityHelper.loadSessionKeys(entities);
   });
 };
@@ -357,7 +405,7 @@ tutao.entity.sys.GroupInfo.loadMultiple = function(ids) {
 tutao.entity.sys.GroupInfo.prototype.updateOwnerEncSessionKey = function() {
   var params = {};
   params[tutao.rest.ResourceConstants.UPDATE_OWNER_ENC_SESSION_KEY] = "true";
-  params["v"] = "26";
+  params["v"] = "27";
   return tutao.locator.entityRestClient.putElement(tutao.entity.sys.GroupInfo.PATH, this, params, tutao.entity.EntityHelper.createAuthHeaders());
 };
 
@@ -367,7 +415,7 @@ tutao.entity.sys.GroupInfo.prototype.updateOwnerEncSessionKey = function() {
  */
 tutao.entity.sys.GroupInfo.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.GroupInfo.PATH, this, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.GroupInfo.PATH, this, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -381,7 +429,7 @@ tutao.entity.sys.GroupInfo.prototype.update = function() {
  * @return {Promise.<Array.<tutao.entity.sys.GroupInfo>>} Resolves to an array of GroupInfo or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.GroupInfo.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.GroupInfo, tutao.entity.sys.GroupInfo.PATH, listId, start, count, reverse, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.GroupInfo, tutao.entity.sys.GroupInfo.PATH, listId, start, count, reverse, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return tutao.entity.EntityHelper.loadSessionKeys(entities);
   });
 };

@@ -26,6 +26,7 @@ tutao.entity.sys.AuditLogEntry = function(data) {
     this._modifiedEntity = null;
     this._modifiedEntity_ = null;
     this._groupInfo = null;
+    this._modifiedGroupInfo = null;
   }
   this._entityHelper = new tutao.entity.EntityHelper(this);
   this.prototype = tutao.entity.sys.AuditLogEntry.prototype;
@@ -52,13 +53,14 @@ tutao.entity.sys.AuditLogEntry.prototype.updateData = function(data) {
   this._modifiedEntity = data.modifiedEntity;
   this._modifiedEntity_ = null;
   this._groupInfo = data.groupInfo;
+  this._modifiedGroupInfo = data.modifiedGroupInfo;
 };
 
 /**
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.AuditLogEntry.MODEL_VERSION = '26';
+tutao.entity.sys.AuditLogEntry.MODEL_VERSION = '27';
 
 /**
  * The url path to the resource.
@@ -100,7 +102,8 @@ tutao.entity.sys.AuditLogEntry.prototype.toJsonData = function() {
     actorMailAddress: this._actorMailAddress, 
     date: this._date, 
     modifiedEntity: this._modifiedEntity, 
-    groupInfo: this._groupInfo
+    groupInfo: this._groupInfo, 
+    modifiedGroupInfo: this._modifiedGroupInfo
   };
 };
 
@@ -390,12 +393,37 @@ tutao.entity.sys.AuditLogEntry.prototype.loadGroupInfo = function() {
 };
 
 /**
+ * Sets the modifiedGroupInfo of this AuditLogEntry.
+ * @param {Array.<string>} modifiedGroupInfo The modifiedGroupInfo of this AuditLogEntry.
+ */
+tutao.entity.sys.AuditLogEntry.prototype.setModifiedGroupInfo = function(modifiedGroupInfo) {
+  this._modifiedGroupInfo = modifiedGroupInfo;
+  return this;
+};
+
+/**
+ * Provides the modifiedGroupInfo of this AuditLogEntry.
+ * @return {Array.<string>} The modifiedGroupInfo of this AuditLogEntry.
+ */
+tutao.entity.sys.AuditLogEntry.prototype.getModifiedGroupInfo = function() {
+  return this._modifiedGroupInfo;
+};
+
+/**
+ * Loads the modifiedGroupInfo of this AuditLogEntry.
+ * @return {Promise.<tutao.entity.sys.GroupInfo>} Resolves to the loaded modifiedGroupInfo of this AuditLogEntry or an exception if the loading failed.
+ */
+tutao.entity.sys.AuditLogEntry.prototype.loadModifiedGroupInfo = function() {
+  return tutao.entity.sys.GroupInfo.load(this._modifiedGroupInfo);
+};
+
+/**
  * Loads a AuditLogEntry from the server.
  * @param {Array.<string>} id The id of the AuditLogEntry.
  * @return {Promise.<tutao.entity.sys.AuditLogEntry>} Resolves to the AuditLogEntry or an exception if the loading failed.
  */
 tutao.entity.sys.AuditLogEntry.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.AuditLogEntry, tutao.entity.sys.AuditLogEntry.PATH, id[1], id[0], {"v" : "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.AuditLogEntry, tutao.entity.sys.AuditLogEntry.PATH, id[1], id[0], {"v" : "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity._entityHelper.loadSessionKey();
   });
 };
@@ -406,7 +434,7 @@ tutao.entity.sys.AuditLogEntry.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.AuditLogEntry>>} Resolves to an array of AuditLogEntry or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.AuditLogEntry.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.AuditLogEntry, tutao.entity.sys.AuditLogEntry.PATH, ids, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.AuditLogEntry, tutao.entity.sys.AuditLogEntry.PATH, ids, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return tutao.entity.EntityHelper.loadSessionKeys(entities);
   });
 };
@@ -418,7 +446,7 @@ tutao.entity.sys.AuditLogEntry.loadMultiple = function(ids) {
 tutao.entity.sys.AuditLogEntry.prototype.updateOwnerEncSessionKey = function() {
   var params = {};
   params[tutao.rest.ResourceConstants.UPDATE_OWNER_ENC_SESSION_KEY] = "true";
-  params["v"] = "26";
+  params["v"] = "27";
   return tutao.locator.entityRestClient.putElement(tutao.entity.sys.AuditLogEntry.PATH, this, params, tutao.entity.EntityHelper.createAuthHeaders());
 };
 
@@ -428,7 +456,7 @@ tutao.entity.sys.AuditLogEntry.prototype.updateOwnerEncSessionKey = function() {
  */
 tutao.entity.sys.AuditLogEntry.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.AuditLogEntry.PATH, this, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.AuditLogEntry.PATH, this, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -442,7 +470,7 @@ tutao.entity.sys.AuditLogEntry.prototype.update = function() {
  * @return {Promise.<Array.<tutao.entity.sys.AuditLogEntry>>} Resolves to an array of AuditLogEntry or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.AuditLogEntry.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.AuditLogEntry, tutao.entity.sys.AuditLogEntry.PATH, listId, start, count, reverse, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.AuditLogEntry, tutao.entity.sys.AuditLogEntry.PATH, listId, start, count, reverse, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return tutao.entity.EntityHelper.loadSessionKeys(entities);
   });
 };

@@ -17,6 +17,7 @@ tutao.entity.tutanota.CustomerContactFormGroupRoot = function(data) {
     this._contactFormConversations = null;
     this._contactForms = null;
     this._statisticsLog = null;
+    this._statisticsLog_encrypted_removed = null;
   }
   this._entityHelper = new tutao.entity.EntityHelper(this);
   this.prototype = tutao.entity.tutanota.CustomerContactFormGroupRoot.prototype;
@@ -33,14 +34,15 @@ tutao.entity.tutanota.CustomerContactFormGroupRoot.prototype.updateData = functi
   this.__permissions = data._permissions;
   this._contactFormConversations = (data.contactFormConversations) ? new tutao.entity.tutanota.DeleteContactFormConversationIndex(this, data.contactFormConversations) : null;
   this._contactForms = data.contactForms;
-  this._statisticsLog = data.statisticsLog;
+  this._statisticsLog = (data.statisticsLog) ? new tutao.entity.tutanota.UnencryptedStatisticLogRef(this, data.statisticsLog) : null;
+  this._statisticsLog_encrypted_removed = data.statisticsLog_encrypted_removed;
 };
 
 /**
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.CustomerContactFormGroupRoot.MODEL_VERSION = '24';
+tutao.entity.tutanota.CustomerContactFormGroupRoot.MODEL_VERSION = '25';
 
 /**
  * The url path to the resource.
@@ -78,7 +80,8 @@ tutao.entity.tutanota.CustomerContactFormGroupRoot.prototype.toJsonData = functi
     _permissions: this.__permissions, 
     contactFormConversations: tutao.entity.EntityHelper.aggregatesToJsonData(this._contactFormConversations), 
     contactForms: this._contactForms, 
-    statisticsLog: this._statisticsLog
+    statisticsLog: tutao.entity.EntityHelper.aggregatesToJsonData(this._statisticsLog), 
+    statisticsLog_encrypted_removed: this._statisticsLog_encrypted_removed
   };
 };
 
@@ -177,7 +180,7 @@ tutao.entity.tutanota.CustomerContactFormGroupRoot.prototype.getContactForms = f
 
 /**
  * Sets the statisticsLog of this CustomerContactFormGroupRoot.
- * @param {string} statisticsLog The statisticsLog of this CustomerContactFormGroupRoot.
+ * @param {tutao.entity.tutanota.UnencryptedStatisticLogRef} statisticsLog The statisticsLog of this CustomerContactFormGroupRoot.
  */
 tutao.entity.tutanota.CustomerContactFormGroupRoot.prototype.setStatisticsLog = function(statisticsLog) {
   this._statisticsLog = statisticsLog;
@@ -186,10 +189,27 @@ tutao.entity.tutanota.CustomerContactFormGroupRoot.prototype.setStatisticsLog = 
 
 /**
  * Provides the statisticsLog of this CustomerContactFormGroupRoot.
- * @return {string} The statisticsLog of this CustomerContactFormGroupRoot.
+ * @return {tutao.entity.tutanota.UnencryptedStatisticLogRef} The statisticsLog of this CustomerContactFormGroupRoot.
  */
 tutao.entity.tutanota.CustomerContactFormGroupRoot.prototype.getStatisticsLog = function() {
   return this._statisticsLog;
+};
+
+/**
+ * Sets the statisticsLog_encrypted_removed of this CustomerContactFormGroupRoot.
+ * @param {string} statisticsLog_encrypted_removed The statisticsLog_encrypted_removed of this CustomerContactFormGroupRoot.
+ */
+tutao.entity.tutanota.CustomerContactFormGroupRoot.prototype.setStatisticsLog_encrypted_removed = function(statisticsLog_encrypted_removed) {
+  this._statisticsLog_encrypted_removed = statisticsLog_encrypted_removed;
+  return this;
+};
+
+/**
+ * Provides the statisticsLog_encrypted_removed of this CustomerContactFormGroupRoot.
+ * @return {string} The statisticsLog_encrypted_removed of this CustomerContactFormGroupRoot.
+ */
+tutao.entity.tutanota.CustomerContactFormGroupRoot.prototype.getStatisticsLog_encrypted_removed = function() {
+  return this._statisticsLog_encrypted_removed;
 };
 
 /**
@@ -198,7 +218,7 @@ tutao.entity.tutanota.CustomerContactFormGroupRoot.prototype.getStatisticsLog = 
  * @return {Promise.<tutao.entity.tutanota.CustomerContactFormGroupRoot>} Resolves to the CustomerContactFormGroupRoot or an exception if the loading failed.
  */
 tutao.entity.tutanota.CustomerContactFormGroupRoot.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.CustomerContactFormGroupRoot, tutao.entity.tutanota.CustomerContactFormGroupRoot.PATH, id, null, {"v" : "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.CustomerContactFormGroupRoot, tutao.entity.tutanota.CustomerContactFormGroupRoot.PATH, id, null, {"v" : "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -209,7 +229,7 @@ tutao.entity.tutanota.CustomerContactFormGroupRoot.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.tutanota.CustomerContactFormGroupRoot>>} Resolves to an array of CustomerContactFormGroupRoot or rejects with an exception if the loading failed.
  */
 tutao.entity.tutanota.CustomerContactFormGroupRoot.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.CustomerContactFormGroupRoot, tutao.entity.tutanota.CustomerContactFormGroupRoot.PATH, ids, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.CustomerContactFormGroupRoot, tutao.entity.tutanota.CustomerContactFormGroupRoot.PATH, ids, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -220,7 +240,7 @@ tutao.entity.tutanota.CustomerContactFormGroupRoot.loadMultiple = function(ids) 
  */
 tutao.entity.tutanota.CustomerContactFormGroupRoot.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.CustomerContactFormGroupRoot.PATH, this, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.CustomerContactFormGroupRoot.PATH, this, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };

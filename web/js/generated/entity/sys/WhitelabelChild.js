@@ -48,7 +48,7 @@ tutao.entity.sys.WhitelabelChild.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.WhitelabelChild.MODEL_VERSION = '26';
+tutao.entity.sys.WhitelabelChild.MODEL_VERSION = '27';
 
 /**
  * The url path to the resource.
@@ -300,7 +300,7 @@ tutao.entity.sys.WhitelabelChild.prototype.loadCustomer = function() {
  * @return {Promise.<tutao.entity.sys.WhitelabelChild>} Resolves to the WhitelabelChild or an exception if the loading failed.
  */
 tutao.entity.sys.WhitelabelChild.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.WhitelabelChild, tutao.entity.sys.WhitelabelChild.PATH, id[1], id[0], {"v" : "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.WhitelabelChild, tutao.entity.sys.WhitelabelChild.PATH, id[1], id[0], {"v" : "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity._entityHelper.loadSessionKey();
   });
 };
@@ -311,7 +311,7 @@ tutao.entity.sys.WhitelabelChild.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.WhitelabelChild>>} Resolves to an array of WhitelabelChild or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.WhitelabelChild.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.WhitelabelChild, tutao.entity.sys.WhitelabelChild.PATH, ids, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.WhitelabelChild, tutao.entity.sys.WhitelabelChild.PATH, ids, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return tutao.entity.EntityHelper.loadSessionKeys(entities);
   });
 };
@@ -323,7 +323,7 @@ tutao.entity.sys.WhitelabelChild.loadMultiple = function(ids) {
 tutao.entity.sys.WhitelabelChild.prototype.updateOwnerEncSessionKey = function() {
   var params = {};
   params[tutao.rest.ResourceConstants.UPDATE_OWNER_ENC_SESSION_KEY] = "true";
-  params["v"] = "26";
+  params["v"] = "27";
   return tutao.locator.entityRestClient.putElement(tutao.entity.sys.WhitelabelChild.PATH, this, params, tutao.entity.EntityHelper.createAuthHeaders());
 };
 
@@ -333,7 +333,7 @@ tutao.entity.sys.WhitelabelChild.prototype.updateOwnerEncSessionKey = function()
  */
 tutao.entity.sys.WhitelabelChild.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.WhitelabelChild.PATH, this, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.WhitelabelChild.PATH, this, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -347,7 +347,7 @@ tutao.entity.sys.WhitelabelChild.prototype.update = function() {
  * @return {Promise.<Array.<tutao.entity.sys.WhitelabelChild>>} Resolves to an array of WhitelabelChild or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.WhitelabelChild.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.WhitelabelChild, tutao.entity.sys.WhitelabelChild.PATH, listId, start, count, reverse, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.WhitelabelChild, tutao.entity.sys.WhitelabelChild.PATH, listId, start, count, reverse, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return tutao.entity.EntityHelper.loadSessionKeys(entities);
   });
 };

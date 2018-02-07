@@ -30,7 +30,7 @@ tutao.entity.tutanota.SendUnsecureMailReturn.prototype.updateData = function(dat
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.SendUnsecureMailReturn.MODEL_VERSION = '24';
+tutao.entity.tutanota.SendUnsecureMailReturn.MODEL_VERSION = '25';
 
 /**
  * The encrypted flag.

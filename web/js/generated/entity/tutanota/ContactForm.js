@@ -19,8 +19,9 @@ tutao.entity.tutanota.ContactForm = function(data) {
     this._languages = [];
     this._participantGroupInfos = [];
     this._statisticsFields_removed = [];
+    this._statisticsLog = null;
+    this._targetGroup = null;
     this._targetGroupInfo = null;
-    this._targetMailGroup_removed = null;
   }
   this._entityHelper = new tutao.entity.EntityHelper(this);
   this.prototype = tutao.entity.tutanota.ContactForm.prototype;
@@ -46,15 +47,16 @@ tutao.entity.tutanota.ContactForm.prototype.updateData = function(data) {
   for (var i=0; i < data.statisticsFields_removed.length; i++) {
     this._statisticsFields_removed.push(new tutao.entity.tutanota.InputField(this, data.statisticsFields_removed[i]));
   }
+  this._statisticsLog = (data.statisticsLog) ? new tutao.entity.tutanota.StatisticLogRef(this, data.statisticsLog) : null;
+  this._targetGroup = data.targetGroup;
   this._targetGroupInfo = data.targetGroupInfo;
-  this._targetMailGroup_removed = data.targetMailGroup_removed;
 };
 
 /**
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.ContactForm.MODEL_VERSION = '24';
+tutao.entity.tutanota.ContactForm.MODEL_VERSION = '25';
 
 /**
  * The url path to the resource.
@@ -95,8 +97,9 @@ tutao.entity.tutanota.ContactForm.prototype.toJsonData = function() {
     languages: tutao.entity.EntityHelper.aggregatesToJsonData(this._languages), 
     participantGroupInfos: this._participantGroupInfos, 
     statisticsFields_removed: tutao.entity.EntityHelper.aggregatesToJsonData(this._statisticsFields_removed), 
-    targetGroupInfo: this._targetGroupInfo, 
-    targetMailGroup_removed: this._targetMailGroup_removed
+    statisticsLog: tutao.entity.EntityHelper.aggregatesToJsonData(this._statisticsLog), 
+    targetGroup: this._targetGroup, 
+    targetGroupInfo: this._targetGroupInfo
   };
 };
 
@@ -217,6 +220,48 @@ tutao.entity.tutanota.ContactForm.prototype.getStatisticsFields_removed = functi
 };
 
 /**
+ * Sets the statisticsLog of this ContactForm.
+ * @param {tutao.entity.tutanota.StatisticLogRef} statisticsLog The statisticsLog of this ContactForm.
+ */
+tutao.entity.tutanota.ContactForm.prototype.setStatisticsLog = function(statisticsLog) {
+  this._statisticsLog = statisticsLog;
+  return this;
+};
+
+/**
+ * Provides the statisticsLog of this ContactForm.
+ * @return {tutao.entity.tutanota.StatisticLogRef} The statisticsLog of this ContactForm.
+ */
+tutao.entity.tutanota.ContactForm.prototype.getStatisticsLog = function() {
+  return this._statisticsLog;
+};
+
+/**
+ * Sets the targetGroup of this ContactForm.
+ * @param {string} targetGroup The targetGroup of this ContactForm.
+ */
+tutao.entity.tutanota.ContactForm.prototype.setTargetGroup = function(targetGroup) {
+  this._targetGroup = targetGroup;
+  return this;
+};
+
+/**
+ * Provides the targetGroup of this ContactForm.
+ * @return {string} The targetGroup of this ContactForm.
+ */
+tutao.entity.tutanota.ContactForm.prototype.getTargetGroup = function() {
+  return this._targetGroup;
+};
+
+/**
+ * Loads the targetGroup of this ContactForm.
+ * @return {Promise.<tutao.entity.tutanota.Group>} Resolves to the loaded targetGroup of this ContactForm or an exception if the loading failed.
+ */
+tutao.entity.tutanota.ContactForm.prototype.loadTargetGroup = function() {
+  return tutao.entity.tutanota.Group.load(this._targetGroup);
+};
+
+/**
  * Sets the targetGroupInfo of this ContactForm.
  * @param {Array.<string>} targetGroupInfo The targetGroupInfo of this ContactForm.
  */
@@ -242,37 +287,12 @@ tutao.entity.tutanota.ContactForm.prototype.loadTargetGroupInfo = function() {
 };
 
 /**
- * Sets the targetMailGroup_removed of this ContactForm.
- * @param {string} targetMailGroup_removed The targetMailGroup_removed of this ContactForm.
- */
-tutao.entity.tutanota.ContactForm.prototype.setTargetMailGroup_removed = function(targetMailGroup_removed) {
-  this._targetMailGroup_removed = targetMailGroup_removed;
-  return this;
-};
-
-/**
- * Provides the targetMailGroup_removed of this ContactForm.
- * @return {string} The targetMailGroup_removed of this ContactForm.
- */
-tutao.entity.tutanota.ContactForm.prototype.getTargetMailGroup_removed = function() {
-  return this._targetMailGroup_removed;
-};
-
-/**
- * Loads the targetMailGroup_removed of this ContactForm.
- * @return {Promise.<tutao.entity.tutanota.Group>} Resolves to the loaded targetMailGroup_removed of this ContactForm or an exception if the loading failed.
- */
-tutao.entity.tutanota.ContactForm.prototype.loadTargetMailGroup_removed = function() {
-  return tutao.entity.tutanota.Group.load(this._targetMailGroup_removed);
-};
-
-/**
  * Loads a ContactForm from the server.
  * @param {Array.<string>} id The id of the ContactForm.
  * @return {Promise.<tutao.entity.tutanota.ContactForm>} Resolves to the ContactForm or an exception if the loading failed.
  */
 tutao.entity.tutanota.ContactForm.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.ContactForm, tutao.entity.tutanota.ContactForm.PATH, id[1], id[0], {"v" : "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.ContactForm, tutao.entity.tutanota.ContactForm.PATH, id[1], id[0], {"v" : "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -283,7 +303,7 @@ tutao.entity.tutanota.ContactForm.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.tutanota.ContactForm>>} Resolves to an array of ContactForm or rejects with an exception if the loading failed.
  */
 tutao.entity.tutanota.ContactForm.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.ContactForm, tutao.entity.tutanota.ContactForm.PATH, ids, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.ContactForm, tutao.entity.tutanota.ContactForm.PATH, ids, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -296,7 +316,7 @@ tutao.entity.tutanota.ContactForm.loadMultiple = function(ids) {
 tutao.entity.tutanota.ContactForm.prototype.setup = function(listId) {
   var self = this;
   self._entityHelper.notifyObservers(false);
-  return tutao.locator.entityRestClient.postElement(tutao.entity.tutanota.ContactForm.PATH, self, listId, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.postElement(tutao.entity.tutanota.ContactForm.PATH, self, listId, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     self.setPermissions(entity.getPermissionListId());
   });
 };
@@ -307,7 +327,7 @@ tutao.entity.tutanota.ContactForm.prototype.setup = function(listId) {
  */
 tutao.entity.tutanota.ContactForm.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.ContactForm.PATH, this, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.ContactForm.PATH, this, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -318,7 +338,7 @@ tutao.entity.tutanota.ContactForm.prototype.update = function() {
  */
 tutao.entity.tutanota.ContactForm.prototype.erase = function() {
   var self = this;
-  return tutao.locator.entityRestClient.deleteElement(tutao.entity.tutanota.ContactForm.PATH, this.__id[1], this.__id[0], {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(data) {
+  return tutao.locator.entityRestClient.deleteElement(tutao.entity.tutanota.ContactForm.PATH, this.__id[1], this.__id[0], {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(data) {
     self._entityHelper.notifyObservers(true);
   });
 };
@@ -330,7 +350,7 @@ tutao.entity.tutanota.ContactForm.prototype.erase = function() {
  */
 tutao.entity.tutanota.ContactForm.createList = function(ownerGroupId) {
   var params = tutao.entity.EntityHelper.createPostListPermissionMap(ownerGroupId);
-  params["v"] = "24";
+  params["v"] = "25";
   return tutao.locator.entityRestClient.postList(tutao.entity.tutanota.ContactForm.PATH, params, tutao.entity.EntityHelper.createAuthHeaders()).then(function(returnEntity) {
     return returnEntity.getGeneratedId();
   });
@@ -345,7 +365,7 @@ tutao.entity.tutanota.ContactForm.createList = function(ownerGroupId) {
  * @return {Promise.<Array.<tutao.entity.tutanota.ContactForm>>} Resolves to an array of ContactForm or rejects with an exception if the loading failed.
  */
 tutao.entity.tutanota.ContactForm.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.tutanota.ContactForm, tutao.entity.tutanota.ContactForm.PATH, listId, start, count, reverse, {"v": "24"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.tutanota.ContactForm, tutao.entity.tutanota.ContactForm.PATH, listId, start, count, reverse, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return entities;
   });
 };

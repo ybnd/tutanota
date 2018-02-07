@@ -19,6 +19,7 @@ tutao.entity.sys.Group = function(data) {
     this._external = null;
     this._type = null;
     this._admin = null;
+    this._administratedGroups = null;
     this._customer = null;
     this._groupInfo = null;
     this._invitations = null;
@@ -44,6 +45,7 @@ tutao.entity.sys.Group.prototype.updateData = function(data) {
   this._external = data.external;
   this._type = data.type;
   this._admin = data.admin;
+  this._administratedGroups = (data.administratedGroups) ? new tutao.entity.sys.AdministratedGroupsRef(this, data.administratedGroups) : null;
   this._customer = data.customer;
   this._groupInfo = data.groupInfo;
   this._invitations = data.invitations;
@@ -59,7 +61,7 @@ tutao.entity.sys.Group.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.Group.MODEL_VERSION = '26';
+tutao.entity.sys.Group.MODEL_VERSION = '27';
 
 /**
  * The url path to the resource.
@@ -100,6 +102,7 @@ tutao.entity.sys.Group.prototype.toJsonData = function() {
     external: this._external, 
     type: this._type, 
     admin: this._admin, 
+    administratedGroups: tutao.entity.EntityHelper.aggregatesToJsonData(this._administratedGroups), 
     customer: this._customer, 
     groupInfo: this._groupInfo, 
     invitations: this._invitations, 
@@ -262,6 +265,23 @@ tutao.entity.sys.Group.prototype.loadAdmin = function() {
 };
 
 /**
+ * Sets the administratedGroups of this Group.
+ * @param {tutao.entity.sys.AdministratedGroupsRef} administratedGroups The administratedGroups of this Group.
+ */
+tutao.entity.sys.Group.prototype.setAdministratedGroups = function(administratedGroups) {
+  this._administratedGroups = administratedGroups;
+  return this;
+};
+
+/**
+ * Provides the administratedGroups of this Group.
+ * @return {tutao.entity.sys.AdministratedGroupsRef} The administratedGroups of this Group.
+ */
+tutao.entity.sys.Group.prototype.getAdministratedGroups = function() {
+  return this._administratedGroups;
+};
+
+/**
  * Sets the customer of this Group.
  * @param {string} customer The customer of this Group.
  */
@@ -384,7 +404,7 @@ tutao.entity.sys.Group.prototype.loadUser = function() {
  * @return {Promise.<tutao.entity.sys.Group>} Resolves to the Group or an exception if the loading failed.
  */
 tutao.entity.sys.Group.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.Group, tutao.entity.sys.Group.PATH, id, null, {"v" : "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.Group, tutao.entity.sys.Group.PATH, id, null, {"v" : "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -395,7 +415,7 @@ tutao.entity.sys.Group.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.Group>>} Resolves to an array of Group or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.Group.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.Group, tutao.entity.sys.Group.PATH, ids, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.Group, tutao.entity.sys.Group.PATH, ids, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -406,7 +426,7 @@ tutao.entity.sys.Group.loadMultiple = function(ids) {
  */
 tutao.entity.sys.Group.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.Group.PATH, this, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.Group.PATH, this, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
