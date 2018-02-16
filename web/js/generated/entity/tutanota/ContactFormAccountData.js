@@ -41,7 +41,7 @@ tutao.entity.tutanota.ContactFormAccountData.prototype.updateData = function(dat
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.ContactFormAccountData.MODEL_VERSION = '25';
+tutao.entity.tutanota.ContactFormAccountData.MODEL_VERSION = '26';
 
 /**
  * The url path to the resource.
@@ -181,7 +181,7 @@ tutao.entity.tutanota.ContactFormAccountData.prototype.setup = function(paramete
   if (!headers) {
     headers = tutao.entity.EntityHelper.createAuthHeaders();
   }
-  parameters["v"] = "25";
+  parameters["v"] = "26";
   this._entityHelper.notifyObservers(false);
   return tutao.locator.entityRestClient.postService(tutao.entity.tutanota.ContactFormAccountData.PATH, this, parameters, headers, tutao.entity.tutanota.ContactFormAccountReturn);
 };

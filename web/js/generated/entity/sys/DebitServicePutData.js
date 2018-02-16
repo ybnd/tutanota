@@ -30,7 +30,7 @@ tutao.entity.sys.DebitServicePutData.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.DebitServicePutData.MODEL_VERSION = '27';
+tutao.entity.sys.DebitServicePutData.MODEL_VERSION = '28';
 
 /**
  * The url path to the resource.
@@ -107,7 +107,7 @@ tutao.entity.sys.DebitServicePutData.prototype.update = function(parameters, hea
   if (!headers) {
     headers = tutao.entity.EntityHelper.createAuthHeaders();
   }
-  parameters["v"] = "27";
+  parameters["v"] = "28";
   return tutao.locator.entityRestClient.putService(tutao.entity.sys.DebitServicePutData.PATH, this, parameters, headers, null);
 };
 /**

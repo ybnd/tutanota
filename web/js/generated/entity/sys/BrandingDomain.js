@@ -16,7 +16,7 @@ tutao.entity.sys.BrandingDomain = function(data) {
     this.__permissions = null;
     this._certificate = null;
     this._serverProperties = null;
-    this._theme = null;
+    this._whitelabelConfig = null;
   }
   this._entityHelper = new tutao.entity.EntityHelper(this);
   this.prototype = tutao.entity.sys.BrandingDomain.prototype;
@@ -33,14 +33,14 @@ tutao.entity.sys.BrandingDomain.prototype.updateData = function(data) {
   this.__permissions = data._permissions;
   this._certificate = data.certificate;
   this._serverProperties = data.serverProperties;
-  this._theme = data.theme;
+  this._whitelabelConfig = data.whitelabelConfig;
 };
 
 /**
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.BrandingDomain.MODEL_VERSION = '27';
+tutao.entity.sys.BrandingDomain.MODEL_VERSION = '28';
 
 /**
  * The url path to the resource.
@@ -78,7 +78,7 @@ tutao.entity.sys.BrandingDomain.prototype.toJsonData = function() {
     _permissions: this.__permissions, 
     certificate: this._certificate, 
     serverProperties: this._serverProperties, 
-    theme: this._theme
+    whitelabelConfig: this._whitelabelConfig
   };
 };
 
@@ -200,28 +200,28 @@ tutao.entity.sys.BrandingDomain.prototype.loadServerProperties = function() {
 };
 
 /**
- * Sets the theme of this BrandingDomain.
- * @param {string} theme The theme of this BrandingDomain.
+ * Sets the whitelabelConfig of this BrandingDomain.
+ * @param {string} whitelabelConfig The whitelabelConfig of this BrandingDomain.
  */
-tutao.entity.sys.BrandingDomain.prototype.setTheme = function(theme) {
-  this._theme = theme;
+tutao.entity.sys.BrandingDomain.prototype.setWhitelabelConfig = function(whitelabelConfig) {
+  this._whitelabelConfig = whitelabelConfig;
   return this;
 };
 
 /**
- * Provides the theme of this BrandingDomain.
- * @return {string} The theme of this BrandingDomain.
+ * Provides the whitelabelConfig of this BrandingDomain.
+ * @return {string} The whitelabelConfig of this BrandingDomain.
  */
-tutao.entity.sys.BrandingDomain.prototype.getTheme = function() {
-  return this._theme;
+tutao.entity.sys.BrandingDomain.prototype.getWhitelabelConfig = function() {
+  return this._whitelabelConfig;
 };
 
 /**
- * Loads the theme of this BrandingDomain.
- * @return {Promise.<tutao.entity.sys.BrandingTheme>} Resolves to the loaded theme of this BrandingDomain or an exception if the loading failed.
+ * Loads the whitelabelConfig of this BrandingDomain.
+ * @return {Promise.<tutao.entity.sys.WhitelabelConfig>} Resolves to the loaded whitelabelConfig of this BrandingDomain or an exception if the loading failed.
  */
-tutao.entity.sys.BrandingDomain.prototype.loadTheme = function() {
-  return tutao.entity.sys.BrandingTheme.load(this._theme);
+tutao.entity.sys.BrandingDomain.prototype.loadWhitelabelConfig = function() {
+  return tutao.entity.sys.WhitelabelConfig.load(this._whitelabelConfig);
 };
 
 /**
@@ -230,7 +230,7 @@ tutao.entity.sys.BrandingDomain.prototype.loadTheme = function() {
  * @return {Promise.<tutao.entity.sys.BrandingDomain>} Resolves to the BrandingDomain or an exception if the loading failed.
  */
 tutao.entity.sys.BrandingDomain.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.BrandingDomain, tutao.entity.sys.BrandingDomain.PATH, id[1], id[0], {"v" : "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.BrandingDomain, tutao.entity.sys.BrandingDomain.PATH, id[1], id[0], {"v" : "28"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -241,7 +241,7 @@ tutao.entity.sys.BrandingDomain.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.BrandingDomain>>} Resolves to an array of BrandingDomain or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.BrandingDomain.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.BrandingDomain, tutao.entity.sys.BrandingDomain.PATH, ids, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.BrandingDomain, tutao.entity.sys.BrandingDomain.PATH, ids, {"v": "28"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -252,7 +252,7 @@ tutao.entity.sys.BrandingDomain.loadMultiple = function(ids) {
  */
 tutao.entity.sys.BrandingDomain.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.BrandingDomain.PATH, this, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.BrandingDomain.PATH, this, {"v": "28"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -266,7 +266,7 @@ tutao.entity.sys.BrandingDomain.prototype.update = function() {
  * @return {Promise.<Array.<tutao.entity.sys.BrandingDomain>>} Resolves to an array of BrandingDomain or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.BrandingDomain.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.BrandingDomain, tutao.entity.sys.BrandingDomain.PATH, listId, start, count, reverse, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.BrandingDomain, tutao.entity.sys.BrandingDomain.PATH, listId, start, count, reverse, {"v": "28"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return entities;
   });
 };

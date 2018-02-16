@@ -16,7 +16,7 @@ tutao.entity.sys.DomainInfoEditable = function(domaininfo) {
 	this.validatedMxRecord = ko.observable(domaininfo.getValidatedMxRecord());
 	this.catchAllMailGroup = ko.observable(domaininfo.getCatchAllMailGroup());
 	this.certificate = ko.observable(domaininfo.getCertificate());
-	this.theme = ko.observable(domaininfo.getTheme());
+	this.whitelabelConfig = ko.observable(domaininfo.getWhitelabelConfig());
 
 	this.lastUpdatedTimestamp = ko.observable(null);
 
@@ -43,6 +43,6 @@ tutao.entity.sys.DomainInfoEditable.prototype.update = function() {
 	this._entity.setValidatedMxRecord(this.validatedMxRecord());
 	this._entity.setCatchAllMailGroup(this.catchAllMailGroup());
 	this._entity.setCertificate(this.certificate());
-	this._entity.setTheme(this.theme());
+	this._entity.setWhitelabelConfig(this.whitelabelConfig());
 	this.lastUpdatedTimestamp(new Date().getTime());
 };

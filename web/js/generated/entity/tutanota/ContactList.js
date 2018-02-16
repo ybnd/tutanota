@@ -40,7 +40,7 @@ tutao.entity.tutanota.ContactList.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.ContactList.MODEL_VERSION = '25';
+tutao.entity.tutanota.ContactList.MODEL_VERSION = '26';
 
 /**
  * The url path to the resource.
@@ -198,7 +198,7 @@ tutao.entity.tutanota.ContactList.prototype.getPhotos = function() {
  * @return {Promise.<tutao.entity.tutanota.ContactList>} Resolves to the ContactList or an exception if the loading failed.
  */
 tutao.entity.tutanota.ContactList.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.ContactList, tutao.entity.tutanota.ContactList.PATH, id, null, {"v" : "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.ContactList, tutao.entity.tutanota.ContactList.PATH, id, null, {"v" : "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity._entityHelper.loadSessionKey();
   });
 };
@@ -209,7 +209,7 @@ tutao.entity.tutanota.ContactList.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.tutanota.ContactList>>} Resolves to an array of ContactList or rejects with an exception if the loading failed.
  */
 tutao.entity.tutanota.ContactList.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.ContactList, tutao.entity.tutanota.ContactList.PATH, ids, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.ContactList, tutao.entity.tutanota.ContactList.PATH, ids, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return tutao.entity.EntityHelper.loadSessionKeys(entities);
   });
 };
@@ -221,7 +221,7 @@ tutao.entity.tutanota.ContactList.loadMultiple = function(ids) {
 tutao.entity.tutanota.ContactList.prototype.updateOwnerEncSessionKey = function() {
   var params = {};
   params[tutao.rest.ResourceConstants.UPDATE_OWNER_ENC_SESSION_KEY] = "true";
-  params["v"] = "25";
+  params["v"] = "26";
   return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.ContactList.PATH, this, params, tutao.entity.EntityHelper.createAuthHeaders());
 };
 
@@ -231,7 +231,7 @@ tutao.entity.tutanota.ContactList.prototype.updateOwnerEncSessionKey = function(
  */
 tutao.entity.tutanota.ContactList.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.ContactList.PATH, this, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.ContactList.PATH, this, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };

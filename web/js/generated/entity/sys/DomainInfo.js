@@ -17,7 +17,7 @@ tutao.entity.sys.DomainInfo = function(parent, data) {
     this._validatedMxRecord = null;
     this._catchAllMailGroup = null;
     this._certificate = null;
-    this._theme = null;
+    this._whitelabelConfig = null;
   }
   this._parent = parent;
   this.prototype = tutao.entity.sys.DomainInfo.prototype;
@@ -35,7 +35,7 @@ tutao.entity.sys.DomainInfo.prototype.updateData = function(parent, data) {
   this._validatedMxRecord = data.validatedMxRecord;
   this._catchAllMailGroup = data.catchAllMailGroup;
   this._certificate = data.certificate;
-  this._theme = data.theme;
+  this._whitelabelConfig = data.whitelabelConfig;
 };
 
 /**
@@ -50,7 +50,7 @@ tutao.entity.sys.DomainInfo.prototype.toJsonData = function() {
     validatedMxRecord: this._validatedMxRecord, 
     catchAllMailGroup: this._catchAllMailGroup, 
     certificate: this._certificate, 
-    theme: this._theme
+    whitelabelConfig: this._whitelabelConfig
   };
 };
 
@@ -183,28 +183,28 @@ tutao.entity.sys.DomainInfo.prototype.loadCertificate = function() {
 };
 
 /**
- * Sets the theme of this DomainInfo.
- * @param {string} theme The theme of this DomainInfo.
+ * Sets the whitelabelConfig of this DomainInfo.
+ * @param {string} whitelabelConfig The whitelabelConfig of this DomainInfo.
  */
-tutao.entity.sys.DomainInfo.prototype.setTheme = function(theme) {
-  this._theme = theme;
+tutao.entity.sys.DomainInfo.prototype.setWhitelabelConfig = function(whitelabelConfig) {
+  this._whitelabelConfig = whitelabelConfig;
   return this;
 };
 
 /**
- * Provides the theme of this DomainInfo.
- * @return {string} The theme of this DomainInfo.
+ * Provides the whitelabelConfig of this DomainInfo.
+ * @return {string} The whitelabelConfig of this DomainInfo.
  */
-tutao.entity.sys.DomainInfo.prototype.getTheme = function() {
-  return this._theme;
+tutao.entity.sys.DomainInfo.prototype.getWhitelabelConfig = function() {
+  return this._whitelabelConfig;
 };
 
 /**
- * Loads the theme of this DomainInfo.
- * @return {Promise.<tutao.entity.sys.BrandingTheme>} Resolves to the loaded theme of this DomainInfo or an exception if the loading failed.
+ * Loads the whitelabelConfig of this DomainInfo.
+ * @return {Promise.<tutao.entity.sys.WhitelabelConfig>} Resolves to the loaded whitelabelConfig of this DomainInfo or an exception if the loading failed.
  */
-tutao.entity.sys.DomainInfo.prototype.loadTheme = function() {
-  return tutao.entity.sys.BrandingTheme.load(this._theme);
+tutao.entity.sys.DomainInfo.prototype.loadWhitelabelConfig = function() {
+  return tutao.entity.sys.WhitelabelConfig.load(this._whitelabelConfig);
 };
 /**
  * Provides the entity helper of this entity.

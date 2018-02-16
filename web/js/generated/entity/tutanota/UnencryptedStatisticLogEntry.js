@@ -38,7 +38,7 @@ tutao.entity.tutanota.UnencryptedStatisticLogEntry.prototype.updateData = functi
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.UnencryptedStatisticLogEntry.MODEL_VERSION = '25';
+tutao.entity.tutanota.UnencryptedStatisticLogEntry.MODEL_VERSION = '26';
 
 /**
  * The url path to the resource.
@@ -181,7 +181,7 @@ tutao.entity.tutanota.UnencryptedStatisticLogEntry.prototype.getDate = function(
  * @return {Promise.<tutao.entity.tutanota.UnencryptedStatisticLogEntry>} Resolves to the UnencryptedStatisticLogEntry or an exception if the loading failed.
  */
 tutao.entity.tutanota.UnencryptedStatisticLogEntry.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.UnencryptedStatisticLogEntry, tutao.entity.tutanota.UnencryptedStatisticLogEntry.PATH, id[1], id[0], {"v" : "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.tutanota.UnencryptedStatisticLogEntry, tutao.entity.tutanota.UnencryptedStatisticLogEntry.PATH, id[1], id[0], {"v" : "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -192,7 +192,7 @@ tutao.entity.tutanota.UnencryptedStatisticLogEntry.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.tutanota.UnencryptedStatisticLogEntry>>} Resolves to an array of UnencryptedStatisticLogEntry or rejects with an exception if the loading failed.
  */
 tutao.entity.tutanota.UnencryptedStatisticLogEntry.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.UnencryptedStatisticLogEntry, tutao.entity.tutanota.UnencryptedStatisticLogEntry.PATH, ids, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.tutanota.UnencryptedStatisticLogEntry, tutao.entity.tutanota.UnencryptedStatisticLogEntry.PATH, ids, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -203,7 +203,7 @@ tutao.entity.tutanota.UnencryptedStatisticLogEntry.loadMultiple = function(ids) 
  */
 tutao.entity.tutanota.UnencryptedStatisticLogEntry.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.UnencryptedStatisticLogEntry.PATH, this, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.tutanota.UnencryptedStatisticLogEntry.PATH, this, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -217,7 +217,7 @@ tutao.entity.tutanota.UnencryptedStatisticLogEntry.prototype.update = function()
  * @return {Promise.<Array.<tutao.entity.tutanota.UnencryptedStatisticLogEntry>>} Resolves to an array of UnencryptedStatisticLogEntry or rejects with an exception if the loading failed.
  */
 tutao.entity.tutanota.UnencryptedStatisticLogEntry.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.tutanota.UnencryptedStatisticLogEntry, tutao.entity.tutanota.UnencryptedStatisticLogEntry.PATH, listId, start, count, reverse, {"v": "25"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.tutanota.UnencryptedStatisticLogEntry, tutao.entity.tutanota.UnencryptedStatisticLogEntry.PATH, listId, start, count, reverse, {"v": "26"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return entities;
   });
 };

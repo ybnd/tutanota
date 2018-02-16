@@ -1,13 +1,13 @@
 "use strict";
 
-tutao.provide('tutao.entity.sys.DisabledFeature');
+tutao.provide('tutao.entity.sys.BootstrapFeature');
 
 /**
  * @constructor
  * @param {Object} parent The parent entity of this aggregate.
  * @param {Object=} data The json data to store in this entity.
  */
-tutao.entity.sys.DisabledFeature = function(parent, data) {
+tutao.entity.sys.BootstrapFeature = function(parent, data) {
   if (data) {
     this.updateData(parent, data);
   } else {
@@ -15,7 +15,7 @@ tutao.entity.sys.DisabledFeature = function(parent, data) {
     this._feature = null;
   }
   this._parent = parent;
-  this.prototype = tutao.entity.sys.DisabledFeature.prototype;
+  this.prototype = tutao.entity.sys.BootstrapFeature.prototype;
 };
 
 /**
@@ -23,7 +23,7 @@ tutao.entity.sys.DisabledFeature = function(parent, data) {
  * @param {Object} parent The parent entity of this aggregate.
  * @param {Object=} data The json data to store in this entity.
  */
-tutao.entity.sys.DisabledFeature.prototype.updateData = function(parent, data) {
+tutao.entity.sys.BootstrapFeature.prototype.updateData = function(parent, data) {
   this.__id = data._id;
   this._feature = data.feature;
 };
@@ -32,7 +32,7 @@ tutao.entity.sys.DisabledFeature.prototype.updateData = function(parent, data) {
  * Provides the data of this instances as an object that can be converted to json.
  * @return {Object} The json object.
  */
-tutao.entity.sys.DisabledFeature.prototype.toJsonData = function() {
+tutao.entity.sys.BootstrapFeature.prototype.toJsonData = function() {
   return {
     _id: this.__id, 
     feature: this._feature
@@ -40,42 +40,42 @@ tutao.entity.sys.DisabledFeature.prototype.toJsonData = function() {
 };
 
 /**
- * Sets the id of this DisabledFeature.
- * @param {string} id The id of this DisabledFeature.
+ * Sets the id of this BootstrapFeature.
+ * @param {string} id The id of this BootstrapFeature.
  */
-tutao.entity.sys.DisabledFeature.prototype.setId = function(id) {
+tutao.entity.sys.BootstrapFeature.prototype.setId = function(id) {
   this.__id = id;
   return this;
 };
 
 /**
- * Provides the id of this DisabledFeature.
- * @return {string} The id of this DisabledFeature.
+ * Provides the id of this BootstrapFeature.
+ * @return {string} The id of this BootstrapFeature.
  */
-tutao.entity.sys.DisabledFeature.prototype.getId = function() {
+tutao.entity.sys.BootstrapFeature.prototype.getId = function() {
   return this.__id;
 };
 
 /**
- * Sets the feature of this DisabledFeature.
- * @param {string} feature The feature of this DisabledFeature.
+ * Sets the feature of this BootstrapFeature.
+ * @param {string} feature The feature of this BootstrapFeature.
  */
-tutao.entity.sys.DisabledFeature.prototype.setFeature = function(feature) {
+tutao.entity.sys.BootstrapFeature.prototype.setFeature = function(feature) {
   this._feature = feature;
   return this;
 };
 
 /**
- * Provides the feature of this DisabledFeature.
- * @return {string} The feature of this DisabledFeature.
+ * Provides the feature of this BootstrapFeature.
+ * @return {string} The feature of this BootstrapFeature.
  */
-tutao.entity.sys.DisabledFeature.prototype.getFeature = function() {
+tutao.entity.sys.BootstrapFeature.prototype.getFeature = function() {
   return this._feature;
 };
 /**
  * Provides the entity helper of this entity.
  * @return {tutao.entity.EntityHelper} The entity helper.
  */
-tutao.entity.sys.DisabledFeature.prototype.getEntityHelper = function() {
+tutao.entity.sys.BootstrapFeature.prototype.getEntityHelper = function() {
   return this._parent.getEntityHelper();
 };

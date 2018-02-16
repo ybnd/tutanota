@@ -48,7 +48,7 @@ tutao.entity.sys.InvoiceInfo.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.InvoiceInfo.MODEL_VERSION = '27';
+tutao.entity.sys.InvoiceInfo.MODEL_VERSION = '28';
 
 /**
  * The url path to the resource.
@@ -278,7 +278,7 @@ tutao.entity.sys.InvoiceInfo.prototype.getInvoices = function() {
  * @return {Promise.<tutao.entity.sys.InvoiceInfo>} Resolves to the InvoiceInfo or an exception if the loading failed.
  */
 tutao.entity.sys.InvoiceInfo.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.InvoiceInfo, tutao.entity.sys.InvoiceInfo.PATH, id, null, {"v" : "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.InvoiceInfo, tutao.entity.sys.InvoiceInfo.PATH, id, null, {"v" : "28"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -289,7 +289,7 @@ tutao.entity.sys.InvoiceInfo.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.InvoiceInfo>>} Resolves to an array of InvoiceInfo or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.InvoiceInfo.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.InvoiceInfo, tutao.entity.sys.InvoiceInfo.PATH, ids, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.InvoiceInfo, tutao.entity.sys.InvoiceInfo.PATH, ids, {"v": "28"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -300,7 +300,7 @@ tutao.entity.sys.InvoiceInfo.loadMultiple = function(ids) {
  */
 tutao.entity.sys.InvoiceInfo.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.InvoiceInfo.PATH, this, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.InvoiceInfo.PATH, this, {"v": "28"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };

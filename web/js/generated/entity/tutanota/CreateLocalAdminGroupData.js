@@ -32,7 +32,7 @@ tutao.entity.tutanota.CreateLocalAdminGroupData.prototype.updateData = function(
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.tutanota.CreateLocalAdminGroupData.MODEL_VERSION = '25';
+tutao.entity.tutanota.CreateLocalAdminGroupData.MODEL_VERSION = '26';
 
 /**
  * The url path to the resource.
@@ -119,7 +119,7 @@ tutao.entity.tutanota.CreateLocalAdminGroupData.prototype.setup = function(param
   if (!headers) {
     headers = tutao.entity.EntityHelper.createAuthHeaders();
   }
-  parameters["v"] = "25";
+  parameters["v"] = "26";
   this._entityHelper.notifyObservers(false);
   return tutao.locator.entityRestClient.postService(tutao.entity.tutanota.CreateLocalAdminGroupData.PATH, this, parameters, headers, null);
 };

@@ -40,7 +40,7 @@ tutao.entity.sys.AdministratedGroup.prototype.updateData = function(data) {
  * The version of the model this type belongs to.
  * @const
  */
-tutao.entity.sys.AdministratedGroup.MODEL_VERSION = '27';
+tutao.entity.sys.AdministratedGroup.MODEL_VERSION = '28';
 
 /**
  * The url path to the resource.
@@ -214,7 +214,7 @@ tutao.entity.sys.AdministratedGroup.prototype.loadLocalAdminGroup = function() {
  * @return {Promise.<tutao.entity.sys.AdministratedGroup>} Resolves to the AdministratedGroup or an exception if the loading failed.
  */
 tutao.entity.sys.AdministratedGroup.load = function(id) {
-  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.AdministratedGroup, tutao.entity.sys.AdministratedGroup.PATH, id[1], id[0], {"v" : "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
+  return tutao.locator.entityRestClient.getElement(tutao.entity.sys.AdministratedGroup, tutao.entity.sys.AdministratedGroup.PATH, id[1], id[0], {"v" : "28"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entity) {
     return entity;
   });
 };
@@ -225,7 +225,7 @@ tutao.entity.sys.AdministratedGroup.load = function(id) {
  * @return {Promise.<Array.<tutao.entity.sys.AdministratedGroup>>} Resolves to an array of AdministratedGroup or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.AdministratedGroup.loadMultiple = function(ids) {
-  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.AdministratedGroup, tutao.entity.sys.AdministratedGroup.PATH, ids, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
+  return tutao.locator.entityRestClient.getElements(tutao.entity.sys.AdministratedGroup, tutao.entity.sys.AdministratedGroup.PATH, ids, {"v": "28"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {
     return entities;
   });
 };
@@ -236,7 +236,7 @@ tutao.entity.sys.AdministratedGroup.loadMultiple = function(ids) {
  */
 tutao.entity.sys.AdministratedGroup.prototype.update = function() {
   var self = this;
-  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.AdministratedGroup.PATH, this, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
+  return tutao.locator.entityRestClient.putElement(tutao.entity.sys.AdministratedGroup.PATH, this, {"v": "28"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function() {
     self._entityHelper.notifyObservers(false);
   });
 };
@@ -250,7 +250,7 @@ tutao.entity.sys.AdministratedGroup.prototype.update = function() {
  * @return {Promise.<Array.<tutao.entity.sys.AdministratedGroup>>} Resolves to an array of AdministratedGroup or rejects with an exception if the loading failed.
  */
 tutao.entity.sys.AdministratedGroup.loadRange = function(listId, start, count, reverse) {
-  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.AdministratedGroup, tutao.entity.sys.AdministratedGroup.PATH, listId, start, count, reverse, {"v": "27"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
+  return tutao.locator.entityRestClient.getElementRange(tutao.entity.sys.AdministratedGroup, tutao.entity.sys.AdministratedGroup.PATH, listId, start, count, reverse, {"v": "28"}, tutao.entity.EntityHelper.createAuthHeaders()).then(function(entities) {;
     return entities;
   });
 };
