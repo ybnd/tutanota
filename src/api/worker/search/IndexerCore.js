@@ -1,26 +1,26 @@
 //@flow
-import {SearchIndexOS, ElementDataOS, MetaDataOS, GroupDataOS, DbTransaction} from "./DbFacade"
+import {DbTransaction, ElementDataOS, GroupDataOS, MetaDataOS, SearchIndexOS} from "./DbFacade"
 import {firstBiggerThanSecond} from "../../common/EntityFunctions"
 import {tokenize} from "./Tokenizer"
 import {mergeMaps} from "../../common/utils/MapUtils"
 import {neverNull} from "../../common/utils/Utils"
 import {
-	uint8ArrayToBase64,
-	stringToUtf8Uint8Array,
 	base64ToUint8Array,
+	stringToUtf8Uint8Array,
+	uint8ArrayToBase64,
 	utf8Uint8ArrayToString
 } from "../../common/utils/Encoding"
-import {IV_BYTE_LENGTH, aes256Encrypt, aes256Decrypt} from "../crypto/Aes"
+import {aes256Decrypt, aes256Encrypt, IV_BYTE_LENGTH} from "../crypto/Aes"
 import {random} from "../crypto/Randomizer"
 import {
-	encryptIndexKeyBase64,
-	encryptSearchIndexEntry,
 	byteLength,
-	getAppId,
+	encryptIndexKeyBase64,
 	encryptIndexKeyUint8Array,
+	encryptSearchIndexEntry,
+	getAppId,
 	getPerformanceTimestamp
 } from "./IndexUtils"
-import type {B64EncInstanceId, SearchIndexEntry, AttributeHandler, IndexUpdate, GroupData, Db} from "./SearchTypes"
+import type {AttributeHandler, B64EncInstanceId, Db, GroupData, IndexUpdate, SearchIndexEntry} from "./SearchTypes"
 import {EventQueue} from "./EventQueue"
 
 export class IndexerCore {
@@ -83,21 +83,17 @@ export class IndexerCore {
 		return mergeMaps(indexEntries)
 	}
 
-	encryptSearchIndexEntries(id: IdTuple, ownerGroup: Id, keyToIndexEntries: Map<string, SearchIndexEntry[]>, indexUpdate: IndexUpdate): void {
+	encryptSearchIndexEntries(id: IdTuple, ownerGroup: Id, wordsToIndexEntries: Map<string, SearchIndexEntry[]>, indexUpdate: IndexUpdate): void {
 		let listId = id[0]
 		let encryptedInstanceId = encryptIndexKeyUint8Array(this.db.key, id[1])
 		let b64InstanceId = uint8ArrayToBase64(encryptedInstanceId)
 
 		let encryptionTimeStart = getPerformanceTimestamp()
 		let words = []
-		keyToIndexEntries.forEach((value, indexKey) => {
-			let encIndexKey = encryptIndexKeyBase64(this.db.key, indexKey)
-			let indexEntries = indexUpdate.create.indexMap.get(encIndexKey)
-			words.push(indexKey)
-			if (!indexEntries) {
-				indexEntries = []
-			}
-			indexUpdate.create.indexMap.set(encIndexKey, indexEntries.concat(value.map(indexEntry => encryptSearchIndexEntry(this.db.key, indexEntry, encryptedInstanceId))))
+		wordsToIndexEntries.forEach((indexEntries, word) => {
+			let encryptedWord = encryptIndexKeyBase64(this.db.key, word)
+			indexEntries.forEach(value =>
+				indexUpdate.create.newEntries.push(encryptSearchIndexEntry(this.db.key, encryptedWord, value, encryptedInstanceId)))
 		})
 
 		indexUpdate.create.encInstanceIdToElementData.set(b64InstanceId, [
@@ -210,27 +206,9 @@ export class IndexerCore {
 
 	_insertNewIndexEntries(indexUpdate: IndexUpdate, keysToUpdate: {[B64EncInstanceId]: boolean}, transaction: DbTransaction): ?Promise<void> {
 		let promises = []
-		indexUpdate.create.indexMap.forEach((encryptedEntries, b64EncIndexKey) => {
-			let filteredEncryptedEntries = encryptedEntries.filter(entry => keysToUpdate[uint8ArrayToBase64((entry: any)[0])]
-				=== true)
-			let encIndexKey = base64ToUint8Array(b64EncIndexKey)
-			if (filteredEncryptedEntries.length > 0) {
-				promises.push(transaction.get(SearchIndexOS, b64EncIndexKey).then((result) => {
-					this._writeRequests += 1
-					let value
-					if (result && result.length > 0) {
-						value = result
-					} else {
-						this._storedBytes += encIndexKey.length
-						value = []
-						this._words += 1
-					}
-					value = value.concat(filteredEncryptedEntries)
-					this._largestColumn = value.length > this._largestColumn ? value.length : this._largestColumn
-					this._storedBytes += filteredEncryptedEntries.reduce((sum, e) => (sum + (e: any)[0].length
-						+ (e: any)[1].length), 0)
-					return transaction.put(SearchIndexOS, b64EncIndexKey, value)
-				}))
+		indexUpdate.create.newEntries.forEach((encryptedEntry) => {
+			if (keysToUpdate[uint8ArrayToBase64(encryptedEntry.encElementId)]) {
+				promises.push(transaction.put(SearchIndexOS, null, encryptedEntry))
 			}
 		})
 		if (promises.length === 0) {

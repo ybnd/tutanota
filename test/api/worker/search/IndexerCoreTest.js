@@ -1,3 +1,4 @@
+/*
 // @flow
 import o from "ospec/ospec.js"
 import type {
@@ -649,4 +650,4 @@ o.spec("IndexerCore test", () => {
 		})
 	})
 
-})
+})*/

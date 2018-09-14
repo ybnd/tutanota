@@ -3,7 +3,7 @@ import {_TypeModel as MailModel, MailTypeRef} from "../../entities/tutanota/Mail
 import {_TypeModel as ContactModel} from "../../entities/tutanota/Contact"
 import {_TypeModel as GroupInfoModel} from "../../entities/sys/GroupInfo"
 import {_TypeModel as WhitelabelChildModel} from "../../entities/sys/WhitelabelChild"
-import {ElementDataOS, SearchIndexOS} from "./DbFacade"
+import {ElementDataOS, SearchIndexOS, SearchIndexWordIndex} from "./DbFacade"
 import {
 	compareNewestFirst,
 	firstBiggerThanSecond,
@@ -18,11 +18,10 @@ import type {
 	Db,
 	ElementData,
 	EncryptedSearchIndexEntry,
-	KeyToEncryptedIndexEntries,
-	KeyToIndexEntries,
+	EncryptedSearchIndexEntryWithHash,
 	SearchIndexEntry
 } from "./SearchTypes"
-import {decryptSearchIndexEntry, encryptIndexKeyBase64, getPerformanceTimestamp} from "./IndexUtils"
+import {decryptSearchIndexEntry, encryptIndexKeyBase64} from "./IndexUtils"
 import {FULL_INDEXED_TIMESTAMP, NOTHING_INDEXED_TIMESTAMP} from "../../common/TutanotaConstants"
 import {timestampToGeneratedId, uint8ArrayToBase64} from "../../common/utils/Encoding"
 import {MailIndexer} from "./MailIndexer"
@@ -194,10 +193,10 @@ export class SearchFacade {
 	_searchForTokens(searchTokens: string[], matchWordOrder: boolean, searchResult: SearchResult): Promise<void> {
 		return this._tryExtendIndex(searchResult.restriction).then(() =>
 			this._findIndexEntries(searchTokens)
-			    .then(keyToEncryptedIndexEntries => this._filterByEncryptedId(keyToEncryptedIndexEntries))
-			    .then(keyToEncryptedIndexEntries => this._decryptSearchResult(keyToEncryptedIndexEntries))
-			    .then(keyToIndexEntries => this._filterByTypeAndAttributeAndTime(keyToIndexEntries, searchResult.restriction))
-			    .then(keyToIndexEntries => this._reduceWords(keyToIndexEntries, matchWordOrder))
+			    .then(indexEntriesLists => this._filterByEncryptedId(indexEntriesLists))
+			    .then(indexEntriesLists => this._decryptSearchResult(indexEntriesLists))
+			    .then(indexEntriesLists => this._filterByTypeAndAttributeAndTime(indexEntriesLists, searchResult.restriction))
+			    .then(indexEntriesLists => this._reduceWords(indexEntriesLists, matchWordOrder))
 			    .then(searchIndexEntries => this._reduceToUniqueElementIds(searchIndexEntries, searchResult))
 			    .then(searchIndexEntries => this._filterByListIdAndGroupSearchResults(searchIndexEntries, searchResult))
 		)
@@ -231,20 +230,17 @@ export class SearchFacade {
 		}
 	}
 
-	_findIndexEntries(searchTokens: string[]): Promise<KeyToEncryptedIndexEntries[]> {
+	_findIndexEntries(searchTokens: string[]): Promise<EncryptedSearchIndexEntryWithHash[][]> {
 		return this._db.dbFacade.createTransaction(true, [SearchIndexOS]).then(transaction => {
 			return Promise.map(searchTokens, (token) => {
-				let indexKey = encryptIndexKeyBase64(this._db.key, token)
-				return transaction.getAsList(SearchIndexOS, indexKey)
-				                  .then((indexEntries: EncryptedSearchIndexEntry[]) => {
-					                  return {
-						                  indexKey,
-						                  indexEntries: indexEntries.map(ie => ({
-							                  encEntry: ie,
-							                  idHash: arrayHash(ie[0])
-						                  }))
-					                  }
-				                  })
+				const encryptedWord = encryptIndexKeyBase64(this._db.key, token)
+				return transaction.getAllFromIndex(SearchIndexOS, SearchIndexWordIndex, encryptedWord)
+				                  .then((encryptedSearchEntries: EncryptedSearchIndexEntry[]) =>
+					                  encryptedSearchEntries.map(encEntry => ({
+						                  encEntry,
+						                  idHash: arrayHash(encEntry.encElementId)
+					                  }))
+				                  )
 			})
 		})
 	}
@@ -252,15 +248,14 @@ export class SearchFacade {
 	/**
 	 * Reduces the search result by filtering out all mailIds that don't match all search tokens
 	 */
-	_filterByEncryptedId(results: KeyToEncryptedIndexEntries[]): KeyToEncryptedIndexEntries[] {
-		// let matchingEncIds = null
+	_filterByEncryptedId(results: EncryptedSearchIndexEntryWithHash[][]): EncryptedSearchIndexEntryWithHash[][] {
 		let matchingEncIds: Set<number>
-		results.forEach(keyToEncryptedIndexEntry => {
+		results.forEach(indexEntries => {
 			if (matchingEncIds == null) {
-				matchingEncIds = new Set(keyToEncryptedIndexEntry.indexEntries.map(entry => entry.idHash))
+				matchingEncIds = new Set(indexEntries.map(entry => entry.idHash))
 			} else {
 				let filtered = new Set()
-				keyToEncryptedIndexEntry.indexEntries.forEach(indexEntry => {
+				indexEntries.forEach(indexEntry => {
 					if (matchingEncIds.has(indexEntry.idHash)) {
 						filtered.add(indexEntry.idHash)
 					}
@@ -268,44 +263,31 @@ export class SearchFacade {
 				matchingEncIds = filtered
 			}
 		})
-		return results.map(r => {
-			return {
-				indexKey: r.indexKey,
-				indexEntries: r.indexEntries.filter(entry => matchingEncIds.has(entry.idHash))
-			}
-		})
+		return results.map(r => r.filter(entry => matchingEncIds.has(entry.idHash)))
 	}
 
 
-	_decryptSearchResult(results: KeyToEncryptedIndexEntries[]): KeyToIndexEntries[] {
-		return results.map(searchResult => {
-			return {
-				indexKey: searchResult.indexKey,
-				indexEntries: searchResult.indexEntries.map(entry => decryptSearchIndexEntry(this._db.key, entry.encEntry))
-			}
-		})
+	_decryptSearchResult(results: EncryptedSearchIndexEntryWithHash[][]): SearchIndexEntry[][] {
+		return results.map(searchResult => searchResult.map(entry => decryptSearchIndexEntry(this._db.key, entry.encEntry)))
 	}
 
 
-	_filterByTypeAndAttributeAndTime(results: KeyToIndexEntries[], restriction: SearchRestriction): KeyToIndexEntries[] {
+	_filterByTypeAndAttributeAndTime(results: SearchIndexEntry[][], restriction: SearchRestriction): SearchIndexEntry[][] {
 		// first filter each index entry by itself
 		let endTimestamp = this._getSearchEndTimestamp(restriction)
 		const minIncludedId = timestampToGeneratedId(endTimestamp)
 		const maxExcludedId = restriction.start ? timestampToGeneratedId(restriction.start + 1) : null
-		results.forEach(result => {
-			result.indexEntries = result.indexEntries.filter(entry => {
-				return this._isValidTypeAndAttributeAndTime(restriction, entry, minIncludedId, maxExcludedId)
-			})
-		})
+		results = results.map(entries => entries.filter(entry =>
+			this._isValidTypeAndAttributeAndTime(restriction, entry, minIncludedId, maxExcludedId)))
 
 		// now filter all ids that are in all of the search words
 		let matchingIds: Set<Id>
-		results.forEach(keyToIndexEntry => {
+		results.forEach(indexEntries => {
 			if (!matchingIds) {
-				matchingIds = new Set(keyToIndexEntry.indexEntries.map(entry => entry.id))
+				matchingIds = new Set(indexEntries.map(entry => entry.id))
 			} else {
 				let filtered = new Set()
-				keyToIndexEntry.indexEntries.forEach(entry => {
+				indexEntries.forEach(entry => {
 					if (matchingIds.has(entry.id)) {
 						filtered.add(entry.id)
 					}
@@ -313,12 +295,7 @@ export class SearchFacade {
 				matchingIds = filtered
 			}
 		})
-		return results.map(r => {
-			return {
-				indexKey: r.indexKey,
-				indexEntries: r.indexEntries.filter(entry => matchingIds.has(entry.id))
-			}
-		})
+		return results.map(r => r.filter(entry => matchingIds.has(entry.id)))
 	}
 
 	_isValidTypeAndAttributeAndTime(restriction: SearchRestriction, entry: SearchIndexEntry, minIncludedId: Id,
@@ -345,13 +322,13 @@ export class SearchFacade {
 		return true
 	}
 
-	_reduceWords(results: KeyToIndexEntries[], matchWordOrder: boolean): SearchIndexEntry[] {
+	_reduceWords(results: SearchIndexEntry[][], matchWordOrder: boolean): SearchIndexEntry[] {
 		if (matchWordOrder) {
-			return results[0].indexEntries.filter(firstWordEntry => {
+			return results[0].filter(firstWordEntry => {
 				// reduce the filtered positions for this first word entry and its attribute with each next word to those that are in order
 				let filteredPositions = firstWordEntry.positions.slice()
 				for (let i = 1; i < results.length; i++) {
-					let entry = results[i].indexEntries.find(e => e.id === firstWordEntry.id
+					let entry = results[i].find(e => e.id === firstWordEntry.id
 						&& e.attribute === firstWordEntry.attribute)
 					if (entry) {
 						filteredPositions = filteredPositions.filter(firstWordPosition => neverNull(entry)
@@ -366,7 +343,7 @@ export class SearchFacade {
 			})
 		} else {
 			// all ids must appear in all words now, so we can use any of the entries lists
-			return results[0].indexEntries
+			return results[0]
 		}
 	}
 

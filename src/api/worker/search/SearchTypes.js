@@ -4,7 +4,12 @@ import type {GroupTypeEnum} from "../../common/TutanotaConstants"
 
 
 // db types
-export type EncryptedSearchIndexEntry = [Uint8Array, Uint8Array] // first entry encrypted element id, second entry encrypted app, attribute, type and positions
+export type EncryptedSearchIndexEntry = {
+	encWord: Base64,
+	encElementId: Uint8Array,
+	// encrypted app, attribute, type and positions
+	encryptedData: Uint8Array
+}
 
 export type EncryptedSearchIndexEntryWithHash = {
 	encEntry: EncryptedSearchIndexEntry,
@@ -56,7 +61,7 @@ export type IndexUpdate = {
 	indexTimestamp: ?number;
 	create: {
 		encInstanceIdToElementData: Map<B64EncInstanceId, ElementData>;
-		indexMap: Map<B64EncIndexKey, EncryptedSearchIndexEntry[]>;
+		newEntries: EncryptedSearchIndexEntry[];
 	};
 	move: {
 		encInstanceId: B64EncInstanceId;

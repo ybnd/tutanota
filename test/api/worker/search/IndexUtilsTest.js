@@ -1,3 +1,4 @@
+/*
 // @flow
 import o from "ospec/ospec.js"
 import {
@@ -181,3 +182,4 @@ o.spec("Index Utils", () => {
 	})
 })
 
+*/

@@ -7,6 +7,7 @@ export const ElementDataOS = "ElementData"
 export const MetaDataOS = "MetaData"
 export const GroupDataOS = "GroupMetaData"
 export const SearchTermSuggestionsOS = "SearchTermSuggestions"
+export const SearchIndexWordIndex = "encWords"
 
 
 export class DbFacade {
@@ -33,7 +34,8 @@ export class DbFacade {
 							//console.log("upgrade db", event)
 							let db = event.target.result
 							try {
-								db.createObjectStore(SearchIndexOS)
+								db.createObjectStore(SearchIndexOS, {autoIncrement: true})
+								  .createIndex(SearchIndexWordIndex, "encWord", {unique: false})
 								db.createObjectStore(ElementDataOS)
 								db.createObjectStore(MetaDataOS)
 								db.createObjectStore(GroupDataOS)
@@ -177,10 +179,29 @@ export class DbTransaction {
 		})
 	}
 
-	put(objectStore: string, key: string, value: any): Promise<void> {
+	getAllFromIndex(objectStore: string, indexName: string, indexValue: string): Promise<any[]> {
 		return Promise.fromCallback((callback) => {
 			try {
-				let request = this._transaction.objectStore(objectStore).put(value, key)
+				const index = (this._transaction.objectStore(objectStore).index(indexName): any)
+				const request = index.getAll(indexValue)
+				request.onsuccess = (event) => {
+					callback(null, event.target.result)
+				}
+				request.onerror = (event) => {
+					callback(new DbError("IDB Unable to query data from index", event))
+				}
+			} catch (e) {
+				callback(new DbError("IDB unable to query from index", e))
+			}
+		})
+	}
+
+	put(objectStore: string, key: ?string, value: any): Promise<void> {
+		return Promise.fromCallback((callback) => {
+			try {
+				const request = key
+					? this._transaction.objectStore(objectStore).put(value, key)
+					: this._transaction.objectStore(objectStore).put(value)
 				request.onerror = (event) => {
 					callback(new DbError("IDB Unable to write data to database!", event))
 				}
@@ -192,7 +213,6 @@ export class DbTransaction {
 			}
 		})
 	}
-
 
 	delete(objectStore: string, key: string): Promise<void> {
 		return Promise.fromCallback((callback) => {
