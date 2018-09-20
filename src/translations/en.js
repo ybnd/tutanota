@@ -1093,6 +1093,8 @@ module.exports = {
 		"searchGroups_placeholder": "Search for groups",
 		"spamRuleEnterValue_msg": "Please enter a value.",
 		"knownCredentials_label": "Use saved account",
-		"typeToFilter_label": "Type to filter..."
+		"typeToFilter_label": "Type to filter...",
+		"editPhoto_label": "edit photo",
+		"picIsToBig_msg":"Your file is to large. The maximum allowed size is 2 MB"
 	}
 }

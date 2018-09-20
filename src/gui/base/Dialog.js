@@ -415,7 +415,7 @@ export class Dialog {
 	 * @param   props.cancelAction called when allowCancel is true and the cancel button/shortcut was pressed.
 	 * @returns the Dialog
 	 */
-	static showActionDialog(props: {|
+	static showActionDialog(props: {
 		title: Stream<string> | string,
 		child: Component,
 		validator?: validator,
@@ -424,7 +424,7 @@ export class Dialog {
 		okActionTextId?: string,
 		cancelAction?: (dialog: Dialog) => void,
 		type?: DialogTypeEnum
-	|}): Dialog {
+	}): Dialog {
 		const {title, child, okAction, validator, allowCancel, okActionTextId, cancelAction, type} =
 			Object.assign({}, {allowCancel: true, okActionTextId: "ok_action", type: DialogType.EditSmall}, props)
 		let actionBar = new DialogHeaderBar()
@@ -458,6 +458,12 @@ export class Dialog {
 
 		actionBar.addRight(new Button(okActionTextId, doAction).setType(ButtonType.Primary))
 
+		/*let dialog = new Dialog(dialogSizeBigger ? DialogType.EditMedium : DialogType.EditSmall, {
+					view: () => m("", [
+						m(".dialog-header.plr-l", m(actionBar)),
+						m(".dialog-max-height.plr-l.pb.text-break.scroll", m(child))
+					])
+				})*/
 		if (allowCancel) {
 			actionBar.addLeft(new Button("cancel_action", doCancel).setType(ButtonType.Secondary))
 			dialog.addShortcut({
@@ -541,7 +547,7 @@ export class Dialog {
 	}
 
 
-	static showDropDownSelectionDialog<T>(titleId: string, labelId: string, infoMsgId: ?string, items: {name: string, value: T}[], selectedValue: Stream<T>, dropdownWidth: ?number): Promise<T> {
+	static showDropDownSelectionDialog<T>(titleId: string, labelId: string, infoMsgId: ?string, items: { name: string, value: T }[], selectedValue: Stream<T>, dropdownWidth: ?number): Promise<T> {
 		return Promise.fromCallback(cb => {
 			let dropdown = new DropDownSelector(labelId, () => (infoMsgId) ? lang.get(infoMsgId) : "", items, selectedValue, dropdownWidth)
 

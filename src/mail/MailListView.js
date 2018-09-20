@@ -50,13 +50,7 @@ export class MailListView {
 			rowHeight: size.list_row_height,
 			fetch: (start, count) => {
 				return this._loadMailRange(start, count)
-				// return new Promise((resolve, reject) => {
-				// 	setTimeout(() => {
-				// 		this._loadMailRange(start, count).then(mails => {
-				// 			resolve(mails)
-				// 		})
-				// 	}, 10000)
-				// })
+				
 			},
 			loadSingle: (elementId) => {
 				return load(MailTypeRef, [this.listId, elementId]).then((entity) => {

@@ -3,12 +3,7 @@ import m from "mithril"
 import {lang} from "../misc/LanguageViewModel"
 import {Button} from "../gui/base/Button"
 import {ContactEditor} from "./ContactEditor"
-import {
-	formatBirthdayWithMonthName,
-	getContactAddressTypeLabel,
-	getContactPhoneNumberTypeLabel,
-	getContactSocialTypeLabel
-} from "./ContactUtils"
+import {getContactAddressTypeLabel, getContactPhoneNumberTypeLabel, getContactSocialTypeLabel} from "./ContactUtils"
 import {ActionBar} from "../gui/base/ActionBar"
 import {TextField, Type} from "../gui/base/TextField"
 import {erase} from "../api/main/Entity"
@@ -23,15 +18,17 @@ import {BootIcons} from "../gui/base/icons/BootIcons"
 import {ContactSocialType} from "../api/common/TutanotaConstants"
 import {mailModel} from "../mail/MailModel"
 import {getEmailSignature} from "../mail/MailUtils"
+import {birthdayToOldBirthday} from "./ContactMergeUtils"
+import {neverNull} from "../api/common/utils/Utils"
 
 assertMainOrNode()
 
-function insertBetween(array: any[], spacer: () => VirtualElement) {
+function insertBetween(array: any[], spacer: Object) {
 	let ret = []
 	for (let e of array) {
 		if (e != null) {
 			if (ret.length > 0) {
-				ret.push(spacer())
+				ret.push(spacer)
 			}
 			ret.push(e)
 		}
@@ -43,7 +40,6 @@ function insertBetween(array: any[], spacer: () => VirtualElement) {
 export class ContactViewer {
 	view: Function;
 	contact: Contact;
-	contactAppellation: string;
 	mailAddresses: TextField[];
 	phones: TextField[];
 	addresses: TextField[];
@@ -57,12 +53,9 @@ export class ContactViewer {
 		let actions = new ActionBar()
 			.add(new Button('edit_action', () => this.edit(), () => Icons.Edit))
 			.add(new Button('delete_action', () => this.delete(), () => Icons.Trash))
-		let title = this.contact.title ? this.contact.title + " " : ""
-		let nickname = (this.contact.nickname ? ' | "' + this.contact.nickname + '"' : "")
-		let fullName = this.contact.firstName + " " + this.contact.lastName
-		this.contactAppellation = (title + fullName + nickname).trim()
+
 		this.mailAddresses = this.contact.mailAddresses.map(element => {
-			let textField = new TextField(() => getContactAddressTypeLabel((element.type: any), element.customTypeName))
+			let textField = new TextField(() => getContactAddressTypeLabel((element.type:any), element.customTypeName))
 				.setValue(element.address)
 				.setDisabled()
 			let newMailButton = new Button('sendMail_alt', () => this._writeMail(element.address), () => BootIcons.Mail)
@@ -70,8 +63,7 @@ export class ContactViewer {
 			return textField
 		})
 		this.phones = this.contact.phoneNumbers.map(element => {
-			let textField = new TextField(() =>
-				getContactPhoneNumberTypeLabel((element.type: any), element.customTypeName))
+			let textField = new TextField(() => getContactPhoneNumberTypeLabel((element.type:any), element.customTypeName))
 				.setValue(element.number)
 				.setDisabled()
 			let callButton = new Button('callNumber_alt', () => null, () => Icons.Call)
@@ -79,13 +71,12 @@ export class ContactViewer {
 			return textField
 		})
 		this.addresses = this.contact.addresses.map(element => {
-			let showAddress = new TextField(() =>
-				getContactAddressTypeLabel((element.type: any), element.customTypeName))
+			let showAddress = new TextField(() => getContactAddressTypeLabel((element.type:any), element.customTypeName))
 				.setType(Type.Area)
 				.setValue(element.address)
 				.setDisabled()
 			let prepAddress
-			if (element.address.indexOf("\n") !== -1) {
+			if (element.address.indexOf("\n") != -1) {
 				prepAddress = encodeURIComponent(element.address.split("\n").join(" "))
 			} else {
 				prepAddress = encodeURIComponent(element.address)
@@ -107,78 +98,48 @@ export class ContactViewer {
 		this.view = () => {
 			return [
 				m("#contact-viewer.fill-absolute.scroll.plr-l.pb-floating", [
-					m(".header.pt-ml", [
-						m(".flex-space-between", [
-							m("#header-details.flex", [
-								//todo style an mobile anpassen
-								m(".align-self-end.mr-s", {
-									style: {
-										'border-radius': "50%",
-										width: "60px",
-										height: "60px",
-										border: "1px solid grey"
-									}
-								}),
-								m(".contact-actions.flex-space-between.flex-wrap.mt-xs", [
-									m(".left.flex-grow-shrink-150", [
-										m(".flex-wrap", [
-											m(".h2", this.contactAppellation),
-										]),
-										m(".flex-wrap", insertBetween([
-												this.contact.company ? m("span.company", this.contact.company) : null,
-												this.contact.role ? m("span.title", this.contact.role) : null,
-												m("span.birthday", this._formatBirthday())], () => m("span", " | ")
-											)
-										)]),
-								]),]),
-							/*	m(".contact-actions.flex-space-between.flex-wrap.mt-xs", [
-														m(".left.flex-grow-shrink-150", [
-															m(".h2.selectable.text-break", this.contactAppellation),
-															m(".flex-wrap.selectable", insertBetween([
-																	this.contact.company ? m("span.company", this.contact.company) : null,
-																	this.contact.role ? m("span.title", this.contact.role) : null,
-																	m("span.birthday", this._formatBirthday())
-																], () => m("span", " | ")
-																)
-															)
-														]),*/
-							m(".action-bar.align-self-end", [//css align self needed otherwise the buttons will float in the top right corner instead of bottom right
-								m(actions)
-							]),
-						]),
-						m("hr.hr.mt.mb"),
+					m(".flex-space-between.pt", [
+						m(".h2", (this.contact.title ? this.contact.title : "") + " " + this.contact.firstName + " " + this.contact.lastName + (this.contact.nickname ? ' | "' + this.contact.nickname + '"' : "")),
+						m(actions),
 					]),
+					insertBetween([
+							this.contact.company ? m("span.company", this.contact.company) : null,
+							this.contact.role ? m("span.title", this.contact.role) : null,
+							m("span.birthday", this._formatBirthday())
+						], m("span", " | ")
+					),
+					m("hr.hr.mt-l"),
 
 					this.mailAddresses.length > 0 || this.phones.length > 0 ? m(".wrapping-row", [
-						m(".mail.mt-l", this.mailAddresses.length > 0 ? [
-							m(".h4", lang.get('email_label')),
-							m(".aggregateEditors", [
-								this.mailAddresses.map(ma => m(ma)),
-							])
-						] : null),
-						m(".phone.mt-l", this.phones.length > 0 ? [
-							m(".h4", lang.get('phone_label')),
-							m(".aggregateEditors", [
-								this.phones.map(ma => m(ma)),
-							])
-						] : null),
-					]) : null,
+							m(".mail.mt-l", this.mailAddresses.length > 0 ? [
+									m(".h4", lang.get('email_label')),
+									m(".aggregateEditors", [
+										this.mailAddresses.map(ma => m(ma)),
+									])
+								] : null),
+							m(".phone.mt-l", this.phones.length > 0 ? [
+									m(".h4", lang.get('phone_label')),
+									m(".aggregateEditors", [
+										this.phones.map(ma => m(ma)),
+									])
+								] : null),
+						]) : null,
 
 					this.addresses.length > 0 || this.socials.length > 0 ? m(".wrapping-row", [
-						m(".address.mt-l", this.addresses.length > 0 ? [
-							m(".h4", lang.get('address_label')),
-							m(".aggregateEditors", this.addresses.map(ma => m(ma)))
-						] : null),
-						m(".social.mt-l", this.socials.length > 0 ? [
-							m(".h4", lang.get('social_label')),
-							m(".aggregateEditors", this.socials.map(ma => m(ma)))
-						] : null),
-					]) : null,
+							m(".address.mt-l", this.addresses.length > 0 ? [
+									m(".h4", lang.get('address_label')),
+									m(".aggregateEditors", this.addresses.map(ma => m(ma)))
+								] : null),
+							m(".social.mt-l", this.socials.length > 0 ? [
+									m(".h4", lang.get('social_label')),
+									m(".aggregateEditors", this.socials.map(ma => m(ma)))
+								] : null),
+						]) : null,
 
 					this.contact.comment && this.contact.comment.trim().length > 0 ? [
-						m("hr.hr.mt-l"),
-						m("p.mt-l.text-prewrap.text-break", this.contact.comment),
-					] : null,
+							m("hr.hr.mt-l"),
+							m("p.mt-l.text-prewrap.text-break", this.contact.comment),
+						] : null,
 
 				]),
 
@@ -194,33 +155,33 @@ export class ContactViewer {
 		switch (element.type) {
 			case ContactSocialType.TWITTER:
 				socialUrlType = "twitter.com/"
-				if (element.socialId.indexOf("http") !== -1 || element.socialId.indexOf(worldwidew) !== -1) {
+				if (element.socialId.indexOf("http") != -1 || element.socialId.indexOf(worldwidew) != -1) {
 					socialUrlType = ""
 				}
 				break
 			case ContactSocialType.FACEBOOK:
 				socialUrlType = "facebook.com/"
-				if (element.socialId.indexOf("http") !== -1 || element.socialId.indexOf(worldwidew) !== -1) {
+				if (element.socialId.indexOf("http") != -1 || element.socialId.indexOf(worldwidew) != -1) {
 					socialUrlType = ""
 				}
 				break
 			case ContactSocialType.XING:
 				socialUrlType = "xing.com/profile/"
-				if (element.socialId.indexOf("http") !== -1 || element.socialId.indexOf(worldwidew) !== -1) {
+				if (element.socialId.indexOf("http") != -1 || element.socialId.indexOf(worldwidew) != -1) {
 					socialUrlType = ""
 				}
 				break
 			case ContactSocialType.LINKED_IN:
 				socialUrlType = "linkedin.com/in/"
-				if (element.socialId.indexOf("http") !== -1 || element.socialId.indexOf(worldwidew) !== -1) {
+				if (element.socialId.indexOf("http") != -1 || element.socialId.indexOf(worldwidew) != -1) {
 					socialUrlType = ""
 				}
 			default:
 		}
-		if (element.socialId.indexOf("http") !== -1) {
+		if (element.socialId.indexOf("http") != -1) {
 			http = ""
 		}
-		if (element.socialId.indexOf(worldwidew) !== -1) {
+		if (element.socialId.indexOf(worldwidew) != -1) {
 			worldwidew = ""
 		}
 		let socialURL = `${http}${worldwidew}${socialUrlType}${element.socialId.trim()}`
@@ -230,11 +191,9 @@ export class ContactViewer {
 
 	_writeMail(mailAddress: string) {
 		let editor = new MailEditor(mailModel.getUserMailboxDetails())
-		editor.initWithTemplate(`${this.contact.firstName} ${this.contact.lastName}`.trim(), mailAddress, "",
-			getEmailSignature(), null)
-			.then(() => {
-				editor.show()
-			})
+		editor.initWithTemplate(`${this.contact.firstName} ${this.contact.lastName}`.trim(), mailAddress, "", getEmailSignature(), null).then(() => {
+			editor.show()
+		})
 	}
 
 	_setupShortcuts() {
@@ -266,13 +225,22 @@ export class ContactViewer {
 
 	_formatBirthday(): string {
 		if (this.contact.birthday) {
-			return formatBirthdayWithMonthName(this.contact.birthday)
+			if (this.contact.birthday.year) {
+				return formatDateWithMonth(birthdayToOldBirthday(this.contact.birthday))
+			} else {
+				return lang.formats.dateWithoutYear.format(new Date(Number(2011), Number(neverNull(this.contact.birthday).month) - 1, Number(neverNull(this.contact.birthday).day)))
+			}
 		} else {
 			if (this.contact.oldBirthday) {
 				return formatDateWithMonth((this.contact.oldBirthday))
 			} else {
 				return ""
 			}
+
 		}
+
+
 	}
 }
+
+

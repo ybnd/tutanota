@@ -34,6 +34,7 @@ import {Keys} from "../misc/KeyManager"
 import {logins} from "../api/main/LoginController"
 import {Icons} from "../gui/base/icons/Icons"
 import {createBirthday} from "../api/entities/tutanota/Birthday"
+import {ContactPhotoEditor} from "./ContactPhotoEditor"
 
 
 assertMainOrNode()
@@ -48,8 +49,10 @@ export class ContactEditor {
 	phoneEditors: ContactAggregateEditor[];
 	addressEditors: ContactAggregateEditor[];
 	socialEditors: ContactAggregateEditor[];
-
+	img: string;
 	view: Function;
+	photoEditor: ContactPhotoEditor;
+	photoEditState: boolean;
 
 	_newContactIdReceiver: ?Function
 
@@ -118,6 +121,9 @@ export class ContactEditor {
 		let title = new TextField("title_placeholder")
 			.setValue(this.contact.title)
 			.onUpdate(value => this.contact.title = value)
+		//let img// = "https://tutanota.com/images/team/bed.png"
+
+		let uploadPhotoButton = new Button('showURL_alt', () => this._updatePhoto(), () => Icons.ArrowForward)
 
 		this.mailAddressEditors = this.contact.mailAddresses.map(ma => new ContactAggregateEditor(ma, e => remove(this.mailAddressEditors, e)))
 		this.createNewMailAddressEditor()
@@ -140,10 +146,25 @@ export class ContactEditor {
 			.setMiddle(name)
 			.addRight(new Button('save_action', () => this.save()).setType(ButtonType.Primary))
 		this.view = () => m("#contact-editor", [
-			m(".wrapping-row", [
-				m(firstName),
-				m(lastName)
+			m("", [
+				m(".flex-space-between", [
+					m(".flex-grow-shrink-auto.pr-l", [
+						m(firstName),
+						m(lastName),
+					]),
+					m(".rel.pt", [
+						m("img.border.photo-icon", {src: this.img}),
+						m(".abs", {style: {top: "85px", left: "-6px"}}, [
+							m(uploadPhotoButton)
+						]),
+					]),
+				]),
+
 			]),
+			// m(".wrapping-row", [
+			// 	m(firstName),
+			// 	m(lastName)
+			// ]),
 			m(".wrapping-row", [
 				m(title),
 				m(this.birthday),
@@ -323,6 +344,11 @@ export class ContactEditor {
 		this.socialEditors.push(editor)
 	}
 
+	_updatePhoto() {
+		this.photoEditor = new ContactPhotoEditor()
+
+
+	}
 
 }
 

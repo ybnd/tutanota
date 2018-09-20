@@ -16,6 +16,9 @@ const FALSE_CLOSURE = () => {
 
 export const Type = {
 	Text: "text",
+	Number: "number",
+	Date: "date",
+	Month: "month",
 	Email: "email",
 	Password: "password",
 	Area: "area",

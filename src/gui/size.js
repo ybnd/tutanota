@@ -24,6 +24,7 @@ export const size = {
 
 	text_bubble_tpad: 20,
 
+	border_radius_m: 6,
 	border_radius: 3,
 	border_selection: 4,
 
@@ -39,6 +40,11 @@ export const size = {
 		return (this.button_height - this.button_height_bubble) / 2
 	},
 
+	photo_icon_bg_size: 106,
+	photo_icon_bg_s_size: 30,
+	photo_icon_bg_m_size: 58,
+
+	navbar_height_s: 56,
 	navbar_height: 70,
 	navbar_height_mobile: 48,
 

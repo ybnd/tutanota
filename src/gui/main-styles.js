@@ -135,6 +135,7 @@ styles.registerStyle('main', () => {
 		'.mt-l': {'margin-top': px(size.vpad_large)},
 		'.mt-xl': {'margin-top': px(size.vpad_xl)},
 		'.mt-form': {'margin-top': px(size.hpad_medium)},
+		'.mt-m': {'margin-top': px(size.hpad_button)},
 		'.mb-0': {'margin-bottom': 0},
 		'.mb': {'margin-bottom': px(size.vpad)},
 		'.mb-s': {'margin-bottom': px(size.vpad_small)},
@@ -143,6 +144,7 @@ styles.registerStyle('main', () => {
 		'.mlr': {'margin-left': px(size.hpad), 'margin-right': px(size.hpad)},
 		'.mlr-l': {'margin-left': px(size.hpad_large), 'margin-right': px(size.hpad_large)},
 		'.mr-s': {'margin-right': px(size.vpad_small)},
+		'.mr-l': {'margin-right': px(size.hpad_large)},
 		'.ml-s': {'margin-left': px(size.vpad_small)},
 
 		// paddings
@@ -150,6 +152,7 @@ styles.registerStyle('main', () => {
 		'.pt': {'padding-top': px(size.vpad)},
 		'.pt-0': {'padding-top': 0},
 		'.pt-s': {'padding-top': px(size.vpad_small)},
+		'.pt-m': {'padding-top': px(size.hpad)},
 		'.pt-l': {'padding-top': px(size.vpad_large)},
 		'.pt-m': {'padding-top': px(size.vpad)},
 		'.pt-ml': {'padding-top': px(size.vpad_ml)},
@@ -258,6 +261,7 @@ styles.registerStyle('main', () => {
 		'.max-width-m': {'max-width': px(450)},
 		'.max-width-l': {'max-width': px(800)},
 		'.max-width-200': {'max-width': px(200)},
+		'.btm-pic': {bottom: px(size.vpad_small)},
 
 		'.scroll': {
 			'overflow-y': client.overflowAuto,
@@ -326,7 +330,10 @@ styles.registerStyle('main', () => {
 		'.limit-width': {'max-width': '100%'},
 
 		'.border': {'border': `1px solid ${theme.content_border}`},
+		'.border-l': {'border': `3px solid ${theme.content_border}`},
 		'.border-radius': {'border-radius': px(size.border_radius)},
+		'.border-radius-m': {'border-radius': px(size.border_radius_m)},
+		'.border-radius-flex': {'border-radius': '50%'},
 		'.editor-border': {
 			'border': `1px solid ${theme.content_border}`,
 			'padding-top': px(size.vpad_small),
@@ -633,6 +640,34 @@ styles.registerStyle('main', () => {
 			height: px(size.button_icon_bg_size),
 			'border-radius': px(size.button_icon_bg_size),
 			'min-width': px(size.button_icon_bg_size),
+		},
+		'.photo-icon': {
+			width: px(size.photo_icon_bg_size),
+			height: px(size.photo_icon_bg_size),
+			'border-radius': "50%",
+			'min-width': px(size.photo_icon_bg_size),
+		},
+		'.photo-icon-s': {
+			width: px(size.photo_icon_bg_s_size),
+			height: px(size.photo_icon_bg_s_size),
+			'border-radius': px(size.photo_icon_bg_s_size),
+			'min-width': px(size.photo_icon_bg_s_size),
+		},
+		'.cutter': {
+			// width: px(size.photo_icon_bg_s_size),
+			// height: px(size.photo_icon_bg_s_size),
+			'border-radius': "50%",
+			'box-sizing': "border-box",
+			cursor: "move"
+		},
+
+		'.resizer': {
+			width: px(size.photo_icon_bg_m_size),
+			height: px(size.photo_icon_bg_m_size),
+			border: "solid 4px",
+			'border-radius': "50%",
+			'box-sizing': "border-box",
+			cursor: "nesw-resize"
 		},
 		'.button-icon.floating': {
 			height: px(size.button_floating_size),

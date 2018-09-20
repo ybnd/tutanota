@@ -31,7 +31,14 @@ export function exportAsVCard(): Promise<void> {
 					tmpFile.name = "vCard3.0.vcf"
 					tmpFile.mimeType = "vCard/rfc2426"
 					tmpFile.size = String(data.byteLength)
+					//cannot test yet
+					//todo native app integration
+					//todo test on app
+					//if (env.mode === Mode.App) {
+					//	return fileApp.open((createDataFile(tmpFile, data):FileReference)).return(allContacts.length)
+					//} else {
 					return fileController.open(createDataFile(tmpFile, data)).return(allContacts.length)
+					//}
 				}
 			})
 		})

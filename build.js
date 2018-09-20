@@ -16,7 +16,7 @@ if (process.argv.indexOf("clean") !== -1) {
 }
 
 let watch = process.argv.indexOf("watch") === -1 ? undefined : () => {
-	}
+}
 
 promise
 	.then(() => fs.copyAsync(path.join(__dirname, '/resources/favicon'), path.join(__dirname, '/build/images')))

@@ -22,7 +22,6 @@ export function vCardFileToVCards(vCardFileData: string): ?string[] {
 	vCardFileData = vCardFileData.replace(/begin:vcard/g, "BEGIN:VCARD")
 	vCardFileData = vCardFileData.replace(/end:vcard/g, "END:VCARD")
 	vCardFileData = vCardFileData.replace(/version:2.1/g, "VERSION:2.1")
-	let vCardList = []
 	if (vCardFileData.indexOf("BEGIN:VCARD") > -1 && vCardFileData.indexOf(E) > -1 && vCardFileData.indexOf(V3) > -1
 		|| vCardFileData.indexOf(V2) > -1) {
 		vCardFileData = vCardFileData.replace(/\r/g, "")
