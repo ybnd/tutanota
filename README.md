@@ -53,3 +53,26 @@ If you prefer the auto-update feature, use the Google Play Store or F-Droid in t
 7. Build the Android app: `./gradlew assembleRelease`
 8. Sign the app: `jarsigner -verbose -keystore MyKeystore.jks -storepass CHANGEME app/build/outputs/apk/release/app-release-unsigned.apk tutaKey`
 9. Install the app on your device: `adb install -r app/build/outputs/apk/release/app-release-unsigned.apk`
+
+
+## Docker Support
+
+### Web client on Docker
+
+1. You just need the Dockerfile in `dockerfiles/webClient`
+2. Build the image running `docker build -t tutanota:web .`
+3. Start a container using `docker run --rm -p 9000:9000 --hostname localhost --name tutanota tutanota:web`
+4. Visit `http://localhost:9000`
+
+### Android APK on Docker
+
+1. You need the files in `dockerfiles/android`
+2. Build the image running `docker build -t tutanota:android`
+3. Start a container using `docker run --rm -v $(pwd):/outputs tutanota:android -b release`
+4. After the container has finished the building, you will find `Tutanota-release.apk` in your current directory
+5. The APK have root ownership, you can change it by running `sudo chown $USER:$USER Tutanota-release.apk `
+6. Install the APK with `ADB` or by copying it to your device  
+
+7. You got the possibility to use your own key for signing the APK. In order to do it, `docker run --rm -it -v myKeyFolder:/keystore -v $(pwd):/outputs tutanota:android -b release -k myKey.jks -a myKeyAlias`
+8. You can also build debug or debugDist build by running `docker run --rm -v $(pwd):/outputs tutanota:android -b debug|debugDist`
+ 
