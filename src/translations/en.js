@@ -886,6 +886,9 @@ const translation = {
 		"yes_label": "Yes",
 		"yourFolders_action": "YOUR FOLDERS",
 		"yourMessage_label": "Your message",
+		"laterInvoicingInfo_msg": "Info: Additionally ordered features will not be invoiced directly, but at the beginning of your next subscription month.",
+		"nativeAuthFailed_msg": "No saved credentials have been loaded.",
+		"requireNativeAuth_label": "Require system authentication on startup",
 		"sessionsWillBeDeleted_msg": "These will be deleted 2 weeks after closing.",
 		"unsupportedBrowserOverlay_msg": "You're using an unsupported browser. Some functionality may be limited.",
 		"storageDeletionAnnouncement_msg": "Info: Emails moved to the trash or spam folders will automatically be deleted after 30 days."
