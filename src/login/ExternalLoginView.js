@@ -34,7 +34,7 @@ import {neverNull} from "../api/common/utils/Utils"
 import {MessageBoxN} from "../gui/base/MessageBoxN"
 import {Dialog} from "../gui/base/Dialog"
 import {assertMainOrNode, LOGIN_TITLE} from "../api/Env"
-import {getImprintLink} from "./LoginView"
+import {getImprintLink, getPrivacyStatementLink} from "./LoginView"
 
 assertMainOrNode()
 
@@ -319,8 +319,14 @@ export class ExternalLoginView {
 }
 
 export function renderImprintLink() {
-	return m("div.center.flex.flex-grow.items-end.justify-center.mb-l.mt-xl", m("a", {
-		href: getImprintLink(),
-		target: "_blank"
-	}, lang.get("imprint_label")))
+	return m("div.center.flex.flex-grow.items-end.justify-center.mb-l.mt-xl", [
+		m("a.plr", {
+			href: getImprintLink(),
+			target: "_blank"
+		}, lang.get("imprint_label")),
+		m("a.plr", {
+			href: getPrivacyStatementLink(),
+			target: "_blank"
+		}, lang.get("privacyLink_label"))
+	])
 }

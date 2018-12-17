@@ -407,5 +407,10 @@ export function getImprintLink() {
 		whitelabelCustomizations.imprintUrl : "https://tutanota.com/contact"
 }
 
+export function getPrivacyStatementLink() {
+	return (whitelabelCustomizations && whitelabelCustomizations.privacyStatementUrl) ?
+		whitelabelCustomizations.privacyStatementUrl : "https://tutanota.com/privacy"
+}
+
 
 export const login: LoginView = new LoginView()
