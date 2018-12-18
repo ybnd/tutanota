@@ -97,8 +97,8 @@ export class LoginSettingsViewer implements UpdatableSettingsViewer {
 						? m(DropDownSelectorN, {
 							label: "requireNativeAuth_label",
 							items: [
-								{name: lang.get("activate_action"), value: true},
-								{name: lang.get("deactivate_action"), value: false}
+								{name: lang.get("active_label"), value: true},
+								{name: lang.get("deactivated_label"), value: false}
 							],
 							selectedValue: stream(Boolean(deviceConfig._nativeAuthRequired)),
 							selectionChangedHandler: (val) => deviceConfig.setNativeAuthRequired(val),

@@ -37,7 +37,7 @@ class DeviceConfig {
 			if (loadedConfig.credentials != null) {
 				this._credentials = loadedConfig._credentials
 			}
-			if (loadedConfig._nativeAuthenticationRequired != null) {
+			if (loadedConfig._nativeAuthRequired != null) {
 				this._nativeAuthRequired = loadedConfig._nativeAuthRequired
 			}
 		}
@@ -88,7 +88,11 @@ class DeviceConfig {
 	store(): Promise<void> {
 		if (isApp()) {
 			return this._saveCredentialsToSecureStorage(false).then(() => {
-				localStorage.setItem(LocalStorageKey, JSON.stringify({_version: this._version, _theme: this._theme}))
+				localStorage.setItem(LocalStorageKey, JSON.stringify({
+					_version: this._version,
+					_theme: this._theme,
+					_nativeAuthRequired: this._nativeAuthRequired
+				}))
 			})
 		} else {
 			try {
@@ -111,7 +115,6 @@ class DeviceConfig {
 	}
 
 	getAllInternal(): Credentials[] {
-		// make a copy to avoid changes from outside influencing the local array
 		return this.getAll().filter(credential => credential.mailAddress.indexOf("@") > 0)
 	}
 
@@ -131,6 +134,7 @@ class DeviceConfig {
 	setNativeAuthRequired(required: boolean) {
 		this._nativeAuthRequired = required
 		this._saveCredentialsToSecureStorage(true)
+		    .then(() => this.store())
 	}
 }
 

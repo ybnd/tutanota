@@ -125,15 +125,18 @@ internal class SecureStorage(private val mainActivity: MainActivity) {
         cancellationSignal = CancellationSignal()
         withContext(Dispatchers.Main) {
             val authDialog = AlertDialog.Builder(this@SecureStorage.mainActivity)
-                    .setCancelable(true)
+                    .setCancelable(false)
                     .setMessage("Plz Authenticate")
                     .setNegativeButton(android.R.string.cancel) { dialog, which ->
                         dialog.dismiss()
                         cancellationSignal?.cancel()
                     }
                     .show()
-            authenticate().await()
-            authDialog.dismiss()
+            try {
+                authenticate().await()
+            } finally {
+                authDialog.dismiss()
+            }
         }
     }
 
@@ -152,6 +155,7 @@ internal class SecureStorage(private val mainActivity: MainActivity) {
             val keyStore = KeyStore.getInstance("AndroidKeyStore")
             keyStore.load(null)
             if(regenerateKey) {
+                keyStore.deleteEntry(KEY_NAME)
                 return createKey(authRequired)
             }
             return keyStore.getKey(KEY_NAME, null) as SecretKey? ?: return createKey(authRequired)
@@ -184,8 +188,8 @@ internal class SecureStorage(private val mainActivity: MainActivity) {
                         deferred.complete(true)
                     }
 
-                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence?) {
-                        deferred.completeExceptionally(FingerprintException())
+                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                        deferred.completeExceptionally(FingerprintException(errString.toString()))
                     }
                 },
                 null)
@@ -200,7 +204,7 @@ internal class SecureStorage(private val mainActivity: MainActivity) {
     }
 }
 
-class FingerprintException : Exception()
+class FingerprintException(msg: String) : Exception(msg)
 
 class CipherWrapper(transformation: String) {
     val cipher: Cipher = Cipher.getInstance(transformation)

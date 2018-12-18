@@ -2,7 +2,7 @@
 import m from "mithril"
 import {TextField, Type} from "../gui/base/TextField"
 import {Checkbox} from "../gui/base/Checkbox"
-import {Button, ButtonType} from "../gui/base/Button"
+import {Button} from "../gui/base/Button"
 import {client} from "../misc/ClientDetector"
 import {assertMainOrNode, isApp, isTutanotaDomain} from "../api/Env"
 import {lang} from "../misc/LanguageViewModel"
@@ -17,7 +17,7 @@ import {base64ToUint8Array, base64UrlToBase64, utf8Uint8ArrayToString} from "../
 import {showProgressDialog} from "../gui/base/ProgressDialog"
 import {windowFacade} from "../misc/WindowFacade"
 import {DeviceType} from "../misc/ClientConstants"
-import {ButtonN} from "../gui/base/ButtonN"
+import {ButtonN, ButtonType} from "../gui/base/ButtonN"
 import {show} from "./RecoverLoginDialog"
 import {NativeAuthenticationError} from "../api/common/error/NativeAuthenticationError"
 
@@ -122,7 +122,14 @@ export class LoginView {
 					}
 				}, [
 					this._showingKnownCredentials ? this.credentialsSelector() : this.loginForm(),
-					m(".flex-center.pt-l", [
+					m(".flex.flex-column.center-vertically.pt-l", [
+						isApp() && deviceConfig._nativeAuthRequired
+							? m(ButtonN, {
+								label: "unlockCredentials_action",
+								click: () => this._handleCredentials(m.parseQueryString(m.route.get().split("?")[1])),
+								type: ButtonType.Primary,
+							})
+							: null,
 						m(optionsExpander),
 					]),
 					m(".pb-l", [
@@ -302,7 +309,10 @@ export class LoginView {
 		} else {
 			this._requestedPath = this.targetPath
 		}
+		this._handleCredentials(args)
+	}
 
+	_handleCredentials(args: {[string]: any}) {
 		let promise = Promise.resolve()
 		if (args.migrateCredentials && client.localStorage() && !localStorage.getItem("tutanotaConfig")) {
 			try {
@@ -327,7 +337,7 @@ export class LoginView {
 
 		} else if (isApp()) {
 			promise = deviceConfig._loadCredentialsFromNative()
-			                      .catch(NativeAuthenticationError, e => {this.helpText = lang.get("nativeAuthFailed_msg")})
+			                      .catch(NativeAuthenticationError, e => {this.helpText = lang.get("nativeAuthFailed_msg", {'{reason}': e.message})})
 		}
 		promise.then(() => {
 			if ((args.loginWith || args.userId) && !(args.loginWith && deviceConfig.get(args.loginWith) ||

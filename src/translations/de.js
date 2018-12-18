@@ -893,7 +893,8 @@ const translation = {
 		"sessionsWillBeDeleted_msg": "Geschlossene Sessions werden nach zwei Wochen aus der Liste gelöscht.",
 		"unsupportedBrowserOverlay_msg": "Du benutzt einen nicht unterstützten Browser. Einige Funktionen könnten eingeschränkt sein.",
 		"storageDeletionAnnouncement_msg": "Info: E-Mails im Papierkorb oder Spam-Ordner werden nach 30 Tagen automatisch gelöscht.",
-		"nativeAuthFailed_msg": "Gespeicherte Zugangsdaten wurden nicht geladen."
+		"nativeAuthFailed_msg": "Gespeicherte Zugangsdaten wurden nicht geladen: {reason}",
+		"unlockCredentials_action": "Zugangsdaten entschlüsseln"
 	}
 }
 export default translation

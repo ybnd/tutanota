@@ -893,7 +893,8 @@ const translation = {
 		"yes_label": "Ja",
 		"yourFolders_action": "Ihre ORDNER",
 		"yourMessage_label": "Ihre Nachricht",
-		"nativeAuthFailed_msg": "Gespeicherte Zugangsdaten wurden nicht geladen.",
+		"nativeAuthFailed_msg": "Gespeicherte Zugangsdaten wurden nicht geladen: {reason}",
+		"unlockCredentials_action": "Zugangsdaten entschlüsseln",
 		"sessionsWillBeDeleted_msg": "Geschlossene Sessions werden nach zwei Wochen aus der Liste gelöscht.",
 		"unsupportedBrowserOverlay_msg": "Sie benutzen einen nicht unterstützten Browser. Einige Funktionen könnten eingeschränkt sein.",
 		"storageDeletionAnnouncement_msg": "Info: E-Mails im Papierkorb oder Spam-Ordner werden nach 30 Tagen automatisch gelöscht."
