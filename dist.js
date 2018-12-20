@@ -282,18 +282,30 @@ function _writeFile(targetFile, content) {
 }
 
 
-let debName = `tutanota-next-${version}_1_amd64.deb`
+const target = `/opt/releases/tutanota-next-${version}`
+const debProdName = `tutanota-next-${version}_1_amd64.deb`
+const debTestName = `tutanota-next-${version}-test_1_amd64.deb`
 
 function packageDeb() {
 	if (options.deb) {
-		console.log("create " + debName)
+		console.log("gzipping... ")
 		exitOnFail(spawnSync("/usr/bin/find", `. ( -name *.js -o -name *.html ) -exec gzip -fkv --best {} \;`.split(" "), {
 			cwd: __dirname + '/build/dist',
 			stdio: [process.stdin, process.stdout, process.stderr]
 		}))
 
-		const target = `/opt/releases/tutanota-next-${version}`
-		exitOnFail(spawnSync("/usr/local/bin/fpm", `-f -s dir -t deb --deb-user tutadb --deb-group tutadb -n tutanota-next-${version} -v 1 dist/=${target} desktop/=${target}/desktop desktop-test/=${target}/desktop-test`.split(" "), {
+		const desktopPath = fs.existsSync('./build/desktop') ? ` desktop/=${target}/desktop` : ""
+		const desktopTestPath = fs.existsSync('./build/desktop-test') ? ` desktop-test/=${target}/desktop` : ""
+		//prod deb
+		console.log("create " + debProdName)
+		exitOnFail(spawnSync("/usr/local/bin/fpm", `-f -s dir -t deb --deb-user tutadb --deb-group tutadb -n tutanota-next-${version} -v 1 dist/=${target}${desktopPath}`.split(" "), {
+			cwd: __dirname + '/build/',
+			stdio: [process.stdin, process.stdout, process.stderr]
+		}))
+
+		//test deb
+		console.log("create " + debTestName)
+		exitOnFail(spawnSync("/usr/local/bin/fpm", `-f -s dir -t deb --deb-user tutadb --deb-group tutadb -n tutanota-next-${version}-test -v 1 dist/=${target}${desktopTestPath}`.split(" "), {
 			cwd: __dirname + '/build/',
 			stdio: [process.stdin, process.stdout, process.stderr]
 		}))
@@ -311,13 +323,23 @@ function release() {
 			stdio: [process.stdin, process.stdout, process.stderr]
 		}))
 
-		exitOnFail(spawnSync("/bin/cp", `-f build/${debName} /opt/repository/tutanota/`.split(" "), {
+		exitOnFail(spawnSync("/bin/cp", `-f build/${debProdName} /opt/repository/tutanota/`.split(" "), {
+			cwd: __dirname,
+			stdio: [process.stdin, process.stdout, process.stderr]
+		}))
+
+		exitOnFail(spawnSync("/bin/cp", `-f build/${debTestName} /opt/repository/tutanota/`.split(" "), {
 			cwd: __dirname,
 			stdio: [process.stdin, process.stdout, process.stderr]
 		}))
 
 		// user puppet needs to read the deb file from jetty
-		exitOnFail(spawnSync("/bin/chmod", `o+r /opt/repository/tutanota/${debName}`.split(" "), {
+		exitOnFail(spawnSync("/bin/chmod", `o+r /opt/repository/tutanota/${debProdName}`.split(" "), {
+			cwd: __dirname + '/build/',
+			stdio: [process.stdin, process.stdout, process.stderr]
+		}))
+
+		exitOnFail(spawnSync("/bin/chmod", `o+r /opt/repository/tutanota/${debTestName}`.split(" "), {
 			cwd: __dirname + '/build/',
 			stdio: [process.stdin, process.stdout, process.stderr]
 		}))
@@ -325,7 +347,7 @@ function release() {
 }
 
 function exitOnFail(result) {
-	if (result.status != 0) {
+	if (result.status !== 0) {
 		throw new Error("error invoking process" + JSON.stringify(result))
 	}
 }
