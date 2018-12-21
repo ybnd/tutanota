@@ -257,7 +257,7 @@ class Native internal constructor(private val activity: MainActivity) {
     }
 }
 
-private fun <T> Deferred<T>.toPromise(): Promise<T, java.lang.Exception, *> {
+fun <T> Deferred<T>.toPromise(): Promise<T, java.lang.Exception, *> {
     val promise = DeferredObject<T, java.lang.Exception, Any>()
 
     this.invokeOnCompletion { err ->
@@ -270,7 +270,7 @@ private fun <T> Deferred<T>.toPromise(): Promise<T, java.lang.Exception, *> {
     return promise
 }
 
-private fun <T> Promise<T, Exception, Void>.toDeferred(): Deferred<T> {
+fun <T> Promise<T, java.lang.Exception, Void>.toDeferred(): Deferred<T> {
     val deferred = CompletableDeferred<T>()
     this.then { res -> deferred.complete(res) }
             .fail { e -> deferred.completeExceptionally(e) }

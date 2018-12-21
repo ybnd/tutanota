@@ -1,6 +1,7 @@
 package de.tutao.tutanota
 
 import android.app.AlertDialog
+import android.app.KeyguardManager
 import android.content.Context
 import android.hardware.fingerprint.FingerprintManager
 import android.os.Build
@@ -10,10 +11,8 @@ import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
 import android.security.keystore.UserNotAuthenticatedException
 import android.support.annotation.RequiresApi
-import android.util.Log
 import de.tutao.tutanota.Utils.bytesToBase64
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.math.BigInteger
@@ -28,7 +27,7 @@ import javax.security.auth.x500.X500Principal
 typealias StorageId = String
 
 internal class SecureStorage(private val mainActivity: MainActivity) {
-    var cancellationSignal: CancellationSignal? = null
+    private var cancellationSignal: CancellationSignal? = null
 
     suspend fun get(id: StorageId): String? {
         val prefString = prefs.value.getString(id, null) ?: return null
@@ -90,7 +89,8 @@ internal class SecureStorage(private val mainActivity: MainActivity) {
         }
     }
 
-    suspend fun tryEncrypt(bytes: ByteArray, authRequired: Boolean, regenerateKey: Boolean): ByteArray {
+    private suspend fun tryEncrypt(bytes: ByteArray, authRequired: Boolean,
+                                   regenerateKey: Boolean): ByteArray {
         return try {
             val key = getSymmetricKey(authRequired, regenerateKey)
             CipherWrapper(CipherWrapper.TRANSFORMATION_SYMMETRIC).encrypt(bytes, key)
@@ -105,7 +105,7 @@ internal class SecureStorage(private val mainActivity: MainActivity) {
         }
     }
 
-    suspend fun tryDecrypt(bytes: ByteArray): ByteArray {
+    private suspend fun tryDecrypt(bytes: ByteArray): ByteArray {
         return try {
             val key = getSymmetricKey(false, false)
             CipherWrapper(CipherWrapper.TRANSFORMATION_SYMMETRIC).decrypt(bytes, key)
@@ -126,14 +126,14 @@ internal class SecureStorage(private val mainActivity: MainActivity) {
         withContext(Dispatchers.Main) {
             val authDialog = AlertDialog.Builder(this@SecureStorage.mainActivity)
                     .setCancelable(false)
-                    .setMessage("Plz Authenticate")
-                    .setNegativeButton(android.R.string.cancel) { dialog, which ->
+                    .setMessage("Authenticate please")
+                    .setNegativeButton(android.R.string.cancel) { dialog, _ ->
                         dialog.dismiss()
                         cancellationSignal?.cancel()
                     }
                     .show()
             try {
-                authenticate().await()
+                authenticate()
             } finally {
                 authDialog.dismiss()
             }
@@ -154,7 +154,7 @@ internal class SecureStorage(private val mainActivity: MainActivity) {
         if (atLeastMarshmallow()) {
             val keyStore = KeyStore.getInstance("AndroidKeyStore")
             keyStore.load(null)
-            if(regenerateKey) {
+            if (regenerateKey) {
                 keyStore.deleteEntry(KEY_NAME)
                 return createKey(authRequired)
             }
@@ -176,7 +176,19 @@ internal class SecureStorage(private val mainActivity: MainActivity) {
 
     @Suppress("DEPRECATION")
     @RequiresApi(Build.VERSION_CODES.M)
-    private fun authenticate(): Deferred<Any> {
+    private suspend fun authenticate() {
+        val fingerprintManager = mainActivity.getSystemService(FingerprintManager::class.java)
+        return if (fingerprintManager.hasEnrolledFingerprints()) {
+            authenticateWithFingerprint()
+        } else {
+            authenticateWithPin()
+        }
+    }
+
+
+    @Suppress("DEPRECATION")
+    @RequiresApi(Build.VERSION_CODES.M)
+    suspend fun authenticateWithFingerprint() {
         val fingerprintManager = mainActivity.getSystemService(FingerprintManager::class.java)
         val deferred = CompletableDeferred<Any>()
         fingerprintManager.authenticate(
@@ -193,7 +205,15 @@ internal class SecureStorage(private val mainActivity: MainActivity) {
                     }
                 },
                 null)
-        return deferred
+        deferred.await()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.M)
+    suspend fun authenticateWithPin() {
+        val keyguardManager = mainActivity.getSystemService(KeyguardManager::class.java)
+        val intent =
+                keyguardManager.createConfirmDeviceCredentialIntent("Unlock credentials", null)
+        mainActivity.startActivityForResult(intent).toDeferred().await()
     }
 
     private fun generateAesKey(): SecretKey = KeyGenerator.getInstance("AES").generateKey()
