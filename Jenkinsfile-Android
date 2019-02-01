@@ -1,0 +1,80 @@
+pipeline {
+    environment {
+        PATH = "${env.PATH}:/opt/node-v10.11.0-linux-x64/bin/"
+        VERSION = sh 'npm version -v'
+    }
+
+    parameters {
+        booleanParam(name: 'PROD', defaultValue: false, description: 'Build for the production')
+        booleanParam(name: 'PUBLISH', defaultValue: false, description: 'Publish the app')
+    }
+
+    agent {
+        label 'master'
+    }
+
+    stages {
+        stage('Build web app and Android app: staging') {
+            environment {
+                APK_SIGN_STORE = 'FILL IN STORE PATH HERE'
+                APK_SIGN_ALIAS = credentials('apk-sign-alias')
+                APK_SIGN_STORE_PASS = credentials('apk-sign-store-pass')
+                APK_SIGN_KEY_PASS = credentials('apk-sign-key-pass')
+            }
+
+            when {
+                expression { params.PROD }
+            }
+            agent {
+                label 'linux'
+            }
+            steps {
+                sh 'npm prune'
+                sh 'npm install'
+                sh 'node node android.js -b release prod'
+                stash includes: 'build/app-android/tutanota-*release.apk', name: 'apk'
+            }
+        }
+
+        stage('Build web app and Android app: staging') {
+            when {
+                not { expression { params.PROD } }
+            }
+            agent {
+                label 'linux'
+            }
+            steps {
+                sh 'npm prune'
+                sh 'npm install'
+                sh 'node node android.js -b releaseTest test'
+                stash includes: 'build/app-android/tutanota-*releaseTest.apk', name: 'apk'
+            }
+        }
+
+        stage('Copy Snapshot') {
+            agent {
+                label 'master'
+            }
+            steps {
+                sh 'rm -f /opt/build/'
+                dir('/opt') {
+                    unstash 'apk'
+                }
+            }
+        }
+
+        stage('Publish') {
+            when {
+                expression { params.PUBLISH }
+            }
+            agent {
+                label 'linux'
+            }
+            steps {
+                sh "git tag tutanota-android-release-${VERSION}"
+                sh "git push --tags"
+                // androidApkUpload
+            }
+        }
+    }
+}
