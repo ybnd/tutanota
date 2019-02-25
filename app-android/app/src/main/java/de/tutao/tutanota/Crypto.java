@@ -205,7 +205,7 @@ public final class Crypto {
         return new SecretKeySpec(key, "AES");
     }
 
-    String aesEncryptFile(final byte[] key, final String fileUrl, final byte[] iv) throws IOException, CryptoError {
+    EncryptedFileInfo aesEncryptFile(final byte[] key, final String fileUrl, final byte[] iv) throws IOException, CryptoError {
         Uri fileUri = Uri.parse(fileUrl);
         FileInfo file = Utils.getFileInfo(context, fileUri);
         File encryptedDir = new File(Utils.getDir(context), TEMP_DIR_ENCRYPTED);
@@ -214,13 +214,14 @@ public final class Crypto {
 
         InputStream in = context.getContentResolver().openInputStream(fileUri);
         OutputStream out = new FileOutputStream(outputFile);
-        aesEncrypt(key, in, out, iv, true);
+        long size = aesEncrypt(key, in, out, iv, true);
 
-        return Utils.fileToUri(outputFile);
+        return new EncryptedFileInfo(Utils.fileToUri(outputFile), size);
     }
 
-    public void aesEncrypt(final byte[] key, InputStream in, OutputStream out, final byte[] iv, boolean useMac) throws CryptoError, IOException {
+    public long aesEncrypt(final byte[] key, InputStream in, OutputStream out, final byte[] iv, boolean useMac) throws CryptoError, IOException {
         InputStream encrypted = null;
+        long byteCount;
         try {
             Cipher cipher = Cipher.getInstance(AES_MODE_PADDING);
             IvParameterSpec params = new IvParameterSpec(iv);
@@ -236,8 +237,10 @@ public final class Crypto {
                 out.write(data);
                 byte[] macBytes = hmac256(subKeys.mKey, data);
                 out.write(macBytes);
+                byteCount = 1 + data.length + macBytes.length;
             } else {
                 out.write(tempOut.toByteArray());
+                byteCount = tempOut.size();
             }
         } catch (InvalidKeyException e) {
             throw new CryptoError(e);
@@ -248,6 +251,7 @@ public final class Crypto {
             IOUtils.closeQuietly(encrypted);
             IOUtils.closeQuietly(out);
         }
+        return byteCount;
     }
 
     String aesDecryptFile(final byte[] key, final String fileUrl) throws IOException, CryptoError {
@@ -345,6 +349,24 @@ public final class Crypto {
             return hmac.doFinal(data);
         } catch (NoSuchAlgorithmException | InvalidKeyException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public class EncryptedFileInfo {
+        private String uri;
+        private long size;
+
+        public EncryptedFileInfo(String uri, long size) {
+            this.size = size;
+            this.uri = uri;
+        }
+
+        public String getUri() {
+            return this.uri;
+        }
+
+        public long getSize() {
+            return this.size;
         }
     }
 }

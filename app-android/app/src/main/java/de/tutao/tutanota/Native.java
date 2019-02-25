@@ -173,7 +173,10 @@ public final class Native {
                     promise.resolve(crypto.rsaDecrypt(args.getJSONObject(0), Utils.base64ToBytes(args.getString(1))));
                     break;
                 case "aesEncryptFile":
-                    promise.resolve(crypto.aesEncryptFile(Utils.base64ToBytes(args.getString(0)), args.getString(1), Utils.base64ToBytes(args.getString(2))));
+                    Crypto.EncryptedFileInfo efi = crypto.aesEncryptFile(Utils.base64ToBytes(args.getString(0)), args.getString(1), Utils.base64ToBytes(args.getString(2)));
+                    JSONObject json = new JSONObject();
+                    json.put("size", efi.getSize()).put("uri", efi.getUri());
+                    promise.resolve(json.toString());
                     break;
                 case "aesDecryptFile": {
                     final byte[] key = Utils.base64ToBytes(args.getString(0));
