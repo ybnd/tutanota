@@ -14,27 +14,36 @@ android {
     }
     buildTypes {
         debug {
-            manifestPlaceholders = [contentProviderAuthority: 'de.tutao.fileprovider.debug']
-            buildConfigField 'String', 'RES_ADDRESS', "\"http://" + InetAddress.getLocalHost().getHostName().split("\\.")[0] + ":9000/client/build/app\""
             applicationIdSuffix ".debug"
+            manifestPlaceholders = [contentProviderAuthority: 'de.tutao.fileprovider.debug']
         }
-        debugDist {
-            initWith debug
-            manifestPlaceholders = [contentProviderAuthority: 'de.tutao.fileprovider.debugdist']
-            buildConfigField 'String', 'RES_ADDRESS', "\"file:///android_asset/tutanota/dist/app.html\""
-            applicationIdSuffix ".debugdist"
-        }
-        releaseTest {
+        staging {
+            minifyEnabled true
             initWith release
             manifestPlaceholders = [contentProviderAuthority: 'de.tutao.fileprovider.test']
-            buildConfigField 'String', 'RES_ADDRESS', "\"file:///android_asset/tutanota/dist/app.html\""
             applicationIdSuffix ".test"
         }
         release {
             minifyEnabled true
             manifestPlaceholders = [contentProviderAuthority: 'de.tutao.fileprovider']
-            buildConfigField 'String', 'RES_ADDRESS', "\"file:///android_asset/tutanota/dist/app.html\""
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    flavorDimensions "websource"
+
+    productFlavors {
+        localhost {
+            dimension "websource"
+            buildConfigField 'String', 'RES_ADDRESS', "\"http://" + InetAddress.getLocalHost().getHostName().split("\\.")[0] + ":9000/client/build/app\""
+        }
+        local {
+            dimension "websource"
+            buildConfigField 'String', 'RES_ADDRESS', "\"file:///android_asset/tutanota/app.html\""
+        }
+        localDist {
+            dimension "websource"
+            buildConfigField 'String', 'RES_ADDRESS', "\"file:///android_asset/tutanota/dist/app.html\""
         }
     }
 
