@@ -1,4 +1,5 @@
 // @flow
+import {loadRoot, setup, update} from "../api/main/Entity"
 import m from "mithril"
 import stream from "mithril/stream/stream.js"
 import {Dialog} from "../gui/base/Dialog"
@@ -19,14 +20,13 @@ import {
 } from "./ContactUtils"
 import {ContactAddressType, ContactPhoneNumberType, ContactSocialType, GroupType} from "../api/common/TutanotaConstants"
 import {animations, DefaultAnimationTime, height, opacity} from "../gui/animation/Animations"
-import {setup, update} from "../api/main/Entity"
 import {ContactMailAddressTypeRef, createContactMailAddress} from "../api/entities/tutanota/ContactMailAddress"
 import {ContactPhoneNumberTypeRef, createContactPhoneNumber} from "../api/entities/tutanota/ContactPhoneNumber"
 import {ContactAddressTypeRef, createContactAddress} from "../api/entities/tutanota/ContactAddress"
 import {ContactSocialIdTypeRef, createContactSocialId} from "../api/entities/tutanota/ContactSocialId"
 import {createContact} from "../api/entities/tutanota/Contact"
 import {isSameTypeRef} from "../api/common/EntityFunctions"
-import {clone, identity, neverNull, noOp} from "../api/common/utils/Utils"
+import {clone, identity, neverNull} from "../api/common/utils/Utils"
 import {assertMainOrNode} from "../api/Env"
 import {remove} from "../api/common/utils/ArrayUtils"
 import {windowFacade} from "../misc/WindowFacade"
@@ -36,6 +36,11 @@ import {Icons} from "../gui/base/icons/Icons"
 import {createBirthday} from "../api/entities/tutanota/Birthday"
 import {NotFoundError} from "../api/common/error/RestError"
 import type {DialogHeaderBarAttrs} from "../gui/base/DialogHeaderBar"
+import {ButtonN} from "../gui/base/ButtonN"
+import {fileController} from "../file/FileController"
+import {uint8ArrayToBase64} from "../api/common/utils/Encoding"
+import {worker} from "../api/main/WorkerClient"
+import {ContactListTypeRef} from "../api/entities/tutanota/ContactList"
 
 
 assertMainOrNode()
@@ -50,6 +55,7 @@ export class ContactEditor {
 	phoneEditors: ContactAggregateEditor[];
 	addressEditors: ContactAggregateEditor[];
 	socialEditors: ContactAggregateEditor[];
+	_imageFile: ?DataFile;
 
 	view: Function;
 
@@ -145,6 +151,34 @@ export class ContactEditor {
 			right: [{label: 'save_action', click: () => this.save(), type: ButtonType.Primary}]
 		}
 		this.view = () => m("#contact-editor", [
+			m(".wrapping-row.flex-start", [
+				m("", {
+						style: {
+							"height": "200px",
+						}
+					},
+					m("img", {
+						src: this._imageFile && `data:${this._imageFile.mimeType};base64,${uint8ArrayToBase64(this._imageFile.data)}`,
+						style: {
+							width: "auto",
+							height: "100%",
+							display: "block"
+						}
+					}),
+				),
+				m(ButtonN, {
+					label: () => "Pick a photo",
+					type: ButtonType.Secondary,
+					icon: () => Icons.Edit,
+					click: () => fileController.showFileChooser(false, ["jpg", "jpeg", "png"]).then((files) => {
+						if (files.length === 1) {
+							this._imageFile = files[0]
+							m.redraw()
+						}
+					})
+				}),
+				m(".flex-grow")
+			]),
 			m(".wrapping-row", [
 				m(firstName),
 				m(lastName)
@@ -241,9 +275,17 @@ export class ContactEditor {
 
 		let promise
 		if (this.contact._id) {
-			// FIXME error handling
-			promise = update(this.contact)
-				.catch(NotFoundError, noOp)
+			const imageFile = this._imageFile
+			const uploadImagePromise = imageFile
+				? loadRoot(ContactListTypeRef, logins.getUserController().user.userGroup.group).then((contactList) => {
+					return worker.uploadFile(imageFile)
+					             .then((id) => {
+						             this.contact.photo = id
+					             })
+				})
+				: Promise.resolve()
+			promise = uploadImagePromise
+				.then(() => update(this.contact))
 		} else {
 			this.contact._area = "0" // legacy
 			this.contact.autoTransmitPassword = "" // legacy
@@ -260,6 +302,11 @@ export class ContactEditor {
 		}
 
 		promise.then(() => this._close())
+		       .catch((e) => {
+			       console.warn("Failed to update contact: ", this.contact._id, e)
+			       // FIXME error handling
+			       Dialog.error(() => "Could not save a contact")
+		       })
 	}
 
 	createNewMailAddressEditor() {

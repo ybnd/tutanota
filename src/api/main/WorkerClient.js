@@ -476,6 +476,10 @@ export class WorkerClient {
 	resetSession() {
 		return this._queue.postMessage(new Request("resetSession", []))
 	}
+
+	uploadFile(dataFile: DataFile): Promise<IdTuple> {
+		return this._queue.postMessage(new Request("uploadFile", [dataFile]))
+	}
 }
 
 export const worker = new WorkerClient()

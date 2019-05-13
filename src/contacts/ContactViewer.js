@@ -18,6 +18,10 @@ import {BootIcons} from "../gui/base/icons/BootIcons"
 import {ContactSocialType, getContactSocialType} from "../api/common/TutanotaConstants"
 import {mailModel} from "../mail/MailModel"
 import {getEmailSignature} from "../mail/MailUtils"
+import {uint8ArrayToBase64} from "../api/common/utils/Encoding"
+import {load} from "../api/main/Entity"
+import {FileTypeRef} from "../api/entities/tutanota/File"
+import {worker} from "../api/main/WorkerClient"
 
 assertMainOrNode()
 
@@ -45,6 +49,7 @@ export class ContactViewer {
 	socials: TextField[];
 	oncreate: Function;
 	onbeforeremove: Function;
+	_contactPhoto: string;
 
 	constructor(contact: Contact) {
 		this.contact = contact
@@ -98,6 +103,7 @@ export class ContactViewer {
 			return showURL
 		})
 
+		this.loadPhoto()
 
 		this.view = () => {
 			return [
@@ -120,6 +126,21 @@ export class ContactViewer {
 						]),
 						m("hr.hr.mt.mb"),
 					]),
+
+					this.contact.photo
+						? m(".wrapping-row", m("", {
+							style: {
+								"height": "200px",
+							}
+						}, m("img", {
+							src: this._contactPhoto,
+							style: {
+								width: "auto",
+								height: "100%",
+								display: "block"
+							}
+						})))
+						: null,
 
 					this.mailAddresses.length > 0 || this.phones.length > 0 ? m(".wrapping-row", [
 						m(".mail.mt-l", this.mailAddresses.length > 0 ? [
@@ -157,6 +178,18 @@ export class ContactViewer {
 			]
 		}
 		this._setupShortcuts()
+	}
+
+	loadPhoto() {
+		if (this.contact.photo) {
+			load(FileTypeRef, this.contact.photo)
+				.then((file) =>
+					worker.downloadFileContent(file))
+				.then((dataFile) => {
+					this._contactPhoto = `data:${dataFile.mimeType};base64,${uint8ArrayToBase64((dataFile: any).data)}`
+					m.redraw()
+				})
+		}
 	}
 
 	getSocialUrl(element: ContactSocialId) {

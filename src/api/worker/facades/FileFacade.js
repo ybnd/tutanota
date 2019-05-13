@@ -1,8 +1,8 @@
 // @flow
 import {_TypeModel as FileDataDataGetTypModel, createFileDataDataGet} from "../../entities/tutanota/FileDataDataGet"
 import {addParamsToUrl, restClient} from "../rest/RestClient"
-import {encryptAndMapToLiteral, encryptBytes, resolveSessionKey} from "../crypto/CryptoFacade"
-import {aes128Decrypt} from "../crypto/Aes"
+import {encryptAndMapToLiteral, encryptBytes, encryptKey, resolveSessionKey} from "../crypto/CryptoFacade"
+import {aes128Decrypt, aes128RandomKey} from "../crypto/Aes"
 import {_TypeModel as FileTypeModel} from "../../entities/tutanota/File"
 import {neverNull} from "../../common/utils/Utils"
 import type {LoginFacade} from "./LoginFacade"
@@ -18,6 +18,9 @@ import {aesDecryptFile, aesEncryptFile} from "../../../native/AesApp"
 import {handleRestError} from "../../common/error/RestError"
 import {fileApp} from "../../../native/FileApp"
 import {createDataFile} from "../../common/DataFile"
+import {serviceRequest} from "../EntityWorker"
+import {createCreateFileData} from "../../entities/tutanota/CreateFileData"
+import {CreateFileReturnTypeRef} from "../../entities/tutanota/CreateFileReturn"
 
 assertWorkerOrNode()
 
@@ -82,6 +85,27 @@ export class FileFacade {
 					{fileDataId: fileDataId}, headers, encryptedData, MediaType.Binary)
 				                 .then(() => fileDataId)
 			})
+	}
+
+	uploadFile(dataFile: DataFile): Promise<IdTuple> {
+		const sk = aes128RandomKey()
+		return this.uploadFileData(dataFile, sk)
+		           .then((fileId) => {
+			           const fileServiceInput = createCreateFileData()
+			           fileServiceInput.fileName = dataFile.name
+			           fileServiceInput.mimeType = dataFile.mimeType
+			           fileServiceInput.fileData = fileId
+
+			           const fileGroupMembership = neverNull(neverNull(this._login._user)
+				           .memberships
+				           .find(membership => membership.groupType === GroupType.File))
+			           const fileGroupKey = this._login.getGroupKey(fileGroupMembership.group)
+			           fileServiceInput.ownerEncSessionKey = encryptKey(fileGroupKey, sk)
+			           fileServiceInput.group = neverNull(fileGroupMembership).group
+
+			           return serviceRequest("createfileservice", HttpMethod.POST, fileServiceInput, CreateFileReturnTypeRef, null, sk)
+				           .then((returnData) => returnData.file)
+		           })
 	}
 
 	/**

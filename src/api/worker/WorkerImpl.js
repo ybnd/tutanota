@@ -14,7 +14,7 @@ import {TotpVerifier} from "./crypto/TotpVerifier"
 import type {EntropySrcEnum} from "../common/TutanotaConstants"
 import {loadContactForm} from "./facades/ContactFormFacade"
 import {keyToBase64} from "./crypto/CryptoUtils"
-import {aes256RandomKey} from "./crypto/Aes"
+import {aes128RandomKey, aes256RandomKey} from "./crypto/Aes"
 import type {BrowserData} from "../../misc/ClientConstants"
 import type {InfoMessage} from "../common/CommonTypes"
 
@@ -271,7 +271,10 @@ export class WorkerImpl {
 			resetSecondFactors: (message: Request) => {
 				return locator.login.resetSecondFactors.apply(locator.login, message.args)
 			},
-			resetSession: () => locator.login.reset()
+			resetSession: () => locator.login.reset(),
+			uploadFile: (message: Request) => {
+				return locator.file.uploadFile.apply(locator.file, message.args)
+			}
 		})
 
 		Promise.onPossiblyUnhandledRejection(e => this.sendError(e));

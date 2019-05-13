@@ -420,6 +420,14 @@ type CreateFileData = {
 	parentFolder: ?IdTuple;
 }
 
+type CreateFileReturn = {
+	_type: TypeRef<CreateFileReturn>;
+	_errors: Object;
+	_format: NumberString;
+
+	file: IdTuple;
+}
+
 type DeleteMailData = {
 	_type: TypeRef<DeleteMailData>;
 	_format: NumberString;
