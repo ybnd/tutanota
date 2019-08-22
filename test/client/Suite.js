@@ -21,6 +21,8 @@ import "./calendar/CalendarUtilsTest"
 import "./calendar/CalendarParsertest"
 import "./calendar/CalendarImporterTest"
 import "./support/FaqModelTest"
+import "./calendar/CalendarEventViewModelTest"
+
 import o from "ospec/ospec.js"
 
 node(() => {

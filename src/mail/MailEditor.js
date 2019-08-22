@@ -6,7 +6,7 @@ import type {TextFieldAttrs} from "../gui/base/TextFieldN"
 import {TextFieldN, Type} from "../gui/base/TextFieldN"
 import type {Language, TranslationKey} from "../misc/LanguageViewModel"
 import {_getSubstitutedLanguageCode, getAvailableLanguageCode, lang, languages} from "../misc/LanguageViewModel"
-import {formatStorageSize, stringToNameAndMailAddress} from "../misc/Formatter"
+import {formatStorageSize} from "../misc/Formatter"
 import type {ConversationTypeEnum} from "../api/common/TutanotaConstants"
 import {
 	ALLOWED_IMAGE_FORMATS,
@@ -18,12 +18,12 @@ import {
 	ReplyType
 } from "../api/common/TutanotaConstants"
 import {animations, height, opacity} from "../gui/animation/Animations"
-import {load, loadAll, setup, update} from "../api/main/Entity"
+import {load, setup, update} from "../api/main/Entity"
 import {worker} from "../api/main/WorkerClient"
-import type {BubbleHandler, Suggestion} from "../gui/base/BubbleTextField"
 import {Bubble, BubbleTextField} from "../gui/base/BubbleTextField"
 import {Editor} from "../gui/base/Editor"
-import {isExternal, recipientInfoType} from "../api/common/RecipientInfo"
+import type {RecipientInfo} from "../api/common/RecipientInfo"
+import {isExternal, RecipientInfoType} from "../api/common/RecipientInfo"
 import {
 	AccessBlockedError,
 	ConnectionError,
@@ -46,12 +46,14 @@ import {
 	getDisplayText,
 	getEmailSignature,
 	getEnabledMailAddresses,
+	getEnabledMailAddressesWithUser,
 	getMailboxName,
 	getSenderName,
 	parseMailtoUrl,
 	replaceCidsWithInlineImages,
 	replaceInlineImagesWithCids,
-	resolveRecipientInfo
+	resolveRecipientInfo,
+	resolveRecipientInfoContact
 } from "./MailUtils"
 import {fileController} from "../file/FileController"
 import {contains, findAllAndRemove, remove, replace} from "../api/common/utils/ArrayUtils"
@@ -72,15 +74,12 @@ import {logins} from "../api/main/LoginController"
 import {Icons} from "../gui/base/icons/Icons"
 import {DropDownSelector} from "../gui/base/DropDownSelector"
 import type {MailAddress} from "../api/entities/tutanota/MailAddress"
-import {createMailAddress} from "../api/entities/tutanota/MailAddress"
 import {showProgressDialog} from "../gui/base/ProgressDialog"
 import type {MailboxDetail} from "./MailModel"
-import {mailModel} from "./MailModel"
 import {locator} from "../api/main/MainLocator"
-import {getContactListName, LazyContactListId, searchForContacts} from "../contacts/ContactUtils"
+import {LazyContactListId} from "../contacts/ContactUtils"
 import {RecipientNotResolvedError} from "../api/common/error/RecipientNotResolvedError"
 import stream from "mithril/stream/stream.js"
-import {checkApprovalStatus} from "../misc/ErrorHandlerImpl"
 import type {EntityEventsListener} from "../api/main/EventController"
 import {isUpdateForTypeRef} from "../api/main/EventController"
 import {htmlSanitizer} from "../misc/HtmlSanitizer"
@@ -100,18 +99,24 @@ import {CustomerPropertiesTypeRef} from "../api/entities/sys/CustomerProperties"
 import type {InlineImages} from "./MailViewer"
 import {getTimeZone} from "../calendar/CalendarUtils"
 import {MailAddressBubbleHandler} from "../misc/MailAddressBubbleHandler"
-import {px, size} from "../gui/size"
-import {isMailAddress} from "../misc/FormatValidator"
-import {DbError} from "../api/common/error/DbError"
-import {findRecipients} from "../native/ContactApp"
 import {createApprovalMail} from "../api/entities/monitor/ApprovalMail"
 import {newMouseEvent} from "../gui/HtmlUtils"
 import type {EncryptedMailAddress} from "../api/entities/tutanota/EncryptedMailAddress"
+import {isMailAddress} from "../misc/FormatValidator"
+import {checkApprovalStatus} from "../misc/LoginUtils"
 
 assertMainOrNode()
 
-export type RecipientList = $ReadOnlyArray<{name: ?string, address: string}>
+export type Recipient = {name: ?string, address: string, contact?: ?Contact}
+export type RecipientList = $ReadOnlyArray<Recipient>
 export type Recipients = {to?: RecipientList, cc?: RecipientList, bcc?: RecipientList}
+
+// Because MailAddress does not have contact of the right type (event when renamed on Recipient) MailAddress <: Recipient does not hold
+function toRecipient({address, name}: MailAddress): Recipient {
+	return {name, address}
+}
+
+type EditorAttachment = TutanotaFile | DataFile | FileReference
 
 export class MailEditor {
 	dialog: Dialog;
@@ -174,7 +179,7 @@ export class MailEditor {
 			.sort().map(mailAddress => ({
 				name: mailAddress,
 				value: mailAddress
-			})), stream(getDefaultSender(this._mailboxDetails)), 250)
+			})), stream(getDefaultSender(logins, this._mailboxDetails)), 250)
 
 		let sortedLanguages = languages.slice().sort((a, b) => lang.get(a.textId).localeCompare(lang.get(b.textId)))
 		this._selectedNotificationLanguage = stream(getAvailableLanguageCode(props.notificationMailLanguage || lang.code))
@@ -218,7 +223,7 @@ export class MailEditor {
 			: null
 
 		this.subject._injectionsRight = () => {
-			return this._allRecipients().find(r => r.type === recipientInfoType.external)
+			return this._allRecipients().find(r => r.type === RecipientInfoType.EXTERNAL)
 				? [m(ButtonN, confidentialButtonAttrs), m(ButtonN, attachFilesButtonAttrs), toolbarButton()]
 				: [m(ButtonN, attachFilesButtonAttrs), toolbarButton()]
 		}
@@ -259,7 +264,7 @@ export class MailEditor {
 		const attachImageHandler = isApp() ?
 			null
 			: (ev) => this._onAttachImageClicked(ev)
-		this._richTextToolbar = new RichTextToolbar(this._editor, attachImageHandler)
+		this._richTextToolbar = new RichTextToolbar(this._editor, {imageButtonClickHandler: attachImageHandler})
 		if (logins.isInternalUserLoggedIn()) {
 			this.toRecipients.textField._injectionsRight = () => m(ExpanderButtonN, {
 				label: "show_action",
@@ -329,8 +334,8 @@ export class MailEditor {
 						oncreate: vnode => this.animate(vnode.dom, true),
 						onbeforeremove: vnode => this.animate(vnode.dom, false)
 					}, this._allRecipients()
-					       // only show passwords for resolved contacts, otherwise we might not get the password
-					       .filter(r => r.type === recipientInfoType.external && !r.resolveContactPromise)
+					       .filter(r => r.type === RecipientInfoType.EXTERNAL
+						       && !r.resolveContactPromise) // only show passwords for resolved contacts, otherwise we might not get the password
 					       .map(r => m(TextFieldN, Object.assign({}, this.getPasswordField(r), {
 						       oncreate: vnode => this.animate(vnode.dom, true),
 						       onbeforeremove: vnode => this.animate(vnode.dom, false)
@@ -458,8 +463,7 @@ export class MailEditor {
 	}
 
 	getPasswordStrength(recipientInfo: RecipientInfo) {
-		let user = logins.getUserController()
-		let reserved = getEnabledMailAddresses(this._mailboxDetails).concat(
+		let reserved = getEnabledMailAddressesWithUser(this._mailboxDetails, logins.getUserController().userGroupInfo).concat(
 			getMailboxName(this._mailboxDetails),
 			recipientInfo.mailAddress,
 			recipientInfo.name
@@ -468,18 +472,13 @@ export class MailEditor {
 	}
 
 	initAsResponse({
-		               previousMail, conversationType, senderMailAddress,
-		               toRecipients, ccRecipients, bccRecipients,
-		               attachments, subject, bodyText,
-		               replyTos, addSignature, inlineImages,
-		               blockExternalContent
+		               previousMail, conversationType, senderMailAddress, recipients, attachments, subject, bodyText, replyTos,
+		               addSignature, inlineImages, blockExternalContent
 	               }: {
 		previousMail: Mail,
 		conversationType: ConversationTypeEnum,
 		senderMailAddress: string,
-		toRecipients: MailAddress[],
-		ccRecipients: MailAddress[],
-		bccRecipients: MailAddress[],
+		recipients: Recipients,
 		attachments: TutanotaFile[],
 		subject: string,
 		bodyText: string,
@@ -509,39 +508,34 @@ export class MailEditor {
 			})
 			.then(() => {
 				// We don't want to wait for the editor to be initialized, otherwise it will never be shown
-				this._setMailData(previousMail, previousMail.confidential, conversationType, previousMessageId, senderMailAddress, toRecipients, ccRecipients, bccRecipients, attachments, subject, bodyText, replyTos)
+				this._setMailData(previousMail, previousMail.confidential, conversationType, previousMessageId, senderMailAddress,
+					recipients, attachments, subject, bodyText, replyTos)
 				    .then(() => this._replaceInlineImages(inlineImages))
 			})
 	}
 
 	initWithTemplate(recipients: Recipients, subject: string, bodyText: string, confidential: ?boolean, senderMailAddress?: string): Promise<void> {
-		function toMailAddress({name, address}: {name: ?string, address: string}) {
-			return createMailAddress({name: name || "", address})
-		}
-
-		const toRecipients = recipients.to ? recipients.to.map(toMailAddress) : []
-		const ccRecipients = recipients.cc ? recipients.cc.map(toMailAddress) : []
-		const bccRecipients = recipients.bcc ? recipients.bcc.map(toMailAddress) : []
-		if (toRecipients.length) {
+		if (recipients.to && recipients.to.length) {
 			this.dialog.setFocusOnLoadFunction(() => this._focusBodyOnLoad())
 		}
 
 		const sender = senderMailAddress ? senderMailAddress : this._senderField.selectedValue()
 
-		this._setMailData(null, confidential, ConversationType.NEW, null, sender, toRecipients, ccRecipients,
-			bccRecipients, [], subject, bodyText, [])
+		this._setMailData(null, confidential, ConversationType.NEW, null, sender, recipients, [], subject, bodyText, [])
 		return Promise.resolve()
 	}
 
 	initWithMailtoUrl(mailtoUrl: string, confidential: boolean): Promise<void> {
-		let result = parseMailtoUrl(mailtoUrl)
+		const result = parseMailtoUrl(mailtoUrl)
 
 		let bodyText = result.body
-		let signature = getEmailSignature()
+		const signature = getEmailSignature()
 		if (logins.getUserController().isInternalUser() && signature) {
 			bodyText = bodyText + signature
 		}
-		this._setMailData(null, confidential, ConversationType.NEW, null, this._senderField.selectedValue(), result.to, result.cc, result.bcc, [], result.subject, bodyText, [])
+		const {to, cc, bcc} = result
+		this._setMailData(null, confidential, ConversationType.NEW, null, this._senderField.selectedValue(), {to, cc, bcc}, [],
+			result.subject, bodyText, [])
 		return Promise.resolve()
 	}
 
@@ -574,14 +568,20 @@ export class MailEditor {
 			}
 		}).then(() => {
 			const {confidential, sender, toRecipients, ccRecipients, bccRecipients, subject, replyTos} = draftMail
+			const recipients: Recipients = {
+				to: toRecipients.map(toRecipient),
+				cc: ccRecipients.map(toRecipient),
+				bcc: bccRecipients.map(toRecipient),
+			}
 			// We don't want to wait for the editor to be initialized, otherwise it will never be shown
-			this._setMailData(previousMail, confidential, conversationType, previousMessageId, sender.address, toRecipients, ccRecipients, bccRecipients, attachments, subject, bodyText, replyTos)
+			this._setMailData(previousMail, confidential, conversationType, previousMessageId, sender.address, recipients, attachments,
+				subject, bodyText, replyTos)
 			    .then(() => this._replaceInlineImages(inlineImages))
 		})
 	}
 
 	_setMailData(previousMail: ?Mail, confidential: ?boolean, conversationType: ConversationTypeEnum, previousMessageId: ?string, senderMailAddress: string,
-	             toRecipients: MailAddress[], ccRecipients: MailAddress[], bccRecipients: MailAddress[], attachments: TutanotaFile[], subject: string,
+	             recipients: Recipients, attachments: TutanotaFile[], subject: string,
 	             body: string, replyTos: EncryptedMailAddress[]): Promise<void> {
 		this._previousMail = previousMail
 		this.conversationType = conversationType
@@ -612,10 +612,14 @@ export class MailEditor {
 			this.toRecipients.textField.setDisabled()
 		}
 
-		this.toRecipients.bubbles = toRecipients.filter(r => isMailAddress(r.address, false)).map(r => this.createBubble(r.name, r.address, null))
-		this.ccRecipients.bubbles = ccRecipients.filter(r => isMailAddress(r.address, false)).map(r => this.createBubble(r.name, r.address, null))
-		this.bccRecipients.bubbles = bccRecipients.filter(r => isMailAddress(r.address, false)).map(r => this.createBubble(r.name, r.address, null))
-		this._replyTos = replyTos.map(ema => createRecipientInfo(ema.address, ema.name, null, true))
+		const {to = [], cc = [], bcc = []} = recipients
+		this.toRecipients.bubbles = to.filter(r => isMailAddress(r.address, false))
+		                              .map(r => this.createBubble(r.name, r.address, r.contact))
+		this.ccRecipients.bubbles = cc.filter(r => isMailAddress(r.address, false))
+		                              .map(r => this.createBubble(r.name, r.address, r.contact))
+		this.bccRecipients.bubbles = bcc.filter(r => isMailAddress(r.address, false))
+		                                .map(r => this.createBubble(r.name, r.address, r.contact))
+		this._replyTos = replyTos.map(ema => createRecipientInfo(ema.address, ema.name, null))
 		this._mailChanged = false
 		return promise
 	}
@@ -890,8 +894,7 @@ export class MailEditor {
 							} else {
 								let externalRecipients = resolvedRecipients.filter(r => isExternal(r))
 								if (this._confidentialButtonState && externalRecipients.length > 0
-									&& externalRecipients.find(r => this.getPasswordField(r).value().trim()
-										!== "") == null) {
+									&& externalRecipients.find(r => this.getPasswordField(r).value().trim() !== "") == null) {
 									throw new UserError("noPreSharedPassword_msg")
 								}
 
@@ -922,8 +925,7 @@ export class MailEditor {
 						})
 						.catch(RecipientsNotFoundError, e => {
 							let invalidRecipients = e.message.join("\n")
-							return Dialog.error(() => lang.get("invalidRecipients_msg") + "\n"
-								+ invalidRecipients)
+							return Dialog.error(() => lang.get("invalidRecipients_msg") + "\n" + invalidRecipients)
 						})
 						.catch(TooManyRequestsError, e => Dialog.error(tooManyRequestsError))
 						.catch(AccessBlockedError, e => {
@@ -983,20 +985,20 @@ export class MailEditor {
 
 	_updateContacts(resolvedRecipients: RecipientInfo[]): Promise<any> {
 		return Promise.all(resolvedRecipients.map(r => {
-			if (r.contact) {
-				let recipientContact = neverNull(r.contact)
-				if (!recipientContact._id && (!logins.getUserController().props.noAutomaticContacts
+			const {contact} = r
+			if (contact) {
+				if (!contact._id && (!logins.getUserController().props.noAutomaticContacts
 					|| (isExternal(r) && this._confidentialButtonState))) {
 					if (isExternal(r) && this._confidentialButtonState) {
-						recipientContact.presharedPassword = this.getPasswordField(r).value().trim()
+						contact.presharedPassword = this.getPasswordField(r).value().trim()
 					}
 					return LazyContactListId.getAsync().then(listId => {
-						return setup(listId, r.contact)
+						return setup(listId, contact)
 					})
-				} else if (recipientContact._id && isExternal(r) && this._confidentialButtonState
-					&& recipientContact.presharedPassword !== this.getPasswordField(r).value().trim()) {
-					recipientContact.presharedPassword = this.getPasswordField(r).value().trim()
-					return update(recipientContact)
+				} else if (contact._id && isExternal(r) && this._confidentialButtonState
+					&& contact.presharedPassword !== this.getPasswordField(r).value().trim()) {
+					contact.presharedPassword = this.getPasswordField(r).value().trim()
+					return update(contact)
 				} else {
 					return Promise.resolve()
 				}
@@ -1017,7 +1019,7 @@ export class MailEditor {
 	 */
 	_waitForResolvedRecipients(): Promise<RecipientInfo[]> {
 		return Promise.all(this._allRecipients().map(recipientInfo => {
-			return resolveRecipientInfo(recipientInfo).then(recipientInfo => {
+			return resolveRecipientInfo(locator.mailModel, recipientInfo).then(recipientInfo => {
 				if (recipientInfo.resolveContactPromise) {
 					return recipientInfo.resolveContactPromise.return(recipientInfo)
 				} else {
@@ -1034,7 +1036,8 @@ export class MailEditor {
 	 */
 	createBubble(name: ?string, mailAddress: string, contact: ?Contact): Bubble<RecipientInfo> {
 		this._mailChanged = true
-		let recipientInfo = createRecipientInfo(mailAddress, name, contact, false)
+		let recipientInfo = createRecipientInfo(mailAddress, name, contact)
+		logins.isInternalUserLoggedIn() && resolveRecipientInfoContact(recipientInfo, locator.contactModel, logins.getUserController().user)
 		let bubbleWrapper = {}
 		bubbleWrapper.buttonAttrs = attachDropdown({
 			label: () => getDisplayText(recipientInfo.name, mailAddress, false),
@@ -1050,8 +1053,7 @@ export class MailEditor {
 				return Promise.resolve(this._createBubbleContextButtons(recipientInfo.name, mailAddress, contact, () => bubbleWrapper.bubble))
 			}
 		}, undefined, 250)
-
-		resolveRecipientInfo(recipientInfo)
+		resolveRecipientInfo(locator.mailModel, recipientInfo)
 			.then(() => m.redraw())
 			.catch(ConnectionError, e => {
 				// we are offline but we want to show the error dialog only when we click on send.
@@ -1079,7 +1081,7 @@ export class MailEditor {
 						type: ButtonType.Secondary,
 						click: () => {
 							LazyContactListId.getAsync().then(contactListId => {
-								new ContactEditor(createNewContact(mailAddress, name), contactListId, contactElementId => {
+								new ContactEditor(createNewContact(logins.getUserController().user, mailAddress, name), contactListId, contactElementId => {
 									let bubbles = [
 										this.toRecipients.bubbles, this.ccRecipients.bubbles, this.bccRecipients.bubbles
 									].find(b => contains(b, bubbleResolver()))
@@ -1207,7 +1209,7 @@ export class MailEditor {
 	}
 
 	static writeSupportMail(subject: string = "") {
-		mailModel.init().then(() => {
+		locator.mailModel.init().then(() => {
 			if (!logins.getUserController().isPremiumAccount()) {
 				const message = lang.get("premiumOffer_msg", {"{1}": formatPrice(1, true)})
 				const title = lang.get("upgradeReminderTitle_msg")
@@ -1218,7 +1220,7 @@ export class MailEditor {
 				})
 				return
 			}
-			return mailModel.getUserMailboxDetails().then((mailboxDetails) => {
+			return locator.mailModel.getUserMailboxDetails().then((mailboxDetails) => {
 				const editor = new MailEditor(mailboxDetails)
 				let signature = "<br><br>--"
 				signature += "<br>Client: " + client.getIdentifier()
@@ -1234,7 +1236,7 @@ export class MailEditor {
 	}
 
 	static writeInviteMail() {
-		mailModel.getUserMailboxDetails().then((mailboxDetails) => {
+		locator.mailModel.getUserMailboxDetails().then((mailboxDetails) => {
 			const editor = new MailEditor(mailboxDetails)
 			const username = logins.getUserController().userGroupInfo.name;
 			const body = lang.get("invitationMailBody_msg", {
@@ -1246,128 +1248,6 @@ export class MailEditor {
 				editor.show()
 			})
 		})
-	}
-}
-
-const ContactSuggestionHeight = 60
-
-export class ContactSuggestion implements Suggestion {
-	name: string;
-	mailAddress: string;
-	contact: ?Contact;
-	selected: boolean;
-	view: Function;
-
-	constructor(name: string, mailAddress: string, contact: ?Contact) {
-		this.name = name
-		this.mailAddress = mailAddress
-		this.contact = contact
-		this.selected = false
-
-		this.view = vnode => m(".pt-s.pb-s.click.content-hover", {
-			class: this.selected ? 'content-accent-fg row-selected' : '',
-			onmousedown: vnode.attrs.mouseDownHandler,
-			style: {
-				'padding-left': this.selected ? px(size.hpad_large - 3) : px(size.hpad_large),
-				'border-left': this.selected ? "3px solid" : null,
-				height: px(ContactSuggestionHeight),
-			}
-		}, [
-			m("small", this.name),
-			m(".name", this.mailAddress),
-		])
-	}
-
-}
-
-class MailBubbleHandler implements BubbleHandler<RecipientInfo, ContactSuggestion> {
-	suggestionHeight: number;
-	_mailEditor: MailEditor;
-
-	constructor(mailEditor: MailEditor) {
-		this._mailEditor = mailEditor
-		this.suggestionHeight = ContactSuggestionHeight
-	}
-
-	getSuggestions(text: string): Promise<ContactSuggestion[]> {
-		let query = text.trim().toLowerCase()
-		if (isMailAddress(query, false)) {
-			return Promise.resolve([])
-		}
-
-		// ensure match word order for email addresses mainly
-		let contactsPromise = searchForContacts("\"" + query + "\"", "recipient", 10).catch(DbError, () => {
-			return LazyContactListId.getAsync().then(listId => loadAll(ContactTypeRef, listId))
-		})
-
-		return contactsPromise
-			.map(contact => {
-				let name = getContactListName(contact)
-				let mailAddresses = []
-				if (name.toLowerCase().indexOf(query) !== -1) {
-					mailAddresses = contact.mailAddresses.filter(ma => isMailAddress(ma.address.trim(), false))
-				} else {
-					mailAddresses = contact.mailAddresses.filter(ma => {
-						return isMailAddress(ma.address.trim(), false) && ma.address.toLowerCase().indexOf(query) !== -1
-					})
-				}
-				return mailAddresses.map(ma => new ContactSuggestion(name, ma.address.trim(), contact))
-			})
-			.reduce((a, b) => a.concat(b), [])
-			.then(suggestions => {
-				if (env.mode === Mode.App) {
-					return findRecipients(query, 10, suggestions).then(() => suggestions)
-				} else {
-					return suggestions
-				}
-			})
-			.then(suggestions => {
-				return suggestions.sort((suggestion1, suggestion2) =>
-					suggestion1.name.localeCompare(suggestion2.name))
-			})
-	}
-
-	createBubbleFromSuggestion(suggestion: ContactSuggestion): Bubble<RecipientInfo> {
-		return this._mailEditor.createBubble(suggestion.name, suggestion.mailAddress, suggestion.contact)
-	}
-
-	createBubblesFromText(text: string): Bubble<RecipientInfo>[] {
-		let separator = (text.indexOf(";") !== -1) ? ";" : ","
-		let textParts = text.split(separator)
-		let bubbles = []
-
-		for (let part of textParts) {
-			part = part.trim()
-			if (part.length !== 0) {
-				let bubble = this.getBubbleFromText(part)
-				if (!bubble) {
-					return [] // if one recipient is invalid, we do not return any valid ones because all invalid text would be deleted otherwise
-				} else {
-					bubbles.push(bubble)
-				}
-			}
-		}
-		return bubbles
-	}
-
-	bubbleDeleted(bubble: Bubble<RecipientInfo>): void {
-	}
-
-	/**
-	 * Retrieves a RecipientInfo instance from a text. The text may be a contact name, contact mail address or other mail address.
-	 * @param text The text to create a RecipientInfo from.
-	 * @return The recipient info or null if the text is not valid data.
-	 */
-	getBubbleFromText(text: string): ?Bubble<RecipientInfo> {
-		text = text.trim()
-		if (text === "") return null
-		const nameAndMailAddress = stringToNameAndMailAddress(text)
-		if (nameAndMailAddress) {
-			let name = (nameAndMailAddress.name) ? nameAndMailAddress.name : null // name will be resolved with contact
-			return this._mailEditor.createBubble(name, nameAndMailAddress.mailAddress, null)
-		} else {
-			return null
-		}
 	}
 }
 
