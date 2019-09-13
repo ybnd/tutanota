@@ -94,14 +94,14 @@ export class WorkerClient {
 			if (env.dist) {
 				worker = new Worker(System.getConfig().baseURL + "WorkerBootstrap.js")
 			} else {
-				let url = System.normalizeSync(typeof module !== "undefined" ? module.id : __moduleName)
-				let workerUrl = url.substring(0, url.lastIndexOf('/')) + '/../worker/WorkerBootstrap.js'
-				worker = new Worker(workerUrl)
+				// let url = System.normalizeSync(typeof module !== "undefined" ? module.id : __moduleName)
+				// let workerUrl = url.substring(0, url.lastIndexOf('/')) + '/../worker/WorkerBootstrap.js'
+				worker = new Worker("WorkerBootstrap.js")
 			}
 			this._queue = new Queue(worker)
 
-			window.env.systemConfig.baseURL = System.getConfig().baseURL
-			window.env.systemConfig.map = System.getConfig().map // update the system config (the current config includes resolved paths; relative paths currently do not work in a worker scope)
+			// window.env.systemConfig.baseURL = System.getConfig().baseURL
+			// window.env.systemConfig.map = System.getConfig().map // update the system config (the current config includes resolved paths; relative paths currently do not work in a worker scope)
 			let start = new Date().getTime()
 			this.initialized = this._queue
 			                       .postMessage(new Request('setup', [
