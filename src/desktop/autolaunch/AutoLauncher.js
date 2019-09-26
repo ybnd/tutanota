@@ -1,35 +1,49 @@
 // @flow
 
-let platformAutoLauncher
+type AutoLauncherModule = {
+	isAutoLaunchEnabled: () => Promise<boolean>,
+	enableAutoLaunch: () => Promise<void>,
+	disableAutoLaunch: () => Promise<void>,
+}
+let platformAutoLauncher: Promise<AutoLauncherModule>
 switch (process.platform) {
 	case 'win32':
-		platformAutoLauncher = require('./AutoLauncherWin32.js')
+		platformAutoLauncher = import('./AutoLauncherWin32.js')
 		break
 	case 'darwin':
-		platformAutoLauncher = require('./AutoLauncherDarwin.js')
+		platformAutoLauncher = import('./AutoLauncherDarwin.js')
 		break
 	case 'linux':
-		platformAutoLauncher = require('./AutoLauncherLinux.js')
+		platformAutoLauncher = import('./AutoLauncherLinux.js')
 		break
 	default:
 		throw new Error('Invalid Platform')
 }
 
-export function enableAutoLaunch(): Promise<void> {
-	return platformAutoLauncher.enableAutoLaunch().catch(e => {
+export async function enableAutoLaunch() {
+	const launcher = await platformAutoLauncher
+	try {
+		launcher.enableAutoLaunch()
+	} catch (e) {
 		console.log("could not enable auto launch:", e)
-	})
+	}
 }
 
-export function disableAutoLaunch(): Promise<void> {
-	return platformAutoLauncher.disableAutoLaunch().catch(e => {
+export async function disableAutoLaunch() {
+	const launcher = await platformAutoLauncher
+	try {
+		launcher.disableAutoLaunch()
+	} catch (e) {
 		console.log("could not disable auto launch:", e)
-	})
+	}
 }
 
-export function isAutoLaunchEnabled(): Promise<boolean> {
-	return platformAutoLauncher.isAutoLaunchEnabled().catch(e => {
-		console.error("could not check auto launch status:", e)
+export async function isAutoLaunchEnabled(): Promise<boolean> {
+	const launcher = await platformAutoLauncher
+	try {
+		return await launcher.isAutoLaunchEnabled()
+	} catch (e) {
+		console.log("could not disable auto launch:", e)
 		return false
-	})
+	}
 }

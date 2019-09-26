@@ -5,6 +5,7 @@ import {defer} from "../api/common/utils/Utils"
 class DesktopLocalizationProvider {
 
 	initialized: DeferredObject<void> = defer();
+	isInitialized: boolean;
 	translations: Object;
 	fallback: Object;
 	code: string;
@@ -14,10 +15,14 @@ class DesktopLocalizationProvider {
 
 	init(p: Promise<any>): Promise<void> {
 		return p.then(this._setTranslations)
-		        .then(() => this.initialized.resolve())
+		        .then(() => {
+		        	this.isInitialized = true
+		        	this.initialized.resolve()
+		        })
 	}
 
 	_setTranslations = (translations: any) => {
+		this.isInitialized = false;
 		this.translations = translations.translations
 		this.fallback = translations.fallback
 		this.code = translations.code

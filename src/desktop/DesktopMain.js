@@ -15,6 +15,7 @@ import {DesktopSseClient} from "./DesktopSseClient"
 import {Socketeer} from "./Socketeer"
 import {Logger, replaceNativeLogger} from "../api/common/Logger"
 
+
 const oldLog = console.log
 const oldError = console.error
 const oldWarn = console.warn

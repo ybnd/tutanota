@@ -24,7 +24,7 @@ export class IPC {
 
 	_initialized: Array<DeferredObject<void>>;
 	_requestId: number = 0;
-	_queue: {[string]: Function};
+	_queue: {[string]: [Function, Function]};
 
 	constructor(conf: DesktopConfigHandler, notifier: DesktopNotifier, sse: DesktopSseClient, wm: WindowManager, sock: Socketeer) {
 		this._conf = conf
@@ -42,9 +42,7 @@ export class IPC {
 
 		switch (method) {
 			case 'init':
-				if (!this.initialized(windowId).isFulfilled()) {
-					this._initialized[windowId].resolve()
-				}
+				this._initialized[windowId].resolve()
 				d.resolve(process.platform);
 				break
 			case 'findInPage':
@@ -191,9 +189,9 @@ export class IPC {
 			if (w) {
 				w.sendMessageToWebContents(windowId, request)
 			}
-			return Promise.fromCallback(cb => {
-				this._queue[requestId] = cb
-			});
+			return new Promise((resolve, reject) => {
+				this._queue[requestId] = [resolve, reject]
+			})
 		})
 	}
 
@@ -217,9 +215,9 @@ export class IPC {
 		ipcMain.on(`${id}`, (ev: Event, msg: string) => {
 			const request = JSON.parse(msg)
 			if (request.type === "response") {
-				this._queue[request.id](null, request.value);
+				this._queue[request.id][0](request.value)
 			} else if (request.type === "requestError") {
-				this._queue[request.id](objToError((request: any).error), null)
+				this._queue[request.id][1](objToError((request: any).error))
 				delete this._queue[request.id]
 			} else {
 				const w = this._wm.get(id)

@@ -1,12 +1,12 @@
 // @flow
 import {ipcRenderer, remote} from 'electron'
+import {webFrame} from "electron"
 
 /**
  * preload scripts can only load modules that have previously been loaded
  * in the main thread.
  */
 const app = remote.require('electron').app
-const webFrame = require('electron').webFrame
 const clipboard = remote.require('electron').clipboard
 const PreloadImports = remote.require('./PreloadImports.js').default
 const lang = PreloadImports.lang

@@ -4,7 +4,7 @@ import {objToError, Queue, Request} from "../common/WorkerProtocol"
 import {UserController} from "../main/UserController"
 import type {HttpMethodEnum, MediaTypeEnum} from "../common/EntityFunctions"
 import {TypeRef} from "../common/EntityFunctions"
-import {assertMainOrNode, isMain} from "../Env"
+import {assertMainOrNode, isDesktop, isMain} from "../Env"
 import {TutanotaPropertiesTypeRef} from "../entities/tutanota/TutanotaProperties"
 import {load, loadRoot, setup} from "./Entity"
 import {nativeApp} from "../../native/NativeWrapper"
@@ -90,7 +90,15 @@ export class WorkerClient {
 
 	_initWorker() {
 		if (typeof Worker !== 'undefined') {
-			const worker = new Worker("WorkerBootstrap.js")
+			let worker
+			if (isDesktop()) {
+				let url = location.href
+				let workerUrl = url.substring(0, url.indexOf("/desktop.html")) + '/WorkerBootstrap.js'
+				worker = new Worker(workerUrl)
+			} else {
+				worker = new Worker("WorkerBootstrap.js")
+			}
+
 			this._queue = new Queue(worker)
 
 			// window.env.systemConfig.baseURL = System.getConfig().baseURL

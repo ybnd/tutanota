@@ -90,7 +90,7 @@ function startFlowCheck() {
 	spawn(flow, [], {stdio: [process.stdin, process.stdout, process.stderr]})
 }
 
-async function build(watch) {
+async function build({watch, desktop}) {
 	startFlowCheck()
 	await prepareAssets(watch)
 
@@ -147,6 +147,9 @@ async function build(watch) {
 		const bundle = await rollup.rollup(inputOptions)
 		await bundle.write(outputOptions)
 	}
+	if (desktop) {
+		await startDesktop()
+	}
 }
 
 const packageJSON = require('./package.json')
@@ -175,32 +178,49 @@ if (options.clean) {
 	fs.emptyDirAsync("build")
 }
 
-build(options.watch)
+build(options)
 
-// function startDesktop() {
-// 	if (options.desktop) {
-// 		console.log("Trying to start desktop client...")
-// 		const packageJSON = require('./buildSrc/electron-package-json-template.js')(
-// 			"",
-// 			"0.0.1",
-// 			"http://localhost:9000",
-// 			path.join(__dirname, "/resources/desktop-icons/logo-solo-red.png"),
-// 			false
-// 		)
-// 		const content = JSON.stringify(packageJSON)
-// 		return fs.writeFileAsync("./build/package.json", content, 'utf-8')
-// 		         .then(() => {
-// 			         return desktopBuilder.trace(
-// 				         ['./src/desktop/DesktopMain.js', './src/desktop/preload.js'],
-// 				         __dirname,
-// 				         path.join(__dirname, '/build/')
-// 			         )
-// 		         })
-// 		         .then(() => {
-// 			         spawn("/bin/sh", ["-c", "npm start"], {
-// 				         stdio: ['ignore', 'inherit', 'inherit'],
-// 				         detached: false
-// 			         })
-// 		         })
-// 	}
-// }
+async function startDesktop() {
+	console.log("Building desktop client...")
+	const packageJSON = require('./buildSrc/electron-package-json-template.js')(
+		"",
+		"0.0.1",
+		"http://localhost:9000",
+		path.join(__dirname, "/resources/desktop-icons/logo-solo-red.png"),
+		false
+	)
+	const content = JSON.stringify(packageJSON)
+
+	await fs.writeFileAsync("./build/desktop/package.json", content, 'utf-8')
+
+	const bundle = await rollup.rollup({
+		input: ["src/desktop/DesktopMain.js", "src/desktop/preload.js"],
+		plugins: [
+			babel({
+				plugins: [
+					// Using Flow plugin and not preset to run before class-properties and avoid generating strange property code
+					"@babel/plugin-transform-flow-strip-types",
+					"@babel/plugin-proposal-class-properties",
+					"@babel/plugin-syntax-dynamic-import"
+				],
+			}),
+			// resolveLibs(),
+			commonjs({
+				exclude: "src/**",
+			}),
+		],
+		treeshake: false, // disable tree-shaking for faster development builds
+		preserveModules: true,
+	})
+	await bundle.write({
+		format: "cjs",
+		sourcemap: "inline",
+		dir: "build/desktop"
+	})
+	console.log("Bundled desktop client")
+
+	spawn("/bin/sh", ["-c", "npm start"], {
+		stdio: ['ignore', 'inherit', 'inherit'],
+		detached: false
+	})
+}

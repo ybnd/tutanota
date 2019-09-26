@@ -65,7 +65,7 @@ class DesktopErrorHandler {
 			version: app.getVersion(),
 		}
 		// check if there's an application window to send a report
-		if (lang.initialized.promise.isFulfilled()) {
+		if (lang.isInitialized) {
 			dialog.showMessageBox(null, {
 				title: lang.get("errorReport_label"),
 				buttons: [lang.get('cancel_action'), lang.get('yes_label')],
