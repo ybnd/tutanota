@@ -8,7 +8,6 @@ const env = require('./buildSrc/env.js')
 const LaunchHtml = require('./buildSrc/LaunchHtml.js')
 const spawnSync = require('child_process').spawnSync
 const desktopSigner = require('./buildSrc/installerSigner.js')
-const glob = require('glob')
 
 const path = require("path")
 const os = require("os")
@@ -239,40 +238,28 @@ async function buildWebapp() {
 	//               .then(() => _writeFile(path.join(__dirname, bundlesCache), JSON.stringify(bundles)))
 }
 
-function buildDesktopClient() {
+async function buildDesktopClient() {
 	if (options.desktop) {
 		const desktopBuilder = require('./buildSrc/DesktopBuilder.js')
 		if (options.stage === "release") {
-			return createHtml(env.create(SystemConfig.distRuntimeConfig(bundles), "https://mail.tutanota.com", version, "Desktop", true), bundles)
-				.then(() => desktopBuilder.build(__dirname, version, options.desktop, "https://mail.tutanota.com/desktop", ""))
-				.then(() => createHtml(env.create(SystemConfig.distRuntimeConfig(bundles), "https://test.tutanota.com", version, "Desktop", true), bundles))
-				.then(() => desktopBuilder.build(__dirname, version, options.desktop, "https://test.tutanota.com/desktop", "-test"))
+			await createHtml(env.create(SystemConfig.distRuntimeConfig(bundles), "https://mail.tutanota.com", version, "Desktop", true), bundles)
+			await desktopBuilder.build(__dirname, version, options.desktop, "https://mail.tutanota.com/desktop", "")
+			await createHtml(env.create(SystemConfig.distRuntimeConfig(bundles), "https://test.tutanota.com", version, "Desktop", true), bundles)
+			await desktopBuilder.build(__dirname, version, options.desktop, "https://test.tutanota.com/desktop", "-test")
 		} else if (options.stage === "local") {
-			return createHtml(env.create(SystemConfig.distRuntimeConfig(bundles), "http://localhost:9000", version, "Desktop", true), bundles)
-				.then(() => desktopBuilder.build(__dirname, `${new Date().getTime()}.0.0`,
-					options.desktop, "http://localhost:9000", "-snapshot"))
+			createHtml(env.create(SystemConfig.distRuntimeConfig(bundles), "http://localhost:9000", version, "Desktop", true), bundles)
+			await desktopBuilder.build(__dirname, `${new Date().getTime()}.0.0`, options.desktop, "http://localhost:9000", "-snapshot")
 		} else if (options.stage === "test") {
-			return createHtml(env.create(SystemConfig.distRuntimeConfig(bundles), "https://test.tutanota.com", version, "Desktop", true), bundles)
-				.then(() => desktopBuilder.build(__dirname, `${new Date().getTime()}.0.0`,
-					options.desktop, "http://localhost:9000/desktop", "-test"))
+			await createHtml(env.create(SystemConfig.distRuntimeConfig(bundles), "https://test.tutanota.com", version, "Desktop", true), bundles)
+			await desktopBuilder.build(__dirname, `${new Date().getTime()}.0.0`, options.desktop, "http://localhost:9000/desktop", "-test")
 		} else if (options.stage === "prod") {
-			return createHtml(env.create(SystemConfig.distRuntimeConfig(bundles), "https://mail.tutanota.com", version, "Desktop", true), bundles)
-				.then(() => desktopBuilder.build(__dirname, `${new Date().getTime()}.0.0`,
-					options.desktop, "http://localhost:9000/desktop", ""))
+			await createHtml(env.create(SystemConfig.distRuntimeConfig(bundles), "https://mail.tutanota.com", version, "Desktop", true), bundles)
+			await desktopBuilder.build(__dirname, `${new Date().getTime()}.0.0`, options.desktop, "http://localhost:9000/desktop", "")
 		} else { // stage = host
-			return createHtml(env.create(SystemConfig.distRuntimeConfig(bundles), options.host, version, "Desktop", true), bundles)
-				.then(() => desktopBuilder.build(__dirname, `${new Date().getTime()}.0.0`,
-					options.desktop, "http://localhost:9000/desktop-snapshot", "-snapshot"))
+			await createHtml(env.create(SystemConfig.distRuntimeConfig(bundles), options.host, version, "Desktop", true), bundles)
+			await desktopBuilder.build(__dirname, `${new Date().getTime()}.0.0`, options.desktop, "http://localhost:9000/desktop-snapshot", "-snapshot")
 		}
 	}
-}
-
-const buildConfig = {
-	minify: true,
-	mangle: false, // destroys type information (e.g. used for bluebird catch blocks)
-	runtime: false,
-	sourceMaps: true,
-	sourceMapContents: true
 }
 
 function bundleServiceWorker(bundles) {
