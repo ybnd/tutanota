@@ -12,9 +12,6 @@ self.onmessage = function (msg) {
 	const data = msg.data
 	if (data.type === 'setup') {
 		self.env = data.args[0]
-		// System.config(self.env.systemConfig)
-		const selfPath = self.location.href.slice(0, self.location.href.lastIndexOf("/") + 1)
-		// System.import(selfPath + "libs/polyfill.js")
 		Promise.resolve()
 		       .then(() => {
 			       // if (connect instanceof Function && location.protocol !== "https:") {

@@ -38,7 +38,6 @@ export class WorkerImpl {
 			throw new ProgrammingError("Browserdata is not passed")
 		}
 		const workerScope = self
-		console.log("new queue")
 		this._queue = new Queue(workerScope)
 		nativeApp.setWorkerQueue(this._queue)
 		this._newEntropy = -1

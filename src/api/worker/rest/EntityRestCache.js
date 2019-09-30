@@ -30,8 +30,6 @@ import {MailTypeRef} from "../../entities/tutanota/Mail"
 assertWorkerOrNode()
 
 
-// console.log("ha!")
-
 /**
  * This implementation provides a caching mechanism to the rest chain.
  * It forwards requests to the entity rest client.
