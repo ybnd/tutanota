@@ -45,12 +45,14 @@ async function build(dirname, version, targets, updateUrl, nameSuffix) {
 			}),
 			terser(),
 		],
-		experimentalOptimizeChunks: true,
-		chunkGroupingSize: 20000,
 		perf: true,
+		preserveModules: true,
 	})
 	await bundle.write({
-		sourcemap: true, dir: distDir + "desktop", format: "cjs",
+		sourcemap: true,
+		dir: distDir + "desktop",
+		format: "cjs",
+		exports: "named" // PreloadImports export differ in normal/dist builds without this setting
 	})
 
 	console.log("Starting installer build...")

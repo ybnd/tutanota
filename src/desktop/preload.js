@@ -1,6 +1,5 @@
 // @flow
-import {ipcRenderer, remote} from 'electron'
-import {webFrame} from "electron"
+import {ipcRenderer, remote, webFrame} from 'electron'
 
 /**
  * preload scripts can only load modules that have previously been loaded
@@ -51,7 +50,11 @@ function setupContextMenu() {
 	contextMenu.append(pasteItem)
 	contextMenu.append(new MenuItem({type: 'separator'}))
 	contextMenu.append(new MenuItem({label: lang.get("undo_action"), accelerator: "CmdOrCtrl+Z", click() { document.execCommand('undo') }}))
-	contextMenu.append(new MenuItem({label: lang.get("redo_action"), accelerator: "CmdOrCtrl+Shift+Z", click() { document.execCommand('redo') }}))
+	contextMenu.append(new MenuItem({
+		label: lang.get("redo_action"),
+		accelerator: "CmdOrCtrl+Shift+Z",
+		click() { document.execCommand('redo') }
+	}))
 
 	ipcRenderer.on('open-context-menu', (e, params) => {
 		console.log(params[0])

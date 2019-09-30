@@ -90,6 +90,10 @@ function startFlowCheck() {
 	spawn(flow, [], {stdio: [process.stdin, process.stdout, process.stderr]})
 }
 
+function readCache(cacheLocation) {
+	return fs.existsSync(cacheLocation) && JSON.parse(fs.readFileSync(cacheLocation, {encoding: "utf8"}))
+}
+
 async function build({watch, desktop}) {
 	startFlowCheck()
 	await prepareAssets(watch)
@@ -144,7 +148,11 @@ async function build({watch, desktop}) {
 			}
 		})
 	} else {
-		const bundle = await rollup.rollup(inputOptions)
+		const cacheLocation = "./build/main-bundle-cache"
+		const cache = readCache(cacheLocation)
+		cache && console.log("using cache for web bundle")
+		const bundle = await rollup.rollup(Object.assign({}, inputOptions, {cache}))
+		await fs.writeFileAsync(cacheLocation, JSON.stringify(bundle.cache))
 		await bundle.write(outputOptions)
 	}
 	if (desktop) {
@@ -191,8 +199,12 @@ async function startDesktop() {
 	)
 	const content = JSON.stringify(packageJSON)
 
-	await fs.writeFileAsync("./build/desktop/package.json", content, 'utf-8')
+	await fs.createFileAsync("./build/package.json")
+	await fs.writeFileAsync("./build/package.json", content, 'utf-8')
 
+	const cacheLocation = "./build/desktop-bundle-cache"
+	const cache = readCache(cacheLocation)
+	cache && console.log("using cache for desktop bundle")
 	const bundle = await rollup.rollup({
 		input: ["src/desktop/DesktopMain.js", "src/desktop/preload.js"],
 		plugins: [
@@ -204,14 +216,17 @@ async function startDesktop() {
 					"@babel/plugin-syntax-dynamic-import"
 				],
 			}),
-			// resolveLibs(),
 			commonjs({
 				exclude: "src/**",
 			}),
 		],
 		treeshake: false, // disable tree-shaking for faster development builds
 		preserveModules: true,
+		cache,
 	})
+	await fs.writeFileAsync(cacheLocation, JSON.stringify(bundle.cache))
+
+
 	await bundle.write({
 		format: "cjs",
 		sourcemap: "inline",

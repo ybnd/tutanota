@@ -9,7 +9,7 @@ const path = require('path')
 module.exports = function (nameSuffix, version, targetUrl, iconPath, sign) {
 	return {
 		"name": "tutanota-desktop" + nameSuffix,
-		"main": "./desktop/DesktopMain.js",
+		"main": "./desktop/desktop/DesktopMain.js",
 		"version": version,
 		"author": "Tutao GmbH",
 		"description": "The desktop client for Tutanota, the secure e-mail service.",
@@ -21,8 +21,8 @@ module.exports = function (nameSuffix, version, targetUrl, iconPath, sign) {
 				? "https://raw.githubusercontent.com/tutao/tutanota/master/tutao-pub-test.pem"
 				: "https://raw.githubusercontent.com/tutao/tutanota/master/tutao-pub.pem",
 			"pollingInterval": 1000 * 60 * 60 * 3, // 3 hours
-			"preloadjs": "./desktop/preload.js",
-			"desktophtml": "../desktop.html",
+			"preloadjs": "./desktop/desktop/preload.js",
+			"desktophtml": "./desktop.html",
 			"iconName": "logo-solo-red.png",
 			"fileManagerTimeout": 30000,
 			// true if this version checks its updates. use to prevent local builds from checking sigs.
