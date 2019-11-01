@@ -1,6 +1,8 @@
-import {noOp} from "../../src/api/common/utils/Utils"
-
-global.env = require('../../buildSrc/env.js').create(null, "http://localhost:9000", require('../../../package.json').version, "Test")
+global.env = require('../../../../buildSrc/env.js')
+	.create(null,
+		"http://localhost:9000",
+		require('../../../../package.json').version,
+		"Test")
 
 // node environment: mock a few browser functions
 global.Promise = require("bluebird")
@@ -34,12 +36,14 @@ global.bodyParser = require('body-parser')
 global.WebSocket = function () {
 }
 
-var nowOffset = Date.now();
+const nowOffset = Date.now();
 global.performance = {
 	now: function () {
 		return Date.now() - nowOffset;
 	}
 }
+
+const noOp = () => {}
 
 global.performance = {
 	now: Date.now,
@@ -48,7 +52,6 @@ global.performance = {
 }
 
 
-const caller = require('caller')
 const path = require('path')
 global.System = {
 	'import': function (modulePath) {
@@ -70,7 +73,7 @@ Module._resolveFilename = function (request, parent, isMain) {
 /**
  * runs this test exclusively on browsers (not nodec)
  */
-global.browser = function (func: Function) {
+global.browser = function (func) {
 	return function () {
 	}
 }
@@ -78,7 +81,7 @@ global.browser = function (func: Function) {
 /**
  * runs this test exclusively on node (not browsers)
  */
-global.node = function (func: Function) {
+global.node = function (func) {
 	return func
 }
 

@@ -1,7 +1,6 @@
-import o from "ospec/ospec.js"
+import o from "ospec"
 import {EntropyCollector} from "../../../src/api/main/EntropyCollector"
 import {EntropySrc as EntropyType} from "../../../src/api/common/TutanotaConstants"
-import {mockFunction, unmockFunction} from "../../api/TestUtils"
 
 o.spec("EntropyCollector", function () {
 
@@ -34,7 +33,7 @@ o.spec("EntropyCollector", function () {
 		o(collector._entropyCache[collector._entropyCache.length - 1].entropy).equals(2)
 	}
 
-	o("MouseclickNotStarted", browser(() => {
+	o("MouseclickNotStarted", browser(function () {
 		let evt = new Event("click")
 		evt.clientX = 888
 		evt.clientY = 777
@@ -42,7 +41,7 @@ o.spec("EntropyCollector", function () {
 		o(collector._entropyCache.length).equals(0)
 	}))
 
-	o("Mouseclick", browser(() => {
+	o("Mouseclick", browser(function () {
 		collector.start({
 			entropy: () => null
 		})
@@ -54,7 +53,7 @@ o.spec("EntropyCollector", function () {
 		assertLastTwoCacheEntries(len, 889 ^ 777, EntropyType.mouse, 2)
 	}))
 
-	o("Mousemove", browser(() => {
+	o("Mousemove", browser(function () {
 		collector.start({
 			entropy: () => null
 		})
@@ -66,7 +65,7 @@ o.spec("EntropyCollector", function () {
 		assertLastTwoCacheEntries(len, 123 ^ 456, EntropyType.mouse, 2)
 	}))
 
-	o("Keydown", browser(() => {
+	o("Keydown", browser(function () {
 		collector.start({
 			entropy: () => null
 		})
@@ -77,7 +76,7 @@ o.spec("EntropyCollector", function () {
 		assertLastTwoCacheEntries(len, 48, EntropyType.key, 2)
 	}))
 
-	o("Touchstart", browser(() => {
+	o("Touchstart", browser(function () {
 		collector.start({
 			entropy: () => null
 		})
@@ -88,7 +87,7 @@ o.spec("EntropyCollector", function () {
 		assertLastTwoCacheEntries(len, 3 ^ 4, EntropyType.touch, 2)
 	}))
 
-	o("Touchmove", browser(() => {
+	o("Touchmove", browser(function () {
 		collector.start({
 			entropy: () => null
 		})
@@ -99,7 +98,7 @@ o.spec("EntropyCollector", function () {
 		assertLastTwoCacheEntries(len, 3 ^ 5, EntropyType.touch, 2)
 	}))
 
-	o("Devicemotion", browser(() => {
+	o("Devicemotion", browser(function () {
 		collector.start({
 			entropy: () => null
 		})
@@ -111,7 +110,7 @@ o.spec("EntropyCollector", function () {
 		assertLastTwoCacheEntries(len, 3 ^ 4 ^ 5, EntropyType.accelerometer, 2)
 	}))
 
-	o("Send", browser((done, timeout) => {
+	o("Send", browser(function (done, timeout) {
 		timeout(2000)
 
 

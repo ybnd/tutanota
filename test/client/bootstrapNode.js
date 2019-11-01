@@ -1,4 +1,4 @@
-global.env = require('../../buildSrc/env.js').create(null, "http://localhost:9000", require('../../../package.json').version)
+global.env = require('../../../../buildSrc/env.js').create(null, "http://localhost:9000", require('../../../../package.json').version)
 
 global.isBrowser = false
 
@@ -48,13 +48,6 @@ global.crypto = {
 global.XMLHttpRequest = require('xhr2')
 
 const path = require('path')
-global.System = {
-	'import': function (modulePath) {
-		let systemBaseDir = path.resolve(__dirname, "../../")
-		let absolutePath = path.resolve(systemBaseDir, modulePath)
-		return Promise.resolve(require(absolutePath))
-	}
-}
 
 // provide the mapping of the @hot module (maps in system js to @empty; an empty module)
 const Module = require('module').Module;
@@ -74,7 +67,7 @@ Module._resolveFilename = function (request, parent, isMain) {
 /**
  * runs this test exclusively on browsers (not nodec)
  */
-global.browser = function (func: Function) {
+global.browser = function (func) {
 	return function () {
 	}
 }
@@ -82,7 +75,7 @@ global.browser = function (func: Function) {
 /**
  * runs this test exclusively on node (not browsers)
  */
-global.node = function (func: Function) {
+global.node = function (func) {
 	return func
 }
 
@@ -95,5 +88,4 @@ process.on("unhandledRejection", function (e) {
 window.tutao = {}
 
 require("../../src/api/Env").bootFinished()
-
 require('./Suite.js')
