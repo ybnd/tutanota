@@ -6,7 +6,15 @@ import {NotAuthorizedError} from "../../common/error/RestError"
 import {EntityEventBatchTypeRef} from "../../entities/sys/EntityEventBatch"
 import type {DbTransaction} from "./DbFacade"
 import {DbFacade, GroupDataOS, MetaDataOS} from "./DbFacade"
-import {firstBiggerThanSecond, GENERATED_MAX_ID, getElementId, isSameId, isSameTypeRef, isSameTypeRefByAttr, TypeRef} from "../../common/EntityFunctions"
+import {
+	firstBiggerThanSecond,
+	GENERATED_MAX_ID,
+	getElementId,
+	isSameId,
+	isSameTypeRef,
+	isSameTypeRefByAttr,
+	TypeRef
+} from "../../common/EntityFunctions"
 import type {DeferredObject} from "../../common/utils/Utils"
 import {defer, downcast, neverNull, noOp} from "../../common/utils/Utils"
 import {hash} from "../crypto/Sha256"

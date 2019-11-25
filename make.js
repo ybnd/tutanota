@@ -101,17 +101,19 @@ async function build({watch, desktop}) {
 		treeshake: false, // disable tree-shaking for faster development builds
 		preserveModules: true,
 	}
-	const outputOptions = Object.assign({}, RollupConfig.outConfig, {sourcemap: "inline", dir: "build"})
+	const outputOptions = {format: "system", sourcemap: "inline", dir: "build"}
 
 	if (watch) {
 		const WebSocket = require("ws")
 		const server = new WebSocket.Server({
 			port: 8080
 		})
-		rollup.watch(Object.assign({}, inputOptions, outputOptions)).on("event", (e) => {
+		let startTime
+		rollup.watch(Object.assign({}, inputOptions, {output: outputOptions})).on("event", (e) => {
 			switch (e.code) {
 				case "START":
 					console.log("Started bundling")
+					startTime = Date.now()
 					break
 				case "BUNDLE_START":
 					console.log("Started bundle", e.input)
@@ -121,23 +123,35 @@ async function build({watch, desktop}) {
 					server.clients.forEach((c) => c.send("reload"))
 					break
 				case "END":
-					console.log("Finished bundling")
+					console.log("Finished bundling", Date.now() - startTime)
 					break
 				case "ERROR":
 					console.warn("Error during bundling", e)
 					break
 				case "FATAL":
-					console.error("Fatal error duing bunling", e)
+					console.error("Fatal error duing bundling", e)
 					break
 			}
 		})
 	} else {
 		const cacheLocation = "./build/main-bundle-cache"
+		console.log("Reading cache")
+		const readCacheStart = Date.now()
 		const cache = readCache(cacheLocation)
 		cache && console.log("using cache for web bundle")
+		const startBundle = Date.now()
+		console.log("Finished reading cache in", startBundle - readCacheStart)
+
 		const bundle = await rollup.rollup(Object.assign({}, inputOptions, {cache}))
-		await fs.writeFileAsync(cacheLocation, JSON.stringify(bundle.cache))
+		const endBundle = Date.now()
+		console.log("Finished bundling in ", endBundle - startBundle, bundle.getTimings())
+
 		await bundle.write(outputOptions)
+		const endWrite = Date.now()
+		console.log("Finished writing bundles in ", endWrite - endBundle)
+
+		await fs.writeFileAsync(cacheLocation, JSON.stringify(bundle.cache))
+		console.log("Finished writing cache in ", Date.now() - endBundle)
 	}
 	if (desktop) {
 		await startDesktop()
