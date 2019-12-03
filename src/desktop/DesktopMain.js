@@ -45,7 +45,7 @@ const alarmScheduler = new DesktopAlarmScheduler(wm, notifier, alarmStorage, cry
 tray.setWindowManager(wm)
 const sse = new DesktopSseClient(conf, notifier, wm, alarmScheduler, net)
 sse.start()
-const ipc = new IPC(conf, notifier, sse, wm, sock, alarmStorage, crypto, dl)
+const ipc = new IPC(conf, notifier, sse, wm, sock, alarmStorage, alarmScheduler, crypto, dl)
 wm.setIPC(ipc)
 
 PreloadImports.keep(sock)

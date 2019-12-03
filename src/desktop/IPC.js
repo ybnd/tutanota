@@ -20,6 +20,7 @@ import type {DesktopSseClient} from './sse/DesktopSseClient.js'
 import type {DesktopNotifier} from "./DesktopNotifier"
 import type {Socketeer} from "./Socketeer"
 import type {DesktopAlarmStorage} from "./sse/DesktopAlarmStorage"
+import {DesktopAlarmScheduler} from "./sse/DesktopAlarmScheduler"
 import type {DesktopCryptoFacade} from "./DesktopCryptoFacade"
 import type {DesktopDownloadManager} from "./DesktopDownloadManager"
 
@@ -33,6 +34,7 @@ export class IPC {
 	_notifier: DesktopNotifier;
 	_sock: Socketeer;
 	_alarmStorage: DesktopAlarmStorage;
+	_alarmScheduler: DesktopAlarmScheduler;
 	_crypto: DesktopCryptoFacade;
 	_dl: DesktopDownloadManager;
 	_initialized: Array<DeferredObject<void>>;
@@ -46,6 +48,7 @@ export class IPC {
 		wm: WindowManager,
 		sock: Socketeer,
 		alarmStorage: DesktopAlarmStorage,
+		alarmScheduler: DesktopAlarmScheduler,
 		desktopCryptoFacade: DesktopCryptoFacade,
 		dl: DesktopDownloadManager
 	) {
@@ -55,6 +58,7 @@ export class IPC {
 		this._notifier = notifier
 		this._sock = sock
 		this._alarmStorage = alarmStorage
+		this._alarmScheduler = alarmScheduler
 		this._crypto = desktopCryptoFacade
 		this._dl = dl
 
@@ -62,7 +66,7 @@ export class IPC {
 		this._queue = {}
 	}
 
-	_invokeMethod(windowId: number, method: NativeRequestType, args: Array<Object>): Promise<any> {
+	_invokeMethod(windowId: number, method: NativeRequestType, args: Array<any>): Promise<any> {
 
 		switch (method) {
 			case 'init':
@@ -180,6 +184,9 @@ export class IPC {
 				return Promise.resolve()
 			case 'getLog':
 				return Promise.resolve(global.logger.getEntries())
+			case 'unscheduleAlarms':
+				console.log("unscheduling alarms for user", args[0])
+				return Promise.resolve(this._alarmScheduler.unscheduleAlarms(args[0]))
 			default:
 				return Promise.reject(new Error(`Invalid Method invocation: ${method}`))
 		}

@@ -89,7 +89,17 @@ export class DesktopAlarmScheduler {
 		}
 	}
 
+	unscheduleAlarms(userId: Id) {
+		this._alarmStorage.getScheduledAlarms().forEach(alarm => {
+			if (alarm.user === userId) {
+				this._cancelAlarms(alarm)
+			}
+		})
+		return this._alarmStorage.storeScheduledAlarms(this._scheduledNotifications)
+	}
+
 	_cancelAlarms(an: AlarmNotification): void {
+		console.log("cancelling alarm", an.alarmInfo.alarmIdentifier)
 		if (this._scheduledNotifications[an.alarmInfo.alarmIdentifier]) {
 			this._scheduledNotifications[an.alarmInfo.alarmIdentifier].timeouts.forEach(to => {
 				clearTimeout(to.id)
