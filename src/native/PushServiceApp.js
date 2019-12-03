@@ -13,6 +13,7 @@ import {worker} from "../api/main/WorkerClient"
 import {client} from "../misc/ClientDetector.js"
 import {getElementId} from "../api/common/EntityFunctions"
 import {deviceConfig} from "../misc/DeviceConfig"
+import {getStartOfDay} from "../api/common/utils/DateUtils"
 
 class PushServiceApp {
 	_pushNotification: ?Object;
@@ -41,6 +42,7 @@ class PushServiceApp {
 							                      })
 						           } else {
 							           return this._storePushIdentifierLocally(pushIdentifier)
+							                      .then(() => this._updatePushIdentifierTimeIfNeeded(pushIdentifier))
 							                      .then(() => this._scheduleAlarmsIfNeeded(pushIdentifier))
 
 						           }
@@ -64,16 +66,18 @@ class PushServiceApp {
 					           return this._loadPushIdentifier(identifier)
 					                      .then(pushIdentifier => {
 						                      if (pushIdentifier) {
-							                      if (pushIdentifier.language !== lang.code) {
-								                      pushIdentifier.language = lang.code
-								                      update(pushIdentifier)
-							                      }
-							                      return this._storePushIdentifierLocally(pushIdentifier)
+							                      return this._updatePushIdentifierTimeIfNeeded(pushIdentifier)
+							                                 .then(() => this._storePushIdentifierLocally(pushIdentifier))
 							                                 .then(() => this._scheduleAlarmsIfNeeded(pushIdentifier))
 						                      } else {
 							                      return this._createPushIdentiferInstance(identifier, PushServiceType.IOS)
-							                                 .then(pushIdentifier => this._storePushIdentifierLocally(pushIdentifier)
-							                                                             .then(() => this._scheduleAlarmsIfNeeded(pushIdentifier)))
+							                                 .then(() => this
+								                                 ._unscheduleAlarms()
+								                                 .catch(noOp)
+								                                 .then(pushIdentifier => this
+									                                 ._storePushIdentifierLocally(pushIdentifier)
+									                                 .then(() => this._scheduleAlarmsIfNeeded(pushIdentifier))))
+
 						                      }
 					                      })
 				           } else {
@@ -83,6 +87,20 @@ class PushServiceApp {
 		} else {
 			return Promise.resolve()
 		}
+	}
+
+	_updatePushIdentifierTimeIfNeeded(pushIdentifier): Promise<void> {
+		if (this._pushIdentifierShouldBeUpdated(pushIdentifier)) {
+			pushIdentifier.lastUsageTime = new Date()
+			return update(pushIdentifier)
+				.catch(e => console.warn("Failed to update push identifier lastUsageTime", e))
+		} else {
+			return Promise.resolve()
+		}
+	}
+
+	_pushIdentifierShouldBeUpdated(pushIdentifier) {
+		return pushIdentifier.lastUsageTime < getStartOfDay(new Date()) || pushIdentifier.language !== lang.code
 	}
 
 	_loadPushIdentifierFromNative() {
@@ -117,14 +135,17 @@ class PushServiceApp {
 
 	_createPushIdentiferInstance(identifier: string, pushServiceType: PushServiceTypeEnum): Promise<PushIdentifier> {
 		let list = logins.getUserController().user.pushIdentifierList
-		let pushIdentifier = createPushIdentifier()
-		pushIdentifier.displayName = client.getIdentifier()
-		pushIdentifier._owner = logins.getUserController().userGroupInfo.group // legacy
-		pushIdentifier._ownerGroup = logins.getUserController().userGroupInfo.group
-		pushIdentifier._area = "0"
-		pushIdentifier.pushServiceType = pushServiceType
-		pushIdentifier.identifier = identifier
-		pushIdentifier.language = lang.code
+		let pushIdentifier = createPushIdentifier({
+			_area: "0",
+			_owner: logins.getUserController().userGroupInfo.group, // legacy
+			_ownerGroup: logins.getUserController().userGroupInfo.group,
+			displayName: client.getIdentifier(),
+			pushServiceType: pushServiceType,
+			identifier: identifier,
+			language: lang.code,
+			lastUsageTime: new Date(),
+		})
+
 		return setup(neverNull(list).list, pushIdentifier).then(id => {
 			return [neverNull(list).list, id]
 		}).then(id => load(PushIdentifierTypeRef, id))
