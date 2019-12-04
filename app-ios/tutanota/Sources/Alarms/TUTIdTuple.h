@@ -14,7 +14,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (readonly, nonnull) NSString *listId;
 @property (readonly, nonnull) NSString *elementId;
 
-+(TUTIdTuple *)fromJSON:(NSArray *)jsonArray;
+- (TUTIdTuple *)initWithListId:(NSString *)listId elementId:(NSString *)elementId;
++ (TUTIdTuple *)fromJSON:(NSArray *)jsonArray;
 @end
 
 NS_ASSUME_NONNULL_END

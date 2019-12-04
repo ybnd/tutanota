@@ -30,7 +30,9 @@
     _viewController = [TUTViewController new];
     _window.rootViewController = _viewController;
     _userPreferences = [TUTUserPreferenceFacade new];
-    _alarmManager = [[TUTAlarmManager alloc] initWithUserPreferences:_userPreferences];
+    _alarmManager = [[TUTAlarmManager alloc] initWithUserPreferences:_userPreferences
+                                                     keychainManager:[TUTKeychainManager new]
+                                                  notificationCenter:TUTNotificationCenterImpl.new];
     UNUserNotificationCenter.currentNotificationCenter.delegate = self;
     
     [_window makeKeyAndVisible];
@@ -106,7 +108,7 @@
     
     if (apsDict[@"content-available"]) {
         NSString *changeTime = apsDict[@"changeTime"];
-        [_alarmManager fetchMissedNotifications:changeTime :^(NSError *error) {
+        [_alarmManager fetchMissedNotificationsForChangeTime:changeTime :^(NSError *error) {
             completionHandler(error ? UIBackgroundFetchResultFailed : UIBackgroundFetchResultNewData);
         }];
     }

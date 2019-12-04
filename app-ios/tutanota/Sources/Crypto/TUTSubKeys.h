@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-
+NS_ASSUME_NONNULL_BEGIN
 
 @interface TUTSubKeys : NSObject
 
@@ -18,3 +18,5 @@
 - initWithCKey: (NSData *)cKey  mKey: (NSData  * _Nullable) mKey;
 
 @end
+
+NS_ASSUME_NONNULL_END

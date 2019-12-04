@@ -23,6 +23,7 @@
                         alarmInfo:(TUTAlarmInfo *)alarmInfo
           notificationSessionKeys:(NSArray<TUTNotificationSessionKey *> *) notificationSessionKeys
                        repeatRule:(TUTRepeatRule *)repeatRule
+                             user:(NSString *)user
                           jsonDict:(NSDictionary *)jsonDict
 {
     self = [super init];
@@ -33,6 +34,7 @@
     _alarmInfo = alarmInfo;
     _notificationSessionKeys = notificationSessionKeys;
     _repeatRule = repeatRule;
+    _user = user;
     _jsonDict = jsonDict;
     return self;
 }
@@ -72,6 +74,7 @@
                                                  alarmInfo:[TUTAlarmInfo fromJSON:jsonDict[@"alarmInfo"]]
                                    notificationSessionKeys:notificationSessionKeys
                                                 repeatRule:repeatRule
+                                                      user:jsonDict[@"user"]
                                                   jsonDict:jsonDict];
 }
 

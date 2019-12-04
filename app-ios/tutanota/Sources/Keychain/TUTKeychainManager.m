@@ -16,7 +16,7 @@ static const NSString *const tag = @"de.tutao.tutanota.notificationkey.";
 
 @implementation TUTKeychainManager
 
-- (void)storeKey:(NSData *)key withId:(NSString *)keyId error:(NSError **)error {
+- (BOOL)storeKey:(NSData *)key withId:(NSString *)keyId error:(NSError **)error {
     let keyTag = [self keyTagFromKeyId:keyId];
 
     NSError *getKeyError;
@@ -48,8 +48,9 @@ static const NSString *const tag = @"de.tutao.tutanota.notificationkey.";
     if (status != errSecSuccess) {
         let errorString = [NSString stringWithFormat:@"Could not store the key, status: %jd", (intmax_t) status];
         *error = [TUTErrorFactory createError:errorString];
-        return;
+        return NO;
     }
+    return YES;
 }
 
 - (NSData * _Nullable)getKeyWithError:(NSString *)keyId error:(NSError **)error {

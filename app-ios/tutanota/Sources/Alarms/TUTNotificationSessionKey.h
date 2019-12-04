@@ -16,7 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 @property (nonnull, readonly) TUTIdTuple *pushIdentifier;
 @property (nonnull, readonly) NSString *pushIdentifierSessionEncSessionKey;
 
-+(TUTNotificationSessionKey *)fromJSON:(NSDictionary *)jsonDict;
+- (TUTNotificationSessionKey *)initWithPushIdentifier:(TUTIdTuple *)pushIdentifier pushIdentifierSessionEncSessionKey:(NSString *)pushIdentifierSessionEncSessionKey;
++ (TUTNotificationSessionKey *)fromJSON:(NSDictionary *)jsonDict;
 
 @end
 

@@ -19,8 +19,6 @@
 #import "Swiftier.h"
 #import "PSPDFFastEnumeration.h"
 
-#import <UserNotifications/UserNotifications.h>
-
 NSString *const TUTOperationCreate = @"0";
 NSString *const TUTOperationUpdate = @"1";
 NSString *const TUTOperationDelete = @"2";
@@ -30,18 +28,22 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
 @interface TUTAlarmManager ()
 @property (nonnull, readonly) TUTKeychainManager *keychainManager;
 @property (nonnull, readonly) TUTUserPreferenceFacade *userPreference;
+@property (nonnull, readonly) id<TUTNotificationCenter> notificationCenter;
 @property NSUInteger lastProcessedChangeTime;
 @end
 
 @implementation TUTAlarmManager
 
-- (instancetype) initWithUserPreferences:(TUTUserPreferenceFacade *) userPref{
+- (instancetype) initWithUserPreferences:(TUTUserPreferenceFacade *)userPref
+                         keychainManager:(TUTKeychainManager *)keychainManager
+                      notificationCenter:(id<TUTNotificationCenter>)notificationCenter {
     
     self = [super init];
     if (self) {
-        _keychainManager = [TUTKeychainManager new];
+        _keychainManager = keychainManager;
         _userPreference = userPref;
         _lastProcessedChangeTime = 0;
+        _notificationCenter = notificationCenter;
     }
     return self;
 }
@@ -100,7 +102,7 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
     }] resume];
 }
 
-- (void)fetchMissedNotifications:(NSString *)changeTime :(void(^)(NSError *error))completionHandler {
+- (void)fetchMissedNotificationsForChangeTime:(NSString *)changeTime :(void(^)(NSError *error))completionHandler {
     let sseInfo = self.userPreference.getSseInfo;
     if (!sseInfo){
         TUTLog(@"No stored SSE info");
@@ -149,7 +151,7 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
                                          origin:sseInfo.sseOrigin
                               completionHandler:^(NSError *error) {
                 if (error && error.domain == TUT_NETWORK_ERROR && error.code == 412) { // Precondition failed
-                    [self fetchMissedNotifications:changeTime :completionHandler];
+                    [self fetchMissedNotificationsForChangeTime:changeTime :completionHandler];
                 } else if (error) {
                     if (missedNotification.changeTime) {
                         self.lastProcessedChangeTime = changeTime.integerValue;
@@ -216,14 +218,13 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
                 [savedNotifications addObject:alarmNotification];
                 [_userPreference storeRepeatingAlarmNotifications:savedNotifications];
             } else {
-                let notificationCenter = UNUserNotificationCenter.currentNotificationCenter;
                 let content = [UNMutableNotificationContent new];
                 content.title =  [TUTUtils translate:@"TutaoCalendarAlarmTitle" default:@""];
                 content.body = @"Could not set up an alarm. Please update the application.";
                 content.sound = [UNNotificationSound defaultSound];
                 
                 let notificationRequest = [UNNotificationRequest requestWithIdentifier:@"parseEerror" content:content trigger:nil];
-                [notificationCenter addNotificationRequest:notificationRequest withCompletionHandler:nil];
+                [_notificationCenter addNotificationRequest:notificationRequest withCompletionHandler:nil];
             }
         } else {
             [self scheduleAlarmOccurrenceEventWithTime:startDate
@@ -237,7 +238,6 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
         }
         completionHandler(nil);
     } else if ([TUTOperationDelete isEqualToString:alarmNotification.operation]) {
-        let notificationCenter = UNUserNotificationCenter.currentNotificationCenter;
         let savedNotifications = [_userPreference getRepeatingAlarmNotifications];
         let index = [savedNotifications indexOfObject:alarmNotification];
         
@@ -249,7 +249,7 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
         } else {
             // If we don't have an alarm saved, just remove one occurrence
             let occurrenceIdentifier = [self occurrenceIdentifier:alarmIdentifier occurrence:0];
-            [notificationCenter removePendingNotificationRequestsWithIdentifiers:@[occurrenceIdentifier]];
+            [_notificationCenter removePendingNotificationRequestsWithIdentifiers:@[occurrenceIdentifier]];
             TUTLog(@"Cancelling a single notification %@", alarmIdentifier);
         }
         
@@ -288,7 +288,7 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
     }
     
 
-    [UNUserNotificationCenter.currentNotificationCenter removePendingNotificationRequestsWithIdentifiers:occurrences];
+    [_notificationCenter removePendingNotificationRequestsWithIdentifiers:occurrences];
     TUTLog(@"Cancelling alarm %@", alarmIdentifier);
 }
 
@@ -373,7 +373,6 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
                                     summary:(NSString *)summary
                             alarmIdentifier:(NSString *)alarmIdentifier
                                  occurrence:(int)occurrence {
-    let notificationCenter = UNUserNotificationCenter.currentNotificationCenter;
     if (!summary) {
         summary = @"Calendar event";
     }
@@ -399,7 +398,7 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
     let request = [UNNotificationRequest requestWithIdentifier:identifier content:content trigger:notificationTrigger];
     // Schedule the request with the system.
     TUTLog(@"Scheduling a notification %@ at: %@", identifier, dateComponents);
-    [notificationCenter addNotificationRequest:request withCompletionHandler:^(NSError * _Nullable error) {
+    [_notificationCenter addNotificationRequest:request withCompletionHandler:^(NSError * _Nullable error) {
         if (error) {
             TUTLog(@"Failed to schedule a notification: %@", error);
         }
@@ -458,15 +457,17 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
         let sessionKey = [self resolveSessionKey:notification];
         let alarmIdentifier = notification.alarmInfo.alarmIdentifier;
         if (!sessionKey) {
-            TUTLog(@"Failed to rsolve session key for notification %@", alarmIdentifier);
+            TUTLog(@"Failed to resolve session key for notification %@", alarmIdentifier);
             [alarmsToRemove addObject:notification];
             continue;
         }
-        [self unscheleAlarm:notification error:&error];
-        if (error) {
-            TUTLog(@"Error when unscheduling alarm %@ %@", alarmIdentifier, error);
+        if ([notification.user isEqualToString:userId]) {
+            [self unscheleAlarm:notification error:&error];
+            if (error) {
+                TUTLog(@"Error when unscheduling alarm %@ %@", alarmIdentifier, error);
+            }
+            [alarmsToRemove addObject:notification];
         }
-        [alarmsToRemove addObject:notification];
     }
     NSMutableArray<TUTAlarmNotification *> *newNotifications = [NSMutableArray arrayWithArray:savedNotifications];
     [newNotifications removeObjectsInArray:alarmsToRemove];

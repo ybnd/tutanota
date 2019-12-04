@@ -16,7 +16,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 -(NSString *)getTriggerDec:(NSData *)sessionkey error:(NSError **)error;
 
-+(TUTAlarmInfo *)fromJSON:(NSDictionary *)jsonDict;
+- (instancetype)initWithAlarmIdentifier:(NSString *)alarmIdentifier trigger:(NSString *)trigger;
++ (TUTAlarmInfo *)fromJSON:(NSDictionary *)jsonDict;
 
 
 @end

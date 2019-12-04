@@ -12,8 +12,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface TUTKeychainManager : NSObject
 
-- (void)storeKey:(NSData *)key  withId:(NSString *)keyId error:(NSError **)error;
-- ( NSData * _Nullable)getKeyWithError:(NSString *)keyId error:(NSError **)error;
+// Return BOOL to please Swift interop - method *must* return nullable pointer or boolean to be converted into "throws"
+- (BOOL)storeKey:(NSData *)key withId:(NSString *)keyId error:(NSError **)error;
+- (NSData * _Nullable)getKeyWithError:(NSString *)keyId error:(NSError **)error;
 
 @end
 

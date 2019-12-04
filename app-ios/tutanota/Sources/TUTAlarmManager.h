@@ -11,13 +11,17 @@
 #import "Utils/TUTSseInfo.h"
 #import "Utils/TUTUserPreferenceFacade.h"
 #import "Alarms/TUTMissedNotification.h"
+#import "TUTKeychainManager.h"
+#import "TUTNotificationCenter.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @interface TUTAlarmManager : NSObject
-- (instancetype) initWithUserPreferences:(TUTUserPreferenceFacade *)userPref;
+- (instancetype) initWithUserPreferences:(TUTUserPreferenceFacade *)userPref
+                         keychainManager:(TUTKeychainManager *)keychainManager
+                      notificationCenter:(id<TUTNotificationCenter> _Nonnull)notificationCenter;
 - (void)scheduleAlarms:(TUTMissedNotification*)notificaiton completionsHandler:(void(^)(void))completionHandler;
-- (void)fetchMissedNotifications:(NSString *_Nullable)changeTime:(void(^)(NSError *))completionHandler;
+- (void)fetchMissedNotificationsForChangeTime:(NSString *_Nullable)changeTime : (void(^)(NSError *))completionHandler;
 - (void)rescheduleEvents;
 - (void)unscheduleAlarmsForUserId:(NSString *)userId;
 

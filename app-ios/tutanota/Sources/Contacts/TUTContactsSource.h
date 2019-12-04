@@ -10,6 +10,6 @@
 
 @interface TUTContactsSource : NSObject
 
--(void)searchForContactsUsingQuery:(NSString *)query
+-(void)searchForContactsUsingQuery:(NSString *_Nonnull)query
 						completion:(void(^ _Nonnull) (NSArray<NSDictionary *> * _Nullable contacts, NSError * _Nullable error))completion;
 @end

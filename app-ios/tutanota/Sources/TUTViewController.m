@@ -112,7 +112,7 @@ typedef void(^VoidCallback)(void);
 	[_webView.rightAnchor constraintEqualToAnchor:self.view.rightAnchor].active = YES;
 	[_webView.bottomAnchor constraintEqualToAnchor:self.view.bottomAnchor].active = YES;
 	[self loadMainPageWithParams:nil];
-    [self.appDelegate.alarmManager fetchMissedNotifications:nil :^(NSError *error) {
+    [self.appDelegate.alarmManager fetchMissedNotificationsForChangeTime:nil :^(NSError *error) {
         if (error) {
             TUTLog(@"Failed to fetch/process missed notifications: %@", error);
         } else {
