@@ -253,6 +253,9 @@ typedef void(^VoidCallback)(void);
             return;
         }
         [self sendResponseWithId:requestId value:filePath];
+    } else if ([@"unscheduleAlarms" isEqualToString:type]) {
+        [self.appDelegate.alarmManager unscheduleAlarmsForUserId:arguments[0]];
+        sendResponseBlock(NSNull.null, nil);
 	} else {
 		let message = [NSString stringWithFormat:@"Unknown command: %@", type];
 		TUTLog(@"%@", message);

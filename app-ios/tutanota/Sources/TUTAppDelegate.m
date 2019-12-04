@@ -69,9 +69,11 @@
     [UNUserNotificationCenter.currentNotificationCenter
      requestAuthorizationWithOptions:(UNAuthorizationOptionAlert|UNAuthorizationOptionBadge|UNAuthorizationOptionSound)
      completionHandler:^(BOOL granted, NSError * _Nullable error) {
+        TUTLog(@"Got notifications persmission response: %d", granted);
          if (!error) {
              dispatch_async(dispatch_get_main_queue(), ^{
                  self->_pushTokenCallback = callback;
+                 TUTLog(@"Registering for remote notifications");
                  [UIApplication.sharedApplication registerForRemoteNotifications];
              });
          } else {
@@ -81,9 +83,18 @@
 }
 
 - (void)application:(UIApplication *)application didRegisterForRemoteNotificationsWithDeviceToken:(NSData *)deviceToken {
+    TUTLog(@"Did register for remote notifications");
     if (_pushTokenCallback) {
         let stringToken = [TUTAppDelegate stringFromDeviceToken:deviceToken];
         _pushTokenCallback(stringToken, nil);
+        _pushTokenCallback = nil;
+    }
+}
+
+- (void)application:(UIApplication *)application didFailToRegisterForRemoteNotificationsWithError:(NSError *)error {
+    TUTLog(@"Failed to register for remote notifications %@", error);
+    if (_pushTokenCallback) {
+        _pushTokenCallback(nil, error);
         _pushTokenCallback = nil;
     }
 }

@@ -55,7 +55,6 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
         [self scheduleLocalAlarm:alarmNotification handler: ^(NSError * _Nullable error) {
             if (error) {
                 TUTLog(@"schedule error %@", error);
-                completionHandler();
             } else {
                 TUTLog(@"schedule success");
                 
@@ -76,9 +75,9 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
                     completionHandler:(void (^)(NSError *))completionHandler {
     let configuration = [NSURLSessionConfiguration ephemeralSessionConfiguration];
     configuration.HTTPAdditionalHeaders = @{
-                                            @"confirmationId":confirmationId,
-                                            @"changeTime":changeTime
-                                            };
+        @"confirmationId":confirmationId,
+        @"changeTime":changeTime
+    };
     let session = [NSURLSession sessionWithConfiguration:configuration];
     let urlString = [self missedNotificationUrl:origin pushIdentifier:identifier];
     
@@ -116,8 +115,8 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
     }
     
     let additionalHeaders = @{
-                              @"userIds": [sseInfo.userIds componentsJoinedByString:@","]
-                              };
+        @"userIds": [sseInfo.userIds componentsJoinedByString:@","]
+    };
     
     let configuration = NSURLSessionConfiguration.ephemeralSessionConfiguration;
     configuration.HTTPAdditionalHeaders = additionalHeaders;
@@ -149,22 +148,22 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
                                      changeTime:missedNotification.changeTime
                                          origin:sseInfo.sseOrigin
                               completionHandler:^(NSError *error) {
-                                  if (error && error.domain == TUT_NETWORK_ERROR && error.code == 412) { // Precondition failed
-                                      [self fetchMissedNotifications:changeTime :completionHandler];
-                                  } else if (error) {
-                                      if (missedNotification.changeTime) {
-                                          self.lastProcessedChangeTime = changeTime.integerValue;
-                                      }
-                                      completionHandler(error);
-                                  } else {
-                                      if (missedNotification.changeTime) {
-                                          self.lastProcessedChangeTime = changeTime.integerValue;
-                                      }
-                                      [self scheduleAlarms:missedNotification completionsHandler:^{
-                                          completionHandler(nil);
-                                      }];
-                                  }
-                              }];
+                if (error && error.domain == TUT_NETWORK_ERROR && error.code == 412) { // Precondition failed
+                    [self fetchMissedNotifications:changeTime :completionHandler];
+                } else if (error) {
+                    if (missedNotification.changeTime) {
+                        self.lastProcessedChangeTime = changeTime.integerValue;
+                    }
+                    completionHandler(error);
+                } else {
+                    if (missedNotification.changeTime) {
+                        self.lastProcessedChangeTime = changeTime.integerValue;
+                    }
+                    [self scheduleAlarms:missedNotification completionsHandler:^{
+                        completionHandler(nil);
+                    }];
+                }
+            }];
         }
     }] resume];
 }
@@ -182,7 +181,7 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
     return [NSString stringWithFormat:@"%@/rest/sys/missednotification/A/%@", origin, base64urlId];
 }
 
-- (void) scheduleLocalAlarm:(TUTAlarmNotification*)alarmNotification handler:(nullable void(^)(NSError *__nullable error))completionHandler {
+- (void)scheduleLocalAlarm:(TUTAlarmNotification*)alarmNotification handler:(nullable void(^)(NSError *__nullable error))completionHandler {
     let alarmIdentifier = alarmNotification.alarmInfo.alarmIdentifier;
     if ([TUTOperationCreate isEqualToString:alarmNotification.operation] ) {
         var sessionKey = [self resolveSessionKey:alarmNotification];
@@ -198,6 +197,11 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
         let repeatRule = alarmNotification.repeatRule;
         let summary = [alarmNotification getSummaryDec:sessionKey error:&error];
         
+        if (error) {
+            TUTLog(@"Error when scheduling notification %@", error);
+            return;
+        }
+        
         if (repeatRule) {
             [self scheduleRepeatingAlarmEventWithTime:startDate
                                              eventEnd:endDate
@@ -207,9 +211,9 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
                                            repeatRule:repeatRule
                                            sessionKey:sessionKey
                                                 error:&error];
-            let savedNotifications = [_userPreference getRepeatingAlarmNotifications];
-            [savedNotifications addObject:alarmNotification];
             if (!error) {
+                let savedNotifications = [_userPreference getRepeatingAlarmNotifications];
+                [savedNotifications addObject:alarmNotification];
                 [_userPreference storeRepeatingAlarmNotifications:savedNotifications];
             } else {
                 let notificationCenter = UNUserNotificationCenter.currentNotificationCenter;
@@ -227,45 +231,25 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
                                                summary:summary
                                        alarmIdentifier:alarmIdentifier
                                             occurrence:0];
+            let savedNotifications = [_userPreference getRepeatingAlarmNotifications];
+            [savedNotifications addObject:alarmNotification];
+            [_userPreference storeRepeatingAlarmNotifications:savedNotifications];
         }
         completionHandler(nil);
     } else if ([TUTOperationDelete isEqualToString:alarmNotification.operation]) {
         let notificationCenter = UNUserNotificationCenter.currentNotificationCenter;
-        //NSMutableArray<NSString *> *identifiers = [[NSMutableArray alloc] initWithCapacity:EVENTS_SCHEDULED_AHEAD];
         let savedNotifications = [_userPreference getRepeatingAlarmNotifications];
         let index = [savedNotifications indexOfObject:alarmNotification];
-
+        
         if (index != NSNotFound) {
-            let savedNotification = savedNotifications[index];
             NSError *error;
-            var sessionKey = [self resolveSessionKey:savedNotification];
-            if (!sessionKey){
-                completionHandler([TUTErrorFactory createError:@"cannot resolve session key"]);
-                return;
-            }
-            
-            let startDate = [savedNotification getEventStartDec:sessionKey error:&error];
-            let endDate = [savedNotification getEventEndDec:sessionKey error:&error];
-            let trigger = [savedNotification.alarmInfo getTriggerDec:sessionKey error:&error];
-            let repeatRule = savedNotification.repeatRule;
-            NSMutableArray *occurrences = [NSMutableArray new];
-            [self iterateRepeatingAlarmtWithTime:startDate
-                                        eventEnd:endDate
-                                         trigger:trigger
-                                      repeatRule:repeatRule
-                                      sessionKey:sessionKey
-                                           error:&error
-                                           block:^(NSDate *time, int occurrence, NSDate *occurrenceDate) {
-                                               let occurrenceIdentifier = [self occurrenceIdentifier:alarmIdentifier occurrence:occurrence];
-                                               [occurrences addObject:occurrenceIdentifier];
-                                           }];
-            [notificationCenter removePendingNotificationRequestsWithIdentifiers:occurrences];
-            TUTLog(@"Cancelling a repeat notification %@", alarmIdentifier);
+            let savedNotification = savedNotifications[index];
+            [self unscheleAlarm:savedNotification error:&error];
+            completionHandler(error);
         } else {
+            // If we don't have an alarm saved, just remove one occurrence
             let occurrenceIdentifier = [self occurrenceIdentifier:alarmIdentifier occurrence:0];
-            NSMutableArray *occurrences = [NSMutableArray new];
-            [occurrences addObject:occurrenceIdentifier];
-            [notificationCenter removePendingNotificationRequestsWithIdentifiers:occurrences];
+            [notificationCenter removePendingNotificationRequestsWithIdentifiers:@[occurrenceIdentifier]];
             TUTLog(@"Cancelling a single notification %@", alarmIdentifier);
         }
         
@@ -273,6 +257,39 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
         [_userPreference storeRepeatingAlarmNotifications:savedNotifications];
         completionHandler(nil);
     }
+}
+
+- (void)unscheleAlarm:(TUTAlarmNotification *)savedNotification error:(NSError **)error {
+    var sessionKey = [self resolveSessionKey:savedNotification];
+    if (!sessionKey){
+        *error = [TUTErrorFactory createError:@"cannot resolve session key"];
+        return;
+    }
+    
+    let startDate = [savedNotification getEventStartDec:sessionKey error:error];
+    let endDate = [savedNotification getEventEndDec:sessionKey error:error];
+    let trigger = [savedNotification.alarmInfo getTriggerDec:sessionKey error:error];
+    let repeatRule = savedNotification.repeatRule;
+    let alarmIdentifier = savedNotification.alarmInfo.alarmIdentifier;
+    NSMutableArray<NSString *> *occurrences = [NSMutableArray new];
+    if (repeatRule) {
+        [self iterateRepeatingAlarmtWithTime:startDate
+                                    eventEnd:endDate
+                                     trigger:trigger
+                                  repeatRule:repeatRule
+                                  sessionKey:sessionKey
+                                       error:error
+                                       block:^(NSDate *time, int occurrence, NSDate *occurrenceDate) {
+            let occurrenceIdentifier = [self occurrenceIdentifier:alarmIdentifier occurrence:occurrence];
+            [occurrences addObject:occurrenceIdentifier];
+        }];
+    } else {
+        [occurrences addObject:alarmIdentifier];
+    }
+    
+
+    [UNUserNotificationCenter.currentNotificationCenter removePendingNotificationRequestsWithIdentifiers:occurrences];
+    TUTLog(@"Cancelling alarm %@", alarmIdentifier);
 }
 
 -(NSData *_Nullable)resolveSessionKey:(TUTAlarmNotification *)alarmNotification {
@@ -309,8 +326,8 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
                               sessionKey:sessionKey
                                    error:error
                                    block:^(NSDate *time, int occurrence, NSDate *occurrenceDate) {
-                                       [self scheduleAlarmOccurrenceEventWithTime:occurrenceDate trigger:trigger summary:summary alarmIdentifier:alarmIdentifier occurrence:occurrence];
-                                   }];
+        [self scheduleAlarmOccurrenceEventWithTime:occurrenceDate trigger:trigger summary:summary alarmIdentifier:alarmIdentifier occurrence:occurrence];
+    }];
 }
 
 -(void)iterateRepeatingAlarmtWithTime:(NSDate *)eventTime
@@ -338,17 +355,17 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
     let now = [NSDate new];
     
     [TUTAlarmModel iterateRepeatingAlarmWithNow:now
-                                        timeZone:timeZoneName
-                                      eventStart:eventTime
+                                       timeZone:timeZoneName
+                                     eventStart:eventTime
                                        eventEnd:eventEnd
-                                   repeatPerioud:frequency
-                                        interval:interval
-                                         endType:endType
-                                        endValue:endValue
-                                         trigger:trigger
+                                  repeatPerioud:frequency
+                                       interval:interval
+                                        endType:endType
+                                       endValue:endValue
+                                        trigger:trigger
                                   localTimeZone:NSTimeZone.localTimeZone
-                                   scheduleAhead:EVENTS_SCHEDULED_AHEAD
-                                           block:block];
+                                  scheduleAhead:EVENTS_SCHEDULED_AHEAD
+                                          block:block];
 }
 
 -(void)scheduleAlarmOccurrenceEventWithTime:(NSDate *)eventTime
@@ -417,16 +434,43 @@ static const int EVENTS_SCHEDULED_AHEAD = 100;
                 TUTLog(@"Failed to decrypt notification %@ %@", alarmIdentifier, error);
                 continue;
             }
-            [self scheduleRepeatingAlarmEventWithTime:startDate
-                                             eventEnd:endDate
-                                              trigger:trigger
-                                              summary:summary
-                                      alarmIdentifier:alarmIdentifier
-                                           repeatRule:repeatRule
-                                           sessionKey:sessionKey
-                                                error:&error];
+            if (repeatRule) {
+                // Only need to reschedule repeating alarms
+                [self scheduleRepeatingAlarmEventWithTime:startDate
+                                                 eventEnd:endDate
+                                                  trigger:trigger
+                                                  summary:summary
+                                          alarmIdentifier:alarmIdentifier
+                                               repeatRule:repeatRule
+                                               sessionKey:sessionKey
+                                                    error:&error];
+            }
         }
     });
+}
+
+- (void)unscheduleAlarmsForUserId:(NSString *)userId {
+    TUTLog(@"Unscheduling alarms %@", userId);
+    let savedNotifications = [self->_userPreference getRepeatingAlarmNotifications];
+    NSMutableArray<TUTAlarmNotification *> *alarmsToRemove = [NSMutableArray new];
+    foreach(notification, savedNotifications) {
+        NSError *error;
+        let sessionKey = [self resolveSessionKey:notification];
+        let alarmIdentifier = notification.alarmInfo.alarmIdentifier;
+        if (!sessionKey) {
+            TUTLog(@"Failed to rsolve session key for notification %@", alarmIdentifier);
+            [alarmsToRemove addObject:notification];
+            continue;
+        }
+        [self unscheleAlarm:notification error:&error];
+        if (error) {
+            TUTLog(@"Error when unscheduling alarm %@ %@", alarmIdentifier, error);
+        }
+        [alarmsToRemove addObject:notification];
+    }
+    NSMutableArray<TUTAlarmNotification *> *newNotifications = [NSMutableArray arrayWithArray:savedNotifications];
+    [newNotifications removeObjectsInArray:alarmsToRemove];
+    [_userPreference storeRepeatingAlarmNotifications:newNotifications];
 }
 
 @end
