@@ -6,7 +6,15 @@ import {NotAuthorizedError} from "../../common/error/RestError"
 import {EntityEventBatchTypeRef} from "../../entities/sys/EntityEventBatch"
 import type {DbTransaction} from "./DbFacade"
 import {DbFacade, GroupDataOS, MetaDataOS} from "./DbFacade"
-import {firstBiggerThanSecond, GENERATED_MAX_ID, getElementId, isSameId, isSameTypeRef, isSameTypeRefByAttr, TypeRef} from "../../common/EntityFunctions"
+import {
+	firstBiggerThanSecond,
+	GENERATED_MAX_ID,
+	getElementId,
+	isSameId,
+	isSameTypeRef,
+	isSameTypeRefByAttr,
+	TypeRef
+} from "../../common/EntityFunctions"
 import type {DeferredObject} from "../../common/utils/Utils"
 import {defer, downcast, neverNull, noOp} from "../../common/utils/Utils"
 import {hash} from "../crypto/Sha256"
@@ -40,6 +48,7 @@ import type {BrowserData} from "../../../misc/ClientConstants"
 import {InvalidDatabaseStateError} from "../../common/error/InvalidDatabaseStateError"
 import {getFromMap} from "../../common/utils/MapUtils"
 import {LocalTimeDateProvider} from "../DateProvider"
+import {CalendarIndexer} from "./CalendarIndexer"
 
 export const Metadata = {
 	userEncDbKey: "userEncDbKey",
@@ -67,6 +76,7 @@ export class Indexer {
 
 	_contact: ContactIndexer;
 	_mail: MailIndexer;
+	_calendar: CalendarIndexer;
 	_groupInfo: GroupInfoIndexer;
 	_whitelabelChildIndexer: WhitelabelChildIndexer;
 
@@ -93,6 +103,7 @@ export class Indexer {
 		this._whitelabelChildIndexer = new WhitelabelChildIndexer(this._core, this.db, this._entity, new SuggestionFacade(WhitelabelChildTypeRef, this.db))
 		const dateProvider = new LocalTimeDateProvider()
 		this._mail = new MailIndexer(this._core, this.db, worker, entityRestClient, defaultEntityRestCache, dateProvider)
+		this._calendar = new CalendarIndexer(this._core, this.db, this._entity)
 		this._groupInfo = new GroupInfoIndexer(this._core, this.db, this._entity, new SuggestionFacade(GroupInfoTypeRef, this.db))
 		this._indexedGroupIds = []
 	}
@@ -130,6 +141,7 @@ export class Indexer {
 				this._core.startProcessing()
 				return this._contact.indexFullContactList(user.userGroup.group)
 				           .then(() => this._groupInfo.indexAllUserAndTeamGroupInfosForAdmin(user))
+				           .then(() => this._calendar.indexUserCalendars(user))
 				           .then(() => this._whitelabelChildIndexer.indexAllWhitelabelChildrenForAdmin(user))
 				           .then(() => this._mail.mailboxIndexingPromise.then(() => this._mail.indexMailboxes(user, this._mail.currentIndexTimestamp)))
 				           .then(() => this._loadPersistentGroupData(user)
@@ -372,7 +384,8 @@ export class Indexer {
 						           const batchesToQueue: QueuedBatch[] = []
 						           for (let batch of eventBatchesOnServer) {
 							           const batchId = getElementId(batch)
-							           if (groupIdToEventBatch.eventBatchIds.indexOf(batchId) === -1 && firstBiggerThanSecond(batchId, startId)) {
+							           if (groupIdToEventBatch.eventBatchIds.indexOf(batchId) === -1
+								           && firstBiggerThanSecond(batchId, startId)) {
 								           batchesToQueue.push({groupId: groupIdToEventBatch.groupId, batchId, events: batch.events})
 							           }
 						           }
