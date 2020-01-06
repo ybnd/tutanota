@@ -13,7 +13,7 @@ import {worker} from "../api/main/WorkerClient"
 import {client} from "../misc/ClientDetector.js"
 import {getElementId} from "../api/common/EntityFunctions"
 import {deviceConfig} from "../misc/DeviceConfig"
-import {getStartOfDay} from "../api/common/utils/DateUtils"
+import {getDayShifted, getStartOfDay} from "../api/common/utils/DateUtils"
 
 class PushServiceApp {
 	_pushNotification: ?Object;
@@ -92,8 +92,15 @@ class PushServiceApp {
 	_updatePushIdentifierTimeIfNeeded(pushIdentifier): Promise<void> {
 		if (this._pushIdentifierShouldBeUpdated(pushIdentifier)) {
 			pushIdentifier.lastUsageTime = new Date()
+			if (this._pushIdentifierShouldBeReEnabled(pushIdentifier)) {
+				pushIdentifier.disabled = false
+				return update(pushIdentifier)
+					.catch(e => console.warn("Failed to update push identifier.disabled", e))
+					// When push identifier is disabled we also unschedule all alarms from the server so we need to schedule them again
+					.then(() => worker.scheduleAlarmsForNewDevice(pushIdentifier))
+			}
 			return update(pushIdentifier)
-				.catch(e => console.warn("Failed to update push identifier lastUsageTime", e))
+				.catch(e => console.warn("Failed to update push identifier.lastUsageTime", e))
 		} else {
 			return Promise.resolve()
 		}
@@ -101,6 +108,10 @@ class PushServiceApp {
 
 	_pushIdentifierShouldBeUpdated(pushIdentifier) {
 		return pushIdentifier.lastUsageTime < getStartOfDay(new Date()) || pushIdentifier.language !== lang.code
+	}
+
+	_pushIdentifierShouldBeReEnabled(pushIdentifier) {
+		return pushIdentifier.disabled && pushIdentifier.lastUsageTime < getDayShifted(new Date(), -20)
 	}
 
 	_loadPushIdentifierFromNative() {
