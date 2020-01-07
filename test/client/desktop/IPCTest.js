@@ -2,6 +2,8 @@
 import n from "../nodemocker"
 import o from "ospec/ospec.js"
 import chalk from 'chalk'
+import type {IPC} from "../../../src/desktop/IPC"
+import {downcast} from "../../../src/api/common/utils/Utils"
 
 o.spec("IPC tests", () => {
 	n.startGroup({
@@ -105,6 +107,7 @@ o.spec("IPC tests", () => {
 	const alarmStorage = {
 		storePushIdentifierSessionKey: () => {}
 	}
+	const alarmScheduler = {}
 
 	const standardMocks = () => {
 		windowMock = n.mock("__window", {
@@ -146,8 +149,8 @@ o.spec("IPC tests", () => {
 	const setUpWithWindowAndInit = () => {
 		const sm = standardMocks()
 		const {electronMock, confMock, notifierMock, sockMock, sseMock, wmMock, alarmStorageMock, cryptoMock, dlMock} = sm
-		const {IPC} = n.subject('../../src/desktop/IPC.js')
-		const ipc = new IPC(confMock, notifierMock, sseMock, wmMock, sockMock, alarmStorageMock, cryptoMock, dlMock)
+		const IPClass = n.subject('../../src/desktop/IPC.js').IPC
+		const ipc: IPC = new IPClass(confMock, notifierMock, sseMock, wmMock, sockMock, alarmStorageMock, alarmScheduler, cryptoMock, dlMock)
 
 		ipc.addWindow(42)
 		o(electronMock.ipcMain.on.callCount).equals(1)
@@ -189,7 +192,7 @@ o.spec("IPC tests", () => {
 	o("sendRequest", done => {
 		const {ipc, electronMock} = setUpWithWindowAndInit()
 
-		ipc.sendRequest(42, 'some-request-type', ["nothing", "useful"])
+		ipc.sendRequest(42, downcast('some-request-type'), ["nothing", "useful"])
 		   .then((resp) => {
 			   // IPC put the value into resolve
 			   o(resp).deepEquals(["some-response-value"])
@@ -215,7 +218,7 @@ o.spec("IPC tests", () => {
 	o("sendRequest with requestError response", done => {
 		const {ipc, electronMock} = setUpWithWindowAndInit()
 
-		ipc.sendRequest(42, 'some-request-type', ["nothing", "useful"])
+		ipc.sendRequest(42, downcast('some-request-type'), ["nothing", "useful"])
 		   .catch(Error, e => {
 			   o(e.message).equals("this is an error")
 			   done()
@@ -723,7 +726,7 @@ o.spec("IPC tests", () => {
 		}, 10)
 	})
 
-	o("open", done => {
+	o("open", function (done) {
 		const {electronMock, dlMock} = setUpWithWindowAndInit()
 
 		setTimeout(() => {
