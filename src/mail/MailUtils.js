@@ -39,10 +39,10 @@ import type {AllIconsEnum, lazyIcon} from "../gui/base/Icon"
 import {endsWith} from "../api/common/utils/StringUtils"
 import {fileController} from "../file/FileController"
 import {uint8ArrayToBase64} from "../api/common/utils/Encoding"
-import type {InlineImages} from "./MailViewer"
 import type {Mail} from "../api/entities/tutanota/Mail"
 import type {MailFolder} from "../api/entities/tutanota/MailFolder"
 import type {File as TutanotaFile} from "../api/entities/tutanota/File"
+import type {InlineImages} from "./SingleMailView"
 
 assertMainOrNode()
 
@@ -164,6 +164,14 @@ export function getSenderOrRecipientHeading(mail: Mail, preferNameOnly: boolean)
 		} else {
 			return ""
 		}
+	}
+}
+
+export function getSenderHeading(mail: Mail, preferNameOnly: boolean): string {
+	if (isExcludedMailAddress(mail.sender.address)) {
+		return ""
+	} else {
+		return getDisplayText(mail.sender.name, mail.sender.address, preferNameOnly)
 	}
 }
 

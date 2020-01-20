@@ -208,7 +208,6 @@ export class Button {
 	 */
 	setStaticRightText(text: string) {
 		this._staticRightText = text
-		m.redraw()
 		return this
 	}
 

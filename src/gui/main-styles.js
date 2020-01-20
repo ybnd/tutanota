@@ -1226,6 +1226,9 @@ styles.registerStyle('main', () => {
 			left: 'auto',
 			width: `${px(size.navbar_edge_width_mobile)}`
 		},
+		'.cursor-pointer': {
+			cursor: 'pointer',
+		},
 
 		// media query for mobile devices, should be one pixel less than style.isDesktopLayout
 		[`@media (max-width: ${size.desktop_layout_width - 1}px)`]: {

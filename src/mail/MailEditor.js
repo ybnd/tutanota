@@ -97,7 +97,6 @@ import {client} from "../misc/ClientDetector"
 import {formatPrice} from "../subscription/SubscriptionUtils"
 import {showUpgradeWizard} from "../subscription/UpgradeSubscriptionWizard"
 import {CustomerPropertiesTypeRef} from "../api/entities/sys/CustomerProperties"
-import type {InlineImages} from "./MailViewer"
 import {getTimeZone} from "../calendar/CalendarUtils"
 import {MailAddressBubbleHandler} from "../misc/MailAddressBubbleHandler"
 import {px, size} from "../gui/size"
@@ -107,6 +106,7 @@ import {findRecipients} from "../native/ContactApp"
 import {createApprovalMail} from "../api/entities/monitor/ApprovalMail"
 import {newMouseEvent} from "../gui/HtmlUtils"
 import type {EncryptedMailAddress} from "../api/entities/tutanota/EncryptedMailAddress"
+import type {InlineImages} from "./SingleMailView"
 
 assertMainOrNode()
 

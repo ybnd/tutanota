@@ -41,7 +41,7 @@ export const size = {
 		return (this.button_height - this.button_height_bubble) / 2
 	},
 
-	navbar_height: 70,
+	navbar_height: 64,
 	navbar_height_mobile: 48,
 	bottom_nav_bar: 50,
 

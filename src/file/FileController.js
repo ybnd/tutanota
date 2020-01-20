@@ -53,7 +53,7 @@ export class FileController {
 	/**
 	 * Temporary files are deleted afterwards in apps.
 	 */
-	downloadAll(tutanotaFiles: TutanotaFile[]): Promise<void> {
+	downloadAll(tutanotaFiles: $ReadOnlyArray<TutanotaFile>): Promise<void> {
 		return Promise
 			.map(tutanotaFiles, (tutanotaFile) => {
 				return (isApp() ? worker.downloadFileContentNative(tutanotaFile) : worker.downloadFileContent(tutanotaFile))
@@ -77,7 +77,7 @@ export class FileController {
 			}).return()
 	}
 
-	downloadBatched(attachments: TutanotaFile[], batchSize: number, delay: number) {
+	downloadBatched(attachments: $ReadOnlyArray<TutanotaFile>, batchSize: number, delay: number) {
 		return splitInChunks(batchSize, attachments).reduce((p, chunk) => {
 			return p.then(() => this.downloadAll(chunk)).delay(delay)
 		}, Promise.resolve())

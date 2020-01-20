@@ -175,7 +175,7 @@ export function groupBy<T, R>(iterable: Iterable<T>, separator: (T) => R): Map<R
 	return groupByAndMap(iterable, separator, identity)
 }
 
-export function splitInChunks<T>(chunkSize: number, array: Array<T>): Array<Array<T>> {
+export function splitInChunks<T>(chunkSize: number, array: $ReadOnlyArray<T>): Array<Array<T>> {
 	if (chunkSize < 1) {
 		return []
 	}
