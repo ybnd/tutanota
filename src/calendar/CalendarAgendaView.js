@@ -65,10 +65,7 @@ export class CalendarAgendaView implements MComponent<Attrs> {
 					.map((day: Date) => {
 						let events = (attrs.eventsForDays.get(day.getTime())
 							|| []).filter((e) => !attrs.hiddenCalendars.has(neverNull(e._ownerGroup)))
-						if (day === today) {
-							// only show future and currently running events
-							events = events.filter(ev => isAllDayEvent(ev) || now < ev.endTime)
-						} else if (day.getTime() > tomorrow.getTime() && events.length === 0) {
+						if (day.getTime() > tomorrow.getTime() && events.length === 0) {
 							return null
 						}
 
