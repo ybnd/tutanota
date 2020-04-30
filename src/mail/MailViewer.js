@@ -53,6 +53,7 @@ export class MailViewer {
 
 		this._threadViewers = {before: [], current: new SingleMailView(mail), after: []}
 		this._threadViewers.current.setExpanded(true)
+		this._threadViewers.current.loadBody()
 
 		loadThread(mail).then((threadMails) => prepareMailViewers(threadMails)).then(({before, after}) => {
 			this._threadViewers.before = before

@@ -123,6 +123,7 @@ export class SingleMailView {
 	_warningDismissed: boolean;
 	_domMailViewer: ?HTMLElement
 	_expanded: boolean
+	_startLoadingBodyMarker: DeferredObject<void>;
 
 	constructor(mail: Mail) {
 		this.mail = mail
@@ -141,12 +142,12 @@ export class SingleMailView {
 		this._lastTouchStart = {x: 0, y: 0, time: Date.now()}
 		this._warningDismissed = false
 		this._expanded = false
-
+		this._startLoadingBodyMarker = defer()
 
 		this.mailHeaderInfo = ""
 		this.mailHeaderDialog = this._createHeadersDialog()
 
-		this._inlineFileIds = this._loadMailBody(mail)
+		this._inlineFileIds = this._startLoadingBodyMarker.promise.then(() => this._loadMailBody(mail))
 		this._inlineImages = this._loadAttachments(mail)
 
 		this.view = () => {
@@ -161,7 +162,12 @@ export class SingleMailView {
 
 	setExpanded(expanded: bool) {
 		this._expanded = expanded
+		this.loadBody()
 		m.redraw()
+	}
+
+	loadBody() {
+		this._startLoadingBodyMarker.resolve()
 	}
 
 	_renderBody(): Children {
