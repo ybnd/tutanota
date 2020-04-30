@@ -1229,6 +1229,14 @@ styles.registerStyle('main', () => {
 		'.cursor-pointer': {
 			cursor: 'pointer',
 		},
+		'.faded:after': {
+			position: "absolute",
+			bottom: 0,
+			height: "100%",
+			width: "calc(100% - 40px)",
+			content: '""',
+			background: "linear-gradient(to top, rgba(255,255,255, 1) 20%, rgba(255,255,255, 0) 80%)"
+		},
 
 		// media query for mobile devices, should be one pixel less than style.isDesktopLayout
 		[`@media (max-width: ${size.desktop_layout_width - 1}px)`]: {

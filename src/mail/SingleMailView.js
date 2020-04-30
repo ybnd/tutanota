@@ -41,6 +41,7 @@ import {
 } from "../api/common/TutanotaConstants"
 import {windowFacade} from "../misc/WindowFacade"
 import {load, serviceRequestVoid, update} from "../api/main/Entity"
+import type {Mail} from "../api/entities/tutanota/Mail"
 import {_TypeModel as MailTypeModel} from "../api/entities/tutanota/Mail"
 import {LockedError, NotAuthorizedError, NotFoundError} from "../api/common/error/RestError"
 import {client} from "../misc/ClientDetector"
@@ -66,7 +67,9 @@ import {htmlSanitizer, stringifyFragment} from "../misc/HtmlSanitizer"
 import {createAsyncDropdown, createDropdown} from "../gui/base/DropdownN"
 import {fileController} from "../file/FileController"
 import {FileOpenError} from "../api/common/error/FileOpenError"
+import type {MailBody} from "../api/entities/tutanota/MailBody"
 import {MailBodyTypeRef} from "../api/entities/tutanota/MailBody"
+import type {File as TutanotaFile} from "../api/entities/tutanota/File"
 import {FileTypeRef} from "../api/entities/tutanota/File"
 import {LazyContactListId, searchForContactByMailAddress} from "../contacts/ContactUtils"
 import {navButtonRoutes} from "../misc/RouteChange"
@@ -82,16 +85,13 @@ import {formatDateTime, urlEncodeHtmlTags} from "../misc/Formatter"
 import {addAll, contains} from "../api/common/utils/ArrayUtils"
 import {CustomerTypeRef} from "../api/entities/sys/Customer"
 import {loadGroupInfos} from "../settings/LoadingUtils"
+import type {MailAddress} from "../api/entities/tutanota/MailAddress"
 import {createMailAddress} from "../api/entities/tutanota/MailAddress"
+import type {EncryptedMailAddress} from "../api/entities/tutanota/EncryptedMailAddress"
 import {createEncryptedMailAddress} from "../api/entities/tutanota/EncryptedMailAddress"
 import {isNewMailActionAvailable} from "./MailView"
 import {exportAsEml} from "./Exporter"
 import {isAnnouncement} from "./MailViewer"
-import type {MailAddress} from "../api/entities/tutanota/MailAddress"
-import type {EncryptedMailAddress} from "../api/entities/tutanota/EncryptedMailAddress"
-import type {Mail} from "../api/entities/tutanota/Mail"
-import type {MailBody} from "../api/entities/tutanota/MailBody"
-import type {File as TutanotaFile} from "../api/entities/tutanota/File"
 import type {GroupInfo} from "../api/entities/sys/GroupInfo"
 
 export class SingleMailView {
@@ -194,7 +194,7 @@ export class SingleMailView {
 					}
 				},
 			},
-			m("#mail-body.selectable.touch-callout.break-word-links", {
+			m("#mail-body.selectable.touch-callout.break-word-links.overflow-hidden", {
 				oncreate: vnode => {
 					this._domBodyDeferred.resolve(vnode.dom)
 					this._updateLineHeight()
@@ -205,6 +205,21 @@ export class SingleMailView {
 						this._domBodyDeferred.resolve(vnode.dom)
 					}
 					this._rescale(false)
+					if (vnode.dom.childNodes.length) {
+						// This should do it for all of them but not all the time ilke now
+						const bq = vnode.dom.querySelector("blockquote")
+						if (bq) {
+							if (bq.offsetHeight > 100) {
+								bq.classList.add("faded")
+								bq.style.maxHeight = "100px"
+								bq.addEventListener("click", (e) => {
+									bq.classList.remove("faded")
+									bq.style.maxHeight = "initial"
+									e.redraw = false
+								})
+							}
+						}
+					}
 				},
 				onsubmit: (event: Event) => this._confirmSubmit(event),
 				style: {'line-height': this._bodyLineHeight, 'transform-origin': 'top left'},
@@ -441,19 +456,6 @@ export class SingleMailView {
 				                            .find(s => s.color !== "" && typeof s.color !== 'undefined')
 				|| 0 < Array.from(sanitizeResult.html.querySelectorAll('font[color]'), e => e.style).length
 			)
-			// This is not perfect as we might pick the wrong one and also we need to do this after loading external images
-			const bq = sanitizeResult.html.querySelector("blockquote")
-			if (bq) {
-				while (bq.firstChild) {
-					bq.removeChild(bq.firstChild)
-				}
-				const e = document.createElement("button")
-				e.innerHTML = "..."
-				e.style.background = "lightgrey"
-				e.style.border = "1px solid transparent"
-				e.style.borderRadius = "2px"
-				bq.appendChild(e)
-			}
 			this._htmlBody = urlify(stringifyFragment(sanitizeResult.html))
 
 			this._contentBlocked = sanitizeResult.externalContent.length > 0
@@ -814,7 +816,8 @@ export class SingleMailView {
 		if (this.mail.restrictions != null && this.mail.restrictions.participantGroupInfos.length > 0) {
 			const participantGroupInfos = this.mail.restrictions.participantGroupInfos
 			return load(CustomerTypeRef, neverNull(logins.getUserController().user.customer)).then(customer => {
-				return loadGroupInfos(participantGroupInfos.filter(groupInfoId => {2
+				return loadGroupInfos(participantGroupInfos.filter(groupInfoId => {
+					2
 					return neverNull(customer.contactFormUserGroups).list !== groupInfoId[0]
 				})).filter(groupInfo => groupInfo.deleted == null)
 			})
