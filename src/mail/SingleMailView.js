@@ -94,7 +94,7 @@ import type {MailBody} from "../api/entities/tutanota/MailBody"
 import type {File as TutanotaFile} from "../api/entities/tutanota/File"
 import type {GroupInfo} from "../api/entities/sys/GroupInfo"
 
-export class SingleMailViewer {
+export class SingleMailView {
 	view: Function;
 	mail: Mail;
 	_mailBody: ?MailBody;

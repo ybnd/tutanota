@@ -11,7 +11,7 @@ import {mailModel} from "./MailModel"
 import {getElementId, listIdPart} from "../api/common/EntityFunctions"
 import type {PosRect} from "../gui/base/Dropdown"
 import {MailTypeRef} from "../api/entities/tutanota/Mail"
-import {SingleMailViewer} from "./SingleMailView"
+import {SingleMailView} from "./SingleMailView"
 import {Keys, MailState} from "../api/common/TutanotaConstants"
 import type {DomMutation} from "../gui/animation/Animations"
 import {animations, scroll} from "../gui/animation/Animations"
@@ -36,7 +36,7 @@ export class MailViewer {
 	_folderText: ?string;
 	_domForScrolling: ?HTMLElement;
 	_scrollAnimation: Promise<void>;
-	_threadViewers: {before: Array<SingleMailViewer>, current: SingleMailViewer, after: Array<SingleMailViewer>}
+	_threadViewers: {before: Array<SingleMailView>, current: SingleMailView, after: Array<SingleMailView>}
 
 	constructor(mail: Mail, showFolder: boolean) {
 		if (isDesktop()) {
@@ -51,7 +51,7 @@ export class MailViewer {
 		}
 
 
-		this._threadViewers = {before: [], current: new SingleMailViewer(mail), after: []}
+		this._threadViewers = {before: [], current: new SingleMailView(mail), after: []}
 		this._threadViewers.current.setExpanded(true)
 
 		loadThread(mail).then((threadMails) => prepareMailViewers(threadMails)).then(({before, after}) => {
@@ -215,8 +215,8 @@ function loadThread(mail) {
 
 function prepareMailViewers(threadMails) {
 	return {
-		before: threadMails.before.map(mail => new SingleMailViewer(mail)),
-		after: threadMails.after.map(mail => new SingleMailViewer(mail))
+		before: threadMails.before.map(mail => new SingleMailView(mail)),
+		after: threadMails.after.map(mail => new SingleMailView(mail))
 	}
 }
 
