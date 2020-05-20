@@ -25,6 +25,7 @@ import {getEmailSignature} from "../mail/MailUtils"
 import {isoDateToBirthday} from "../api/common/utils/BirthdayUtils"
 import type {Contact} from "../api/entities/tutanota/Contact"
 import type {ContactSocialId} from "../api/entities/tutanota/ContactSocialId"
+import {calendarModel} from "../calendar/CalendarModel"
 
 assertMainOrNode()
 
@@ -237,6 +238,7 @@ export class ContactViewer {
 				erase(this.contact).catch(NotFoundError, e => {
 					// ignore because the delete key shortcut may be executed again while the contact is already deleted
 				})
+				calendarModel.deleteBirthdayEvent(this.contact)
 			}
 		})
 	}
@@ -246,7 +248,7 @@ export class ContactViewer {
 	}
 
 	_formatBirthday(): string {
-		if (this._hasBirthday()) {
+		if (this.contact.birthdayIso) {
 			return formatBirthdayWithMonthName(isoDateToBirthday(this.contact.birthdayIso))
 		} else {
 			return ""

@@ -481,7 +481,7 @@ export function showCalendarEventDialog(date: Date, calendars: Map<Id, CalendarI
 	dialog.show()
 }
 
-function createCalendarAlarm(identifier: string, trigger: string): AlarmInfo {
+export function createCalendarAlarm(identifier: string, trigger: string): AlarmInfo {
 	const calendarAlarmInfo = createAlarmInfo()
 	calendarAlarmInfo.alarmIdentifier = identifier
 	calendarAlarmInfo.trigger = trigger

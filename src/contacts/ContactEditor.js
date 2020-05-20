@@ -42,6 +42,7 @@ import type {ContactMailAddress} from "../api/entities/tutanota/ContactMailAddre
 import type {ContactPhoneNumber} from "../api/entities/tutanota/ContactPhoneNumber"
 import type {ContactAddress} from "../api/entities/tutanota/ContactAddress"
 import type {ContactSocialId} from "../api/entities/tutanota/ContactSocialId"
+import {calendarModel} from "../calendar/CalendarModel"
 
 
 assertMainOrNode()
@@ -274,13 +275,16 @@ export class ContactEditor {
 			                                           .memberships
 			                                           .find(m => m.groupType === GroupType.Contact)).group
 			promise = setup(this.listId, this.contact).then(contactId => {
+				this.contact._id = [this.listId, contactId]
 				if (this._newContactIdReceiver) {
 					this._newContactIdReceiver(contactId)
 				}
 			})
 		}
 
-		promise.then(() => this._close())
+		promise
+			.then(() => calendarModel.createOrUpdateBirthdayEvent(this.contact))
+			.then(() => this._close())
 	}
 
 	createNewMailAddressEditor() {

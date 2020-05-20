@@ -8,7 +8,7 @@ import {mapToObject} from "../../api/TestUtils"
 import {
 	addDaysForEvent,
 	addDaysForLongEvent,
-	addDaysForRecurringEvent,
+	addDaysForRecurringEvent, getDateFromIso,
 	incrementByRepeatPeriod,
 	iterateEventOccurrences
 } from "../../../src/calendar/CalendarModel"
@@ -674,6 +674,19 @@ o.spec("CalendarModel", function () {
 				DateTime.fromObject({year: 2019, month: 5, day: 1, hour: 0, zone: timeZone}).toJSDate(),
 				DateTime.fromObject({year: 2019, month: 5, day: 2, hour: 0, zone: timeZone}).toJSDate(),
 			])
+		})
+	})
+
+	o.spec("createBirthdayEvent", function () {
+		o.only("getDateFromIso returns the date object from iso string", function () {
+			const year = 2020
+			const month = 0
+			const day = 1
+
+			const date = new Date(year, month, day)
+			const isoString = "2020-01-01"
+			const result = getDateFromIso(isoString)
+			o(result.toISOString()).equals(date.toISOString())
 		})
 	})
 })

@@ -1,12 +1,15 @@
 //@flow
 import type {CalendarMonthTimeRange} from "./CalendarUtils"
 import {
+	createEventId,
+	filterInt,
 	getAllDayDateForTimezone,
 	getAllDayDateUTCFromZone,
 	getDiffInDays,
 	getEventEnd,
 	getEventStart,
 	getStartOfDayWithZone,
+	getStartOfNextDayWithZone,
 	getTimeZone,
 	isLongEvent,
 	isSameEvent
@@ -14,30 +17,45 @@ import {
 import {isToday} from "../api/common/utils/DateUtils"
 import {getFromMap} from "../api/common/utils/MapUtils"
 import type {DeferredObject} from "../api/common/utils/Utils"
-import {clone, defer, downcast} from "../api/common/utils/Utils"
+import {clone, defer, downcast, neverNull} from "../api/common/utils/Utils"
 import type {AlarmIntervalEnum, EndTypeEnum, RepeatPeriodEnum} from "../api/common/TutanotaConstants"
-import {AlarmInterval, EndType, FeatureType, OperationType, RepeatPeriod} from "../api/common/TutanotaConstants"
+import {AlarmInterval, EndType, FeatureType, GroupType, OperationType, RepeatPeriod} from "../api/common/TutanotaConstants"
 import {DateTime, FixedOffsetZone, IANAZone} from "luxon"
-import {isAllDayEvent, isAllDayEventByTimes} from "../api/common/utils/CommonCalendarUtils"
+import {generateEventElementId, isAllDayEvent, isAllDayEventByTimes} from "../api/common/utils/CommonCalendarUtils"
 import {Notifications} from "../gui/Notifications"
 import type {EntityUpdateData} from "../api/main/EventController"
 import {EventController, isUpdateForTypeRef} from "../api/main/EventController"
 import {worker} from "../api/main/WorkerClient"
 import {locator} from "../api/main/MainLocator"
-import {getElementId} from "../api/common/EntityFunctions"
-import {load} from "../api/main/Entity"
+import {elementIdPart, getElementId, HttpMethod, isSameId, listIdPart} from "../api/common/EntityFunctions"
+import {erase, load, loadAll, loadMultiple, serviceRequestVoid, update} from "../api/main/Entity"
+import type {UserAlarmInfo} from "../api/entities/sys/UserAlarmInfo"
 import {UserAlarmInfoTypeRef} from "../api/entities/sys/UserAlarmInfo"
-import {CalendarEventTypeRef} from "../api/entities/tutanota/CalendarEvent"
+import type {CalendarEvent} from "../api/entities/tutanota/CalendarEvent"
+import {CalendarEventTypeRef, createCalendarEvent} from "../api/entities/tutanota/CalendarEvent"
 import {formatDateWithWeekdayAndTime, formatTime} from "../misc/Formatter"
 import {lang} from "../misc/LanguageViewModel"
 import {isApp} from "../api/Env"
 import {logins} from "../api/main/LoginController"
 import {NotFoundError} from "../api/common/error/RestError"
 import {client} from "../misc/ClientDetector"
-import {insertIntoSortedArray} from "../api/common/utils/ArrayUtils"
+import {insertIntoSortedArray, lastThrow} from "../api/common/utils/ArrayUtils"
 import m from "mithril"
-import type {UserAlarmInfo} from "../api/entities/sys/UserAlarmInfo"
-import type {CalendarEvent} from "../api/entities/tutanota/CalendarEvent"
+import {UserTypeRef} from "../api/entities/sys/User"
+import type {CalendarGroupRoot} from "../api/entities/tutanota/CalendarGroupRoot"
+import {CalendarGroupRootTypeRef} from "../api/entities/tutanota/CalendarGroupRoot"
+import {GroupInfoTypeRef} from "../api/entities/sys/GroupInfo"
+import type {Group} from "../api/entities/sys/Group"
+import {GroupTypeRef} from "../api/entities/sys/Group"
+import {LazyLoaded} from "../api/common/utils/LazyLoaded"
+import {createMembershipRemoveData} from "../api/entities/sys/MembershipRemoveData"
+import {SysService} from "../api/entities/sys/Services"
+import type {CalendarInfo} from "./CalendarView"
+import {createGroupSettings} from "../api/entities/tutanota/GroupSettings"
+import type {Contact} from "../api/entities/tutanota/Contact"
+import {createRepeatRule} from "../api/entities/sys/RepeatRule"
+import {isoDateToBirthday} from "../api/common/utils/BirthdayUtils"
+import {createCalendarAlarm} from "./CalendarEventDialog"
 
 
 function eventComparator(l: CalendarEvent, r: CalendarEvent): number {
@@ -269,6 +287,17 @@ function getValidTimeZone(zone: string, fallback: ?string): string {
 	}
 }
 
+const BIRTHDAY_CALENDAR_NAME = "Birthdays"
+
+export function getDateFromIso(isoDate: string): Date {
+	const {day, month} = isoDateToBirthday(isoDate)
+	return DateTime.fromObject({day: filterInt(day), month: filterInt(month), year: new Date().getFullYear()}).toJSDate()
+}
+
+export function generateBirthdayUid(contact: Contact): string {
+	return `birthday-${getElementId(contact)}@tutanota.com`
+}
+
 class CalendarModel {
 	_notifications: Notifications;
 	_scheduledNotifications: Map<string, TimeoutID>;
@@ -326,6 +355,136 @@ class CalendarModel {
 				this._scheduleNotification(getElementId(userAlarmInfo), event, calculateAlarmTime(event.startTime, downcast(userAlarmInfo.alarmInfo.trigger)))
 			}
 		}
+	}
+
+	ensureBirthdayCalendar(): Promise<Group> {
+		return this.loadCalendarInfos().then((calendars) => {
+			for (let calendarInfo of calendars.values()) {
+				if (calendarInfo.groupInfo.name === BIRTHDAY_CALENDAR_NAME) {
+					return calendarInfo.group
+				}
+			}
+			return worker.addCalendar(BIRTHDAY_CALENDAR_NAME)
+			             .then((group) => {
+				             const {userSettingsGroupRoot} = logins.getUserController()
+				             const newGroupSettings = Object.assign(createGroupSettings(), {
+					             group: group._id,
+					             color: "ff0000"
+				             })
+				             userSettingsGroupRoot.groupSettings.push(newGroupSettings)
+				             return update(userSettingsGroupRoot)
+					             .then(() => group)
+			             })
+		})
+	}
+
+	createOrUpdateBirthdayEvent(contact: Contact): Promise<void> {
+		const zone = getTimeZone()
+
+		const {birthdayIso} = contact
+		if (!birthdayIso) return Promise.resolve()
+		const date = getDateFromIso(birthdayIso)
+
+		return this.ensureBirthdayCalendar()
+		           .then((group) => load(CalendarGroupRootTypeRef, group._id))
+		           .then((groupRoot) => {
+			           this._findExistingBirthdayEvent(contact, groupRoot).then((existingEvent) => {
+				           const newEvent = createCalendarEvent()
+
+				           const startDate = getAllDayDateUTCFromZone(date, zone)
+				           const endDate = getAllDayDateUTCFromZone(getStartOfNextDayWithZone(date, zone), zone)
+
+				           newEvent.startTime = startDate
+				           newEvent.endTime = endDate
+				           newEvent.description = existingEvent ? existingEvent.description : ""
+				           newEvent.summary = contact.firstName + " " + contact.lastName
+				           newEvent.location = existingEvent ? existingEvent.location : ""
+
+				           newEvent._ownerGroup = groupRoot._id
+				           newEvent.uid = generateBirthdayUid(contact)
+				           newEvent.repeatRule = createRepeatRule({
+					           endType: EndType.Never,
+					           frequency: RepeatPeriod.ANNUALLY,
+					           interval: "1",
+				           })
+				           createEventId(newEvent, zone, groupRoot)
+
+				           let alarms
+				           if (existingEvent) {
+					           const user = logins.getUserController().user
+					           const userAlarms = existingEvent.alarmInfos
+					                                           .filter((a) => listIdPart(a) === neverNull(user.alarmInfoList).alarms)
+					                                           .map(elementIdPart)
+					           alarms = loadMultiple(UserAlarmInfoTypeRef, neverNull(user.alarmInfoList).alarms, userAlarms)
+						           .then((userAlarmInfos) => userAlarmInfos.map((a => a.alarmInfo)))
+				           } else {
+					           alarms = Promise.resolve([])
+				           }
+				           return alarms.then((alarms) => {
+					           const newAlarms = alarms.map(alarm => createCalendarAlarm(generateEventElementId(Date.now()), alarm.trigger))
+					           worker.createCalendarEvent(newEvent, newAlarms, existingEvent)
+				           })
+			           })
+		           })
+	}
+
+	deleteBirthdayEvent(contact: Contact): Promise<void> {
+		return this.ensureBirthdayCalendar()
+		           .then((group) => load(CalendarGroupRootTypeRef, group._id))
+		           .then((groupRoot) => {
+			           this._findExistingBirthdayEvent(contact, groupRoot).then((existingEvent) => {
+				           if (existingEvent) return erase(existingEvent)
+			           })
+		           })
+	}
+
+	_findExistingBirthdayEvent(contact: Contact, groupRoot: CalendarGroupRoot): Promise<?CalendarEvent> {
+		const uid = generateBirthdayUid(contact)
+		return loadAll(CalendarEventTypeRef, groupRoot.longEvents)
+			.then((events) => events.find((e) => e.uid === uid))
+	}
+
+	loadCalendarInfos(): Promise<Map<Id, CalendarInfo>> {
+		const userId = logins.getUserController().user._id
+		return load(UserTypeRef, userId)
+			.then(user => {
+				const calendarMemberships = user.memberships.filter(m => m.groupType === GroupType.Calendar);
+				const notFoundMemberships = []
+				return Promise
+					.map(calendarMemberships, (membership) => Promise
+						.all([
+							load(CalendarGroupRootTypeRef, membership.group),
+							load(GroupInfoTypeRef, membership.groupInfo),
+							load(GroupTypeRef, membership.group)
+						])
+						.catch(NotFoundError, () => {
+							notFoundMemberships.push(membership)
+							return null
+						})
+					)
+					.then((groupInstances) => {
+						const calendarInfos: Map<Id, CalendarInfo> = new Map()
+						groupInstances.filter(Boolean)
+						              .forEach(([groupRoot, groupInfo, group]) => {
+							              calendarInfos.set(groupRoot._id, {
+								              groupRoot,
+								              groupInfo,
+								              shortEvents: [],
+								              longEvents: new LazyLoaded(() => loadAll(CalendarEventTypeRef, groupRoot.longEvents), []),
+								              group: group,
+								              shared: !isSameId(group.user, userId)
+							              })
+						              })
+
+						// cleanup inconsistent memberships
+						Promise.each(notFoundMemberships, (notFoundMembership) => {
+							const data = createMembershipRemoveData({user: userId, group: notFoundMembership.group})
+							return serviceRequestVoid(SysService.MembershipService, HttpMethod.DELETE, data)
+						})
+						return calendarInfos
+					})
+			})
+			.tap(() => m.redraw())
 	}
 
 	_scheduleNotification(identifier: string, event: CalendarEvent, time: Date) {
