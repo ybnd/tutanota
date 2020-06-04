@@ -1181,6 +1181,20 @@ module.exports = {
 		"yourCalendars_label": "Your calendars",
 		"yourFolders_action": "YOUR FOLDERS",
 		"yourMessage_label": "Your message",
+		"couldNotAuthU2f_msg": "Could not authenticate with security key.",
+		"waitingForU2f_msg": "Waiting for security key…",
+		"businessUseUpgradeNeeded_msg": "Sorry, you are currently not allowed to send or receive emails (except to the Tutanota sales support at sales@tutao.de) because you have a business account which is only allowed with paid subscriptions. Please upgrade to a paid subscription now.",
+		"upgradeNeeded_msg": "Sorry, you are currently not allowed to send or receive emails (except to the Tutanota sales support at sales@tutao.de) because you first need to order a paid subscription.",
+		"howCanWeHelp_title": "How can we help you?",
+		"describeProblem_msg": "Please enter your question",
+		"noSolution_msg": "Have not found a solution to your problem?",
+		"contactSupport_action": "Contact support",
+		"spelling_label": "Spelling",
+		"addToDict_action": 'Add "{word}" to dictionary',
+		"changeSpellCheckLang_action": 'Change spellcheck language…',
+		"checkSpelling_action": "Check spelling",
+		"requiresNewWindow_msg": "Will take effect in any new window.",
+		"creditCardDeclined_msg": "Unfortunately, your credit card was declined. Please get in contact with your bank to solve this or select a different payment method.",
 		"you_label": "You"
 	}
 }

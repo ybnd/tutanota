@@ -1183,6 +1183,13 @@ module.exports = {
 		"yourCalendars_label": "Deine Kalender",
 		"yourFolders_action": "Ihre ORDNER",
 		"yourMessage_label": "Ihre Nachricht",
+		"couldNotAuthU2f_msg": "Es konnte nicht mit dem Sicherheitsschlüssel authentifiziert werden.",
+		"waitingForU2f_msg": "Warten auf den Sicherheitsschlüssel…",
+		"spelling_label": "Rechtschreibung",
+		"addToDict_action": '"{word}" zum Wörterbuch hinzufügen',
+		"changeSpellCheckLang_action": 'Sprache wechseln…',
+		"checkSpelling_action": "Rechtschreibung prüfen",
+		"requiresNewWindow_msg": "Änderung wird in neuen Fenstern aktiv.",
 		"you_label": "Sie"
 	}
 }

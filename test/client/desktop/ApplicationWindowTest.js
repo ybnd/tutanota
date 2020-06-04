@@ -202,12 +202,14 @@ o.spec("ApplicationWindow Test", function () {
 			switch (key) {
 				case 'preloadjs':
 				case 'desktophtml':
+				case 'updateUrl':
 					return key
 				default:
 					throw new Error("unknown conf.get key: " + key)
 			}
 		},
 		getDesktopConfig: key => {
+			if (key == 'spellcheck') return true
 			throw new Error("unknown conf.getDesktopConfig key: " + key)
 		}
 	}
@@ -263,7 +265,8 @@ o.spec("ApplicationWindow Test", function () {
 				contextIsolation: false,
 				webSecurity: true,
 				enableRemoteModule: false,
-				preload: '/path/to/app/preloadjs'
+				preload: '/path/to/app/preloadjs',
+				spellcheck: true
 			}
 		})
 		o(bwInstance.setMenuBarVisibility.callCount).equals(1)
