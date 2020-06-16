@@ -81,6 +81,7 @@ static const long MISSED_NOTIFICATION_TTL_SEC = 30L * 24 * 60 * 60; // 30 days
         }
         
         NSMutableDictionary<NSString *, NSString *> *additionalHeaders = [NSMutableDictionary new];
+        [TUTUtils addSystemModelHeadersTo:additionalHeaders];
         additionalHeaders[@"userIds"] = [sseInfo.userIds componentsJoinedByString:@","];
         if (strongSelf.userPreference.lastProcessedNotificationId) {
             additionalHeaders[@"lastProcessedNotificationId"] = strongSelf.userPreference.lastProcessedNotificationId;
