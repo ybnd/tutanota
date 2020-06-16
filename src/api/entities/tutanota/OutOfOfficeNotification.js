@@ -51,7 +51,7 @@ export const _TypeModel: TypeModel = {
 		},
 		"endTime": {
 			"name": "endTime",
-			"id": 1092,
+			"id": 1093,
 			"since": 42,
 			"type": "Date",
 			"cardinality": "ZeroOrOne",
@@ -69,9 +69,18 @@ export const _TypeModel: TypeModel = {
 		},
 		"startTime": {
 			"name": "startTime",
-			"id": 1091,
+			"id": 1092,
 			"since": 42,
 			"type": "Date",
+			"cardinality": "One",
+			"final": false,
+			"encrypted": false
+		},
+		"subject": {
+			"name": "subject",
+			"id": 1091,
+			"since": 42,
+			"type": "String",
 			"cardinality": "One",
 			"final": false,
 			"encrypted": false
@@ -96,4 +105,5 @@ export type OutOfOfficeNotification = {
 	endTime: ?Date;
 	message: string;
 	startTime: Date;
+	subject: string;
 }

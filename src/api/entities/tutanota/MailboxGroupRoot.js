@@ -73,7 +73,7 @@ export const _TypeModel: TypeModel = {
 		},
 		"outOfOfficeNotification": {
 			"name": "outOfOfficeNotification",
-			"id": 1093,
+			"id": 1094,
 			"since": 42,
 			"type": "ELEMENT_ASSOCIATION",
 			"cardinality": "ZeroOrOne",

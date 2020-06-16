@@ -6,7 +6,7 @@ import {isSameId} from "../api/common/EntityFunctions"
 import type {TutanotaProperties} from "../api/entities/tutanota/TutanotaProperties"
 import {TutanotaPropertiesTypeRef} from "../api/entities/tutanota/TutanotaProperties"
 import {FeatureType, InboxRuleType, OperationType} from "../api/common/TutanotaConstants"
-import {load, setup, update} from "../api/main/Entity"
+import {load, update} from "../api/main/Entity"
 import {getEnabledMailAddressesForGroupInfo, neverNull, noOp} from "../api/common/utils/Utils"
 import {MailFolderTypeRef} from "../api/entities/tutanota/MailFolder"
 import {getInboxRuleTypeName} from "../mail/InboxRuleHandler"
@@ -39,11 +39,7 @@ import {ExpanderButtonN, ExpanderPanelN} from "../gui/base/ExpanderN"
 import {IdentifierListViewer} from "./IdentifierListViewer"
 import {IndexingNotSupportedError} from "../api/common/error/IndexingNotSupportedError"
 import {LockedError} from "../api/common/error/RestError"
-import {HtmlEditor} from "../gui/base/HtmlEditor"
-import {DatePicker} from "../gui/base/DatePicker"
-import {getStartOfTheWeekOffsetForUser} from "../calendar/CalendarUtils"
-import {createOutOfOfficeNotification, OutOfOfficeNotificationTypeRef} from "../api/entities/tutanota/OutOfOfficeNotification"
-import {MailboxGroupRootTypeRef} from "../api/entities/tutanota/MailboxGroupRoot"
+import {showEditOutOfOfficeNotificationDialog} from "./EditOutOfOfficeNotificationDialog"
 
 assertMainOrNode()
 
@@ -59,10 +55,6 @@ export class MailSettingsViewer implements UpdatableSettingsViewer {
 	_inboxRulesExpanded: Stream<boolean>;
 	_indexStateWatch: ?Stream<any>;
 	_identifierListViewer: IdentifierListViewer;
-	_outOfOfficeExpanded: Stream<boolean>;
-	_outOfOfficeEditor: HtmlEditor;
-	_outOfOfficeStartTimePicker: DatePicker;
-	_outOfOfficeEndTimePicker: DatePicker;
 
 	constructor() {
 		this._defaultSender = stream(getDefaultSenderFromUser())
@@ -76,13 +68,7 @@ export class MailSettingsViewer implements UpdatableSettingsViewer {
 		this._inboxRulesTableLines = stream([])
 		this._indexStateWatch = null
 		this._identifierListViewer = new IdentifierListViewer(logins.getUserController().user)
-		this._outOfOfficeExpanded = stream(false)
-		this._outOfOfficeEditor = new HtmlEditor(() => "Message", {enabled: true})
-			.setMinHeight(100)
-			.showBorders()
 		this._updateInboxRules(logins.getUserController().props)
-		this._outOfOfficeStartTimePicker = new DatePicker(getStartOfTheWeekOffsetForUser(), "dateFrom_label")
-		this._outOfOfficeEndTimePicker = new DatePicker(getStartOfTheWeekOffsetForUser(), "dateTo_label")
 	}
 
 	view() {
@@ -133,6 +119,20 @@ export class MailSettingsViewer implements UpdatableSettingsViewer {
 			value: this._signature,
 			disabled: true,
 			injectionsRight: () => [m(ButtonN, changeSignatureButtonAttrs)]
+		}
+
+
+		const editOutOfOfficeNotificationButtonAttrs: ButtonAttrs = {
+			label: () => "Out of Office Notification",
+			click: () => showEditOutOfOfficeNotificationDialog(),
+			icon: () => Icons.Edit
+		}
+
+		const outOfOfficeAttrs: TextFieldAttrs = {
+			label: () => "Out of Office Notification",
+			value: stream("test"),
+			disabled: true,
+			injectionsRight: () => [m(ButtonN, editOutOfOfficeNotificationButtonAttrs)]
 		}
 
 		const defaultUnconfidentialAttrs: DropDownSelectorAttrs<boolean> = {
@@ -251,19 +251,7 @@ export class MailSettingsViewer implements UpdatableSettingsViewer {
 					m(".small", lang.get("nbrOfInboxRules_msg", {"{1}": logins.getUserController().props.inboxRules.length})),
 				],
 				m(this._identifierListViewer),
-				m(".flex-space-between.items-center.mt-l.mb-s", [
-					m(".h4", "Out of Office Notification"),
-					m(ExpanderButtonN, {
-						label: "show_action",
-						expanded: this._outOfOfficeExpanded
-					})
-				]),
-				m(ExpanderPanelN, {expanded: this._outOfOfficeExpanded}, [
-					m(this._outOfOfficeEditor), m(this._outOfOfficeStartTimePicker), m(this._outOfOfficeEndTimePicker),
-					m(ButtonN, {
-						click: () => this.saveOutOfOfficeNotification(), label: "save_action", type: ButtonType.Secondary
-					})
-				])
+				m(TextFieldN, outOfOfficeAttrs),
 			])
 		]
 	}
@@ -309,46 +297,6 @@ export class MailSettingsViewer implements UpdatableSettingsViewer {
 		}
 	}
 
-	loadOutOfOfficeNotification() {
-		const mailMembership = this.getMailMembership()
-		load(MailboxGroupRootTypeRef, mailMembership.group).then(
-			(grouproot) => {
-				if (grouproot.outOfOfficeNotification) {
-					load(OutOfOfficeNotificationTypeRef, grouproot.outOfOfficeNotification).then(
-						(outOfOfficeNotification) => {
-							this._outOfOfficeEditor.setValue(outOfOfficeNotification.message)
-							this._outOfOfficeStartTimePicker.setDate(outOfOfficeNotification.startTime)
-							this._outOfOfficeEndTimePicker.setDate(outOfOfficeNotification.endTime)
-						}
-					)
-				}
-			}
-		)
-	}
-
-	saveOutOfOfficeNotification() {
-		const startTime = this._outOfOfficeStartTimePicker.date()
-		const endTime = this._outOfOfficeEndTimePicker.date()
-		if (!startTime || !endTime) {
-			return
-		}
-		if (startTime.getTime()  > endTime.getTime() || endTime.getTime() < Date.now()) {
-			Dialog.error(() => "Time is invalid")
-			return
-		}
-		const mailMembership = this.getMailMembership()
-		const notification = createOutOfOfficeNotification({
-			_ownerGroup: mailMembership.group,
-			message: this._outOfOfficeEditor.getValue(),
-			startTime,
-			endTime,
-		})
-		setup(null, notification)
-	}
-
-	getMailMembership() {
-		return logins.getUserController().getMailGroupMemberships()[0]
-	}
 
 	entityEventsReceived(updates: $ReadOnlyArray<EntityUpdateData>): void {
 		for (let update of updates) {
