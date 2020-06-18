@@ -376,7 +376,7 @@ class ClientDetector {
 	}
 
 	notOldChrome() {
-		return this.browser !== BrowserType.CHROME || this.browserVersion > 37
+		return this.browser !== BrowserType.CHROME || this.browserVersion > 44
 	}
 
 	canDownloadMultipleFiles(): boolean {
