@@ -66,7 +66,25 @@ export const _TypeModel: TypeModel = {
 			"cardinality": "One",
 			"final": false,
 			"encrypted": true
-		}
+		},
+		"byKind": {
+			name: "byKind",
+			id: 9990,
+			since: 48,
+			type: "Number",
+			cardinality: "ZeroOrOne",
+			final: false,
+			encrypted: true
+		},
+		"byValue": {
+			name: "byValue",
+			id: 9991,
+			since: 48,
+			type: "String",
+			cardinality: "ZeroOrOne",
+			final: false,
+			encrypted: true
+		},
 	},
 	"associations": {},
 	"app": "sys",
@@ -86,4 +104,6 @@ export type RepeatRule = {
 	frequency: NumberString;
 	interval: NumberString;
 	timeZone: string;
+	byKind: ?NumberString;
+	byValue: ?string;
 }
