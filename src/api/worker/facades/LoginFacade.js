@@ -7,6 +7,7 @@ import {
 	base64ToUint8Array,
 	base64UrlToBase64,
 	hexToUint8Array,
+	stringToUtf8Uint8Array,
 	uint8ArrayToBase64,
 	uint8ArrayToHex,
 	utf8Uint8ArrayToString
@@ -38,9 +39,12 @@ import {aes128Decrypt, aes128RandomKey, aes256RandomKey} from "../crypto/Aes"
 import {random} from "../crypto/Randomizer"
 import {CryptoError} from "../../common/error/CryptoError"
 import {createSaltData} from "../../entities/sys/SaltData"
+import type {SaltReturn} from "../../entities/sys/SaltReturn"
 import {SaltReturnTypeRef} from "../../entities/sys/SaltReturn"
+import type {GroupInfo} from "../../entities/sys/GroupInfo"
 import {GroupInfoTypeRef} from "../../entities/sys/GroupInfo"
 import {TutanotaPropertiesTypeRef} from "../../entities/tutanota/TutanotaProperties"
+import type {User} from "../../entities/sys/User"
 import {UserTypeRef} from "../../entities/sys/User"
 import {defer, neverNull, noOp} from "../../common/utils/Utils"
 import {_loadEntity, GENERATED_ID_BYTES_LENGTH, HttpMethod, isSameId, isSameTypeRefByAttr, MediaType} from "../../common/EntityFunctions"
@@ -49,6 +53,7 @@ import {hash} from "../crypto/Sha256"
 import {createChangePasswordData} from "../../entities/sys/ChangePasswordData"
 import {EventBusClient} from "../EventBusClient"
 import {createCreateSessionData} from "../../entities/sys/CreateSessionData"
+import type {CreateSessionReturn} from "../../entities/sys/CreateSessionReturn"
 import {CreateSessionReturnTypeRef} from "../../entities/sys/CreateSessionReturn"
 import {_TypeModel as SessionModelType, SessionTypeRef} from "../../entities/sys/Session"
 import {EntityRestClient, typeRefToPath} from "../rest/EntityRestClient"
@@ -63,23 +68,22 @@ import {createDeleteCustomerData} from "../../entities/sys/DeleteCustomerData"
 import {createAutoLoginDataGet} from "../../entities/sys/AutoLoginDataGet"
 import {AutoLoginDataReturnTypeRef} from "../../entities/sys/AutoLoginDataReturn"
 import {CancelledError} from "../../common/error/CancelledError"
+import type {PasswordChannelReturn} from "../../entities/tutanota/PasswordChannelReturn"
 import {PasswordChannelReturnTypeRef} from "../../entities/tutanota/PasswordChannelReturn"
 import {TutanotaService} from "../../entities/tutanota/Services"
 import {PasswordMessagingReturnTypeRef} from "../../entities/tutanota/PasswordMessagingReturn"
 import {createPasswordMessagingData} from "../../entities/tutanota/PasswordMessagingData"
 import {createRecoverCode, RecoverCodeTypeRef} from "../../entities/sys/RecoverCode"
 import {createResetFactorsDeleteData} from "../../entities/sys/ResetFactorsDeleteData"
-import type {User} from "../../entities/sys/User"
-import type {GroupInfo} from "../../entities/sys/GroupInfo"
-import type {CreateSessionReturn} from "../../entities/sys/CreateSessionReturn"
-import type {PasswordChannelReturn} from "../../entities/tutanota/PasswordChannelReturn"
-import type {SaltReturn} from "../../entities/sys/SaltReturn"
 import type {GroupMembership} from "../../entities/sys/GroupMembership"
 import type {EntityUpdate} from "../../entities/sys/EntityUpdate"
+import {arrayEquals} from "../../common/utils/ArrayUtils"
 
 assertWorkerOrNode()
 
 const RETRY_TIMOUT_AFTER_INIT_INDEXER_ERROR_MS = 30000
+
+export type WebauthnAssertionData = {signCount: number, credentialId: Uint8Array, publicKey: Uint8Array}
 
 export class LoginFacade {
 	_user: ?User;
@@ -661,7 +665,7 @@ export class LoginFacade {
 		const eventRestClient = new EntityRestClient(() => ({}))
 
 		return serviceRequest(SysService.SessionService, HttpMethod.POST, sessionData, CreateSessionReturnTypeRef)
-		// Don't pass email address to avoid proposing to reset second factor when we're resetting password
+			// Don't pass email address to avoid proposing to reset second factor when we're resetting password
 			.then(createSessionReturn => this._waitUntilSecondFactorApprovedOrCancelled(createSessionReturn, null))
 			.then(sessionData => {
 				return _loadEntity(UserTypeRef, sessionData.userId, null, eventRestClient, {accessToken: sessionData.accessToken})
@@ -711,6 +715,21 @@ export class LoginFacade {
 
 	getUserGroupInfo(): GroupInfo {
 		return neverNull(this._userGroupInfo)
+	}
+
+	unpackWebauthnResponse(rpAppId: string, authData: Uint8Array): WebauthnAssertionData {
+		//let authDataArray = new Uint8Array(authData);
+		const extractedRpIdHash = authData.slice(0, 32)
+		const ourRpIdHash = hash(stringToUtf8Uint8Array(rpAppId))
+		if (!arrayEquals(extractedRpIdHash, ourRpIdHash)) {
+			throw new Error("Woah woah it's another hash")
+		}
+		const counter = new DataView(authData.buffer).getUint32(33)
+		const idLength = new DataView(authData.buffer).getUint16(53)
+		const credentialId = authData.slice(55, 55 + idLength)
+		const publicKeyBytes = authData.slice(55 + idLength) // slice till the end
+
+		return {signCount: counter, credentialId, publicKey: publicKeyBytes}
 	}
 }
 

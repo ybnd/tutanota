@@ -3,6 +3,7 @@
 import {create, TypeRef} from "../../common/EntityFunctions"
 
 import type {U2fRegisteredDevice} from "./U2fRegisteredDevice"
+import type {WebauthnRegisteredDevice} from "./WebauthnRegisteredDevice"
 
 export const SecondFactorTypeRef: TypeRef<SecondFactor> = new TypeRef("sys", "SecondFactor")
 export const _TypeModel: TypeModel = {
@@ -87,10 +88,19 @@ export const _TypeModel: TypeModel = {
 			"cardinality": "ZeroOrOne",
 			"refType": "U2fRegisteredDevice",
 			"final": true
+		},
+		"webauthn": {
+			"name": "webauthn",
+			"id": 1760,
+			"since": 62,
+			"type": "AGGREGATION",
+			"cardinality": "ZeroOrOne",
+			"refType": "WebauthnRegisteredDevice",
+			"final": true
 		}
 	},
 	"app": "sys",
-	"version": "61"
+	"version": "62"
 }
 
 export function createSecondFactor(values?: $Shape<$Exact<SecondFactor>>): SecondFactor {
@@ -109,4 +119,5 @@ export type SecondFactor = {
 	type: NumberString;
 
 	u2f: ?U2fRegisteredDevice;
+	webauthn: ?WebauthnRegisteredDevice;
 }

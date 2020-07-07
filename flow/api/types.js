@@ -147,6 +147,7 @@ type MainRequestType = 'execNative'
 	| 'updateWebSocketState'
 	| 'counterUpdate'
 	| 'infoMessage'
+	| 'unpackWebauthnResponse'
 
 type NativeRequestType = 'init'
 	| 'generateRsaKey'

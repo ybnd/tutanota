@@ -4,11 +4,27 @@ import cbor from "cbor"
 import type {User} from "../api/entities/sys/User"
 import {base64ExtToBase64, base64ToUint8Array} from "../api/common/utils/Encoding"
 import {isApp} from "../api/Env"
+import {downcast} from "../api/common/utils/Utils"
+import {worker} from "../api/main/WorkerClient"
+
+export interface AuthenticatorResponse {
+	clientDataJSON: Object
+}
+
+export interface AuthenticatorAttestationResponse extends AuthenticatorResponse {
+	attestationObject: ArrayBuffer,
+}
+
+export interface CredMgmtPublicKeyCredential extends CredMgmtCredential {
+	response: AuthenticatorAttestationResponse,
+}
 
 export type WebAuthValidationData = {}
 
 
 export type WebAuthCreateData = {}
+
+const rpAppId = "tutanota.com"
 
 /**
  * Wrapper client for the web authentication api.
@@ -43,7 +59,7 @@ export class WebAuthClient {
 			challenge: challenge /* this actually is given from the server */,
 			rp: {
 				name: "Tutanota",
-				id: "tutanota.com"
+				id: rpAppId
 			},
 			user: {
 				id: base64ToUint8Array(base64ExtToBase64(user._id)), /* To be changed for each user */
@@ -55,7 +71,7 @@ export class WebAuthClient {
 
 		const credentials = navigator.credentials
 		if (credentials) {
-			return credentials.create({publicKey})
+			return credentials.create({publicKey, signal: new AbortController().signal})
 			                  .then(function (newCredentialInfo) {
 					                  // send attestation response and client extensions
 					                  // to the server to proceed with the registration
@@ -67,9 +83,17 @@ export class WebAuthClient {
 					                  //
 					                  //     return {}
 
-					                  if (newCredentialInfo && newCredentialInfo.type === "public-key" && newCredentialInfo.response) {
-						                  const response: any = newCredentialInfo.response
-						                  console.log(cbor.decode(response.attestationObject))
+
+					                  if (newCredentialInfo && newCredentialInfo.type === "public-key") {
+						                  let publicKeyCredential: CredMgmtPublicKeyCredential = downcast(newCredentialInfo);
+						                  const response: any = publicKeyCredential.response
+						                  const attestationObject = cbor.decode(response.attestationObject)
+						                  // To pass it to the worker correctly we need offsetless view
+						                  const authDataCopy = attestationObject.authData.slice()
+						                  worker.unpackWebauthnResponse(rpAppId, authDataCopy).then(
+							                  unpacked => console.log(unpacked, /*cbor.decode(unpacked.publicKey.buffer)*/)
+						                  )
+
 					                  } else {
 						                  throw new Error("Unknown credential type")
 					                  }
@@ -87,3 +111,4 @@ export class WebAuthClient {
 		return Promise.resolve({})
 	}
 }
+

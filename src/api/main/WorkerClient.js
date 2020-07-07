@@ -48,6 +48,7 @@ import type {PushIdentifier} from "../entities/sys/PushIdentifier"
 import type {GroupInvitationPostReturn} from "../entities/tutanota/GroupInvitationPostReturn"
 import type {ReceivedGroupInvitation} from "../entities/sys/ReceivedGroupInvitation"
 import type {Mail} from "../entities/tutanota/Mail"
+import type {WebauthnAssertionData} from "../worker/facades/LoginFacade"
 
 assertMainOrNode()
 
@@ -584,6 +585,10 @@ export class WorkerClient {
 
 	checkMailForPhishing(mail: Mail, links: Array<string>): Promise<boolean> {
 		return this._queue.postMessage(new Request("checkMailForPhishing", [mail, links]))
+	}
+
+	unpackWebauthnResponse(rpAppId: string, authData: Uint8Array): Promise<WebauthnAssertionData> {
+		return this._queue.postMessage(new Request('unpackWebauthnResponse', [rpAppId, authData]))
 	}
 }
 
