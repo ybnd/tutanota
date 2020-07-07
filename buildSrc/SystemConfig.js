@@ -15,6 +15,7 @@ const baseProdDependencies = baseDependencies
 	.map(relative => path.join(__dirname, '/..', relative).replace("/libs/", "/libs/minified/"))
 
 const dependencyMap = {
+	"cbor": "./libs/cbor.js",
 	"mithril": "./libs/mithril.js",
 	"mithril/stream/stream.js": "./libs/stream.js",
 	"squire-rte": "./libs/squire-raw.js",

@@ -165,6 +165,11 @@ declare module 'faker' {
 }
 declare module 'squire-rte' {
 	declare var Squire: any;
+
+}
+
+declare module 'cbor' {
+	declare export default  any;
 }
 
 declare type SanitizeConfigBase = {

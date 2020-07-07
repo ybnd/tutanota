@@ -1,5 +1,6 @@
 //@flow
 import m from "mithril"
+
 import {assertMainOrNode, isApp, isTutanotaDomain} from "../api/Env"
 import {createSecondFactor, SecondFactorTypeRef} from "../api/entities/sys/SecondFactor"
 import {LazyLoaded} from "../api/common/utils/LazyLoaded"
@@ -35,6 +36,7 @@ import type {DropDownSelectorAttrs} from "../gui/base/DropDownSelectorN"
 import {DropDownSelectorN} from "../gui/base/DropDownSelectorN"
 import {isUpdateForTypeRef} from "../api/main/EventController"
 import type {User} from "../api/entities/sys/User"
+import {WebAuthClient} from "../misc/WebAuthClient"
 
 assertMainOrNode()
 
@@ -46,6 +48,7 @@ const VerificationStatus = {
 }
 
 const SecondFactorTypeToNameTextId = {
+	[SecondFactorType.webAuth]: "webAuth_label",
 	[SecondFactorType.totp]: "totpAuthenticator_label",
 	[SecondFactorType.u2f]: "u2fSecurityKey_label",
 }
@@ -132,13 +135,17 @@ export class EditSecondFactorsForm {
 	}
 
 	_showAddSecondFactorDialog() {
+
+		let webAuthClient = new WebAuthClient()
+
 		let u2f = new U2fClient()
 		let totpPromise = worker.generateTotpSecret()
 		let u2fSupportPromise = u2f.isSupported()
+		let webAuthPromise = webAuthClient.isSupported()
 		let userPromise = this._user.getAsync()
-		showProgressDialog("pleaseWait_msg", Promise.all([totpPromise, u2fSupportPromise, userPromise]))
-			.spread((totpKeys, u2fSupport, user) => {
-				console.log("u2fSupport", u2fSupport)
+		showProgressDialog("pleaseWait_msg", Promise.all([totpPromise, u2fSupportPromise, userPromise, webAuthPromise]))
+			.spread((totpKeys, u2fSupport, user, webAuthSupport) => {
+				console.log("u2fSupport", u2fSupport, "webAuthSupport", webAuthSupport)
 				const nameValue: Stream<string> = stream("")
 				const selectedType: Stream<string> = stream(SecondFactorType.totp)
 				const totpCode: Stream<string> = stream("")
@@ -274,6 +281,12 @@ export class EditSecondFactorsForm {
 							       u2fRegistrationData(null)
 							       verificationStatus(VerificationStatus.Failed)
 						       })
+					} else if (selectedType() === SecondFactorType.webAuth) {
+						p = worker.generateTotpSecret().then(secret => {
+							return webAuthClient.register(secret.key, user).then(result => {
+								console.log("second factor dialog result:", result)
+							})
+						})
 					} else {
 						p = Promise.resolve()
 					}

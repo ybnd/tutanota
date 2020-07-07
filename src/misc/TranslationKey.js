@@ -1108,3 +1108,5 @@ export type TranslationKeyType = "about_label"
 	| "waitingForU2f_msg"
 	| "businessUseUpgradeNeeded_msg"
 	| "upgradeNeeded_msg"
+	| "webAuth_label"
+

@@ -304,7 +304,8 @@ export type EntropySrcEnum = $Values<typeof EntropySrc>;
 
 export const SecondFactorType = Object.freeze({
 	u2f: "0",
-	totp: "1"
+	totp: "1",
+	webAuth: "2"
 })
 export type SecondFactorTypeEnum = $Values<typeof SecondFactorType>;
 
