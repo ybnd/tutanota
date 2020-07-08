@@ -434,6 +434,29 @@ export type EndTypeEnum = $Values<typeof EndType>
 export const defaultCalendarColor = "2196f3"
 
 
+export const ByRuleType = Object.freeze({
+	BYSECOND: "0",
+	BYMINUTE: "1",
+	BYHOUR: "2",
+	BYDAY: "3",
+	BYMONTHDAY: "4",
+	BYYEARDAY: "5",
+	BYWEEKNO: "6",
+	BYMONTH: "7",
+	BYSETPOS: "8"
+})
+export type ByRuleTypeEnum = $Values<typeof ByRuleType>
+
+export const Weekdays = Object.freeze({
+	SU: 0,
+	MO: 1,
+	TU: 2,
+	WE: 3,
+	TH: 4,
+	FR: 5,
+	SA: 6	
+})
+
 export const AlarmInterval = Object.freeze({
 	FIVE_MINUTES: "5M",
 	TEN_MINUTES: "10M",
@@ -445,7 +468,6 @@ export const AlarmInterval = Object.freeze({
 	ONE_WEEK: "1W",
 })
 export type AlarmIntervalEnum = $Values<typeof AlarmInterval>
-
 
 export const EventTextTimeOption = Object.freeze({
 	NO_TIME: "noTime",

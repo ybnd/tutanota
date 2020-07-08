@@ -86,4 +86,6 @@ export type CalendarRepeatRule = {
 	frequency: NumberString;
 	interval: NumberString;
 	timeZone: string;
+	byKind: ?NumberString;
+	byValue: ?string;
 }

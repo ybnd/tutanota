@@ -1,5 +1,6 @@
 //@flow
-import type {CalendarMonthTimeRange} from "./CalendarUtils"
+import { filterInt } from "./CalendarUtils"
+import type { CalendarMonthTimeRange } from "./CalendarUtils"
 import {
 	getAllDayDateForTimezone,
 	getAllDayDateUTCFromZone,
@@ -11,33 +12,34 @@ import {
 	isLongEvent,
 	isSameEvent
 } from "./CalendarUtils"
-import {isToday} from "../api/common/utils/DateUtils"
-import {getFromMap} from "../api/common/utils/MapUtils"
-import type {DeferredObject} from "../api/common/utils/Utils"
-import {clone, defer, downcast} from "../api/common/utils/Utils"
-import type {AlarmIntervalEnum, EndTypeEnum, RepeatPeriodEnum} from "../api/common/TutanotaConstants"
-import {AlarmInterval, EndType, FeatureType, OperationType, RepeatPeriod} from "../api/common/TutanotaConstants"
-import {DateTime, FixedOffsetZone, IANAZone} from "luxon"
-import {isAllDayEvent, isAllDayEventByTimes} from "../api/common/utils/CommonCalendarUtils"
-import {Notifications} from "../gui/Notifications"
-import type {EntityUpdateData} from "../api/main/EventController"
-import {EventController, isUpdateForTypeRef} from "../api/main/EventController"
-import {worker} from "../api/main/WorkerClient"
-import {locator} from "../api/main/MainLocator"
-import {getElementId} from "../api/common/EntityFunctions"
-import {load} from "../api/main/Entity"
-import {UserAlarmInfoTypeRef} from "../api/entities/sys/UserAlarmInfo"
-import {CalendarEventTypeRef} from "../api/entities/tutanota/CalendarEvent"
-import {formatDateWithWeekdayAndTime, formatTime} from "../misc/Formatter"
-import {lang} from "../misc/LanguageViewModel"
-import {isApp} from "../api/Env"
-import {logins} from "../api/main/LoginController"
-import {NotFoundError} from "../api/common/error/RestError"
-import {client} from "../misc/ClientDetector"
-import {insertIntoSortedArray} from "../api/common/utils/ArrayUtils"
+import { isToday } from "../api/common/utils/DateUtils"
+import { getFromMap } from "../api/common/utils/MapUtils"
+import type { DeferredObject } from "../api/common/utils/Utils"
+import { neverNull } from "../api/common/utils/Utils"
+import { clone, defer, downcast } from "../api/common/utils/Utils"
+import type { AlarmIntervalEnum, EndTypeEnum, RepeatPeriodEnum } from "../api/common/TutanotaConstants"
+import { AlarmInterval, EndType, FeatureType, OperationType, RepeatPeriod, ByRuleType, Weekdays } from "../api/common/TutanotaConstants"
+import { DateTime, FixedOffsetZone, IANAZone } from "luxon"
+import { isAllDayEvent, isAllDayEventByTimes } from "../api/common/utils/CommonCalendarUtils"
+import { Notifications } from "../gui/Notifications"
+import type { EntityUpdateData } from "../api/main/EventController"
+import { EventController, isUpdateForTypeRef } from "../api/main/EventController"
+import { worker } from "../api/main/WorkerClient"
+import { locator } from "../api/main/MainLocator"
+import { getElementId } from "../api/common/EntityFunctions"
+import { load } from "../api/main/Entity"
+import { UserAlarmInfoTypeRef } from "../api/entities/sys/UserAlarmInfo"
+import { CalendarEventTypeRef } from "../api/entities/tutanota/CalendarEvent"
+import { formatDateWithWeekdayAndTime, formatTime } from "../misc/Formatter"
+import { lang } from "../misc/LanguageViewModel"
+import { isApp } from "../api/Env"
+import { logins } from "../api/main/LoginController"
+import { NotFoundError } from "../api/common/error/RestError"
+import { client } from "../misc/ClientDetector"
+import { insertIntoSortedArray } from "../api/common/utils/ArrayUtils"
 import m from "mithril"
-import type {UserAlarmInfo} from "../api/entities/sys/UserAlarmInfo"
-import type {CalendarEvent} from "../api/entities/tutanota/CalendarEvent"
+import type { UserAlarmInfo } from "../api/entities/sys/UserAlarmInfo"
+import type { CalendarEvent } from "../api/entities/tutanota/CalendarEvent"
 
 
 function eventComparator(l: CalendarEvent, r: CalendarEvent): number {
@@ -45,7 +47,7 @@ function eventComparator(l: CalendarEvent, r: CalendarEvent): number {
 }
 
 export function addDaysForEvent(events: Map<number, Array<CalendarEvent>>, event: CalendarEvent, month: CalendarMonthTimeRange,
-                                zone: string = getTimeZone()) {
+	zone: string = getTimeZone()) {
 	const eventStart = getEventStart(event, zone)
 	let calculationDate = getStartOfDayWithZone(eventStart, zone)
 	const eventEndDate = getEventEnd(event, zone);
@@ -65,7 +67,7 @@ export function addDaysForEvent(events: Map<number, Array<CalendarEvent>>, event
 }
 
 export function addDaysForRecurringEvent(events: Map<number, Array<CalendarEvent>>, event: CalendarEvent, month: CalendarMonthTimeRange,
-                                         timeZone: string) {
+	timeZone: string) {
 	const repeatRule = event.repeatRule
 	if (repeatRule == null) {
 		throw new Error("Invalid argument: event doesn't have a repeatRule" + JSON.stringify(event))
@@ -98,8 +100,8 @@ export function addDaysForRecurringEvent(events: Map<number, Array<CalendarEvent
 	let calcEndTime = eventEndTime
 	let iteration = 1
 	while ((endOccurrences == null || iteration <= endOccurrences)
-	&& (repeatEndTime == null || calcStartTime.getTime() < repeatEndTime)
-	&& calcStartTime.getTime() < month.end.getTime()) {
+		&& (repeatEndTime == null || calcStartTime.getTime() < repeatEndTime)
+		&& calcStartTime.getTime() < month.end.getTime()) {
 		if (calcEndTime.getTime() >= month.start.getTime()) {
 			const eventClone = clone(event)
 			if (allDay) {
@@ -115,16 +117,73 @@ export function addDaysForRecurringEvent(events: Map<number, Array<CalendarEvent
 				addDaysForEvent(events, eventClone, month, timeZone)
 			}
 		}
-		calcStartTime = incrementByRepeatPeriod(eventStartTime, frequency, interval * iteration, repeatTimeZone)
-		calcEndTime = allDay
-			? incrementByRepeatPeriod(calcStartTime, RepeatPeriod.DAILY, calcDuration, repeatTimeZone)
-			: DateTime.fromJSDate(calcStartTime).plus(calcDuration).toJSDate()
+
+		if (!repeatRule.byKind) {
+			calcStartTime = incrementByRepeatPeriod(eventStartTime, frequency, interval * iteration, repeatTimeZone)
+			calcEndTime = allDay
+				? incrementByRepeatPeriod(calcStartTime, RepeatPeriod.DAILY, calcDuration, repeatTimeZone)
+				: DateTime.fromJSDate(calcStartTime).plus(calcDuration).toJSDate()
+		} else {
+			switch (repeatRule.byKind) {
+				case ByRuleType.BYDAY:
+					if (frequency === RepeatPeriod.WEEKLY) {
+						let weekdays = neverNull(repeatRule.byValue).split(",").map(d => Weekdays[d]);
+						let currentIndex = weekdays.indexOf(calcStartTime.getDay());
+						let timeDifference = 0;
+
+						if (currentIndex === weekdays.length - 1) {
+							timeDifference = 7 + (weekdays[0] - weekdays[currentIndex]);
+							calcStartTime = incrementByRepeatPeriod(calcStartTime, RepeatPeriod.DAILY, timeDifference + (7 * (interval - 1)), repeatTimeZone);
+						} else {
+							timeDifference = weekdays[currentIndex + 1] - weekdays[currentIndex];
+							calcStartTime = incrementByRepeatPeriod(calcStartTime, RepeatPeriod.DAILY, timeDifference, repeatTimeZone);
+						}
+					} else if (frequency === RepeatPeriod.MONTHLY) {
+						let weekdays = neverNull(repeatRule.byValue).split(",").map((v) => {
+							let ret = v.match(/(-?\d)(\w{2})/);
+							if (ret == null) throw new Error()
+							return { weekday: Weekdays[ret[2]], weekNumber: filterInt(ret[1]) };
+						});
+						const currentWeek = Math.ceil(calcStartTime.getDate() / 7)
+						const currentIndex = weekdays.findIndex(({ weekNumber }) => weekNumber === currentWeek)
+						if (currentIndex === weekdays.length - 1) {
+							const current = weekdays[0]
+							// next month
+							calcStartTime = DateTime.fromJSDate(calcStartTime).set({ day: 1 })
+								.plus({ months: 1 })
+								.toJSDate()
+							if (calcStartTime.getDay() < current.weekday) {
+								calcStartTime.setDate(calcStartTime.getDate() + (current.weekday - calcStartTime.getDay()))
+							} else {
+								calcStartTime.setDate(calcStartTime.getDate() + ((7 - calcStartTime.getDay()) + current.weekday))
+							}
+
+							console.log(calcStartTime)
+						} else {
+							console.log("other branch")
+							const next = weekdays[currentIndex + 1]
+							// start of month + weeks + day of week?
+							calcStartTime = DateTime.fromJSDate(calcStartTime).set({ day: 1 }).plus({ weeks: next.weekNumber, days: Weekdays[next.weekday] }).toJSDate()
+						}
+
+						if (iteration === 10) {
+							throw new Error()
+						}
+					}
+					break;
+				default:
+					throw new Error();
+			}
+			calcEndTime = allDay
+				? incrementByRepeatPeriod(calcStartTime, RepeatPeriod.DAILY, calcDuration, repeatTimeZone)
+				: DateTime.fromJSDate(calcStartTime).plus(calcDuration).toJSDate()
+		}
 		iteration++
 	}
 }
 
 export function addDaysForLongEvent(events: Map<number, Array<CalendarEvent>>, event: CalendarEvent, month: CalendarMonthTimeRange,
-                                    zone: string = getTimeZone()) {
+	zone: string = getTimeZone()) {
 	// for long running events we create events for the month only
 
 	// first start of event is inside month
@@ -164,13 +223,13 @@ export function addDaysForLongEvent(events: Map<number, Array<CalendarEvent>>, e
 export function incrementByRepeatPeriod(date: Date, repeatPeriod: RepeatPeriodEnum, interval: number, ianaTimeZone: string): Date {
 	switch (repeatPeriod) {
 		case RepeatPeriod.DAILY:
-			return DateTime.fromJSDate(date, {zone: ianaTimeZone}).plus({days: interval}).toJSDate()
+			return DateTime.fromJSDate(date, { zone: ianaTimeZone }).plus({ days: interval }).toJSDate()
 		case RepeatPeriod.WEEKLY:
-			return DateTime.fromJSDate(date, {zone: ianaTimeZone}).plus({weeks: interval}).toJSDate()
+			return DateTime.fromJSDate(date, { zone: ianaTimeZone }).plus({ weeks: interval }).toJSDate()
 		case RepeatPeriod.MONTHLY:
-			return DateTime.fromJSDate(date, {zone: ianaTimeZone}).plus({months: interval}).toJSDate()
+			return DateTime.fromJSDate(date, { zone: ianaTimeZone }).plus({ months: interval }).toJSDate()
 		case RepeatPeriod.ANNUALLY:
-			return DateTime.fromJSDate(date, {zone: ianaTimeZone}).plus({years: interval}).toJSDate()
+			return DateTime.fromJSDate(date, { zone: ianaTimeZone }).plus({ years: interval }).toJSDate()
 		default:
 			throw new Error("Unknown repeat period")
 	}
@@ -225,33 +284,33 @@ export function calculateAlarmTime(date: Date, interval: AlarmIntervalEnum, iana
 	let diff
 	switch (interval) {
 		case AlarmInterval.FIVE_MINUTES:
-			diff = {minutes: 5}
+			diff = { minutes: 5 }
 			break
 		case AlarmInterval.TEN_MINUTES:
-			diff = {minutes: 10}
+			diff = { minutes: 10 }
 			break
 		case AlarmInterval.THIRTY_MINUTES:
-			diff = {minutes: 30}
+			diff = { minutes: 30 }
 			break
 		case AlarmInterval.ONE_HOUR:
-			diff = {hours: 1}
+			diff = { hours: 1 }
 			break
 		case AlarmInterval.ONE_DAY:
-			diff = {days: 1}
+			diff = { days: 1 }
 			break
 		case AlarmInterval.TWO_DAYS:
-			diff = {days: 2}
+			diff = { days: 2 }
 			break
 		case AlarmInterval.THREE_DAYS:
-			diff = {days: 3}
+			diff = { days: 3 }
 			break
 		case AlarmInterval.ONE_WEEK:
-			diff = {weeks: 1}
+			diff = { weeks: 1 }
 			break
 		default:
 			diff = {}
 	}
-	return DateTime.fromJSDate(date, {zone: ianaTimeZone}).minus(diff).toJSDate()
+	return DateTime.fromJSDate(date, { zone: ianaTimeZone }).minus(diff).toJSDate()
 }
 
 function getValidTimeZone(zone: string, fallback: ?string): string {
@@ -291,11 +350,11 @@ class CalendarModel {
 	scheduleAlarmsLocally(): Promise<void> {
 		if (this._localAlarmsEnabled()) {
 			return worker.loadAlarmEvents()
-			             .then((eventsWithInfos) => {
-				             eventsWithInfos.forEach(({event, userAlarmInfo}) => {
-					             this.scheduleUserAlarmInfo(event, userAlarmInfo)
-				             })
-			             })
+				.then((eventsWithInfos) => {
+					eventsWithInfos.forEach(({ event, userAlarmInfo }) => {
+						this.scheduleUserAlarmInfo(event, userAlarmInfo)
+					})
+				})
 		} else {
 			return Promise.resolve()
 		}
@@ -339,7 +398,7 @@ class CalendarModel {
 				dateString = formatDateWithWeekdayAndTime(eventStart)
 			}
 			const body = `${dateString} ${event.summary}`
-			return this._notifications.showNotification(title, {body}, () => {
+			return this._notifications.showNotification(title, { body }, () => {
 				m.route.set("/calendar/agenda")
 			})
 		})
@@ -367,7 +426,7 @@ class CalendarModel {
 					// CalendarEvent is there (which might already be true)
 					// and load it.
 					load(UserAlarmInfoTypeRef, userAlarmInfoId).then((userAlarmInfo) => {
-						const {listId, elementId} = userAlarmInfo.alarmInfo.calendarRef
+						const { listId, elementId } = userAlarmInfo.alarmInfo.calendarRef
 						const deferredEvent = getFromMap(this._pendingAlarmRequests, elementId, defer)
 						return deferredEvent.promise.then(() => {
 							return load(CalendarEventTypeRef, [listId, elementId])

@@ -1,10 +1,10 @@
 //@flow
 import o from "ospec/ospec.js"
-import {createCalendarEvent} from "../../../src/api/entities/tutanota/CalendarEvent"
-import {createRepeatRuleWithValues, getAllDayDateUTCFromZone, getMonth, getTimeZone} from "../../../src/calendar/CalendarUtils"
-import {getStartOfDay} from "../../../src/api/common/utils/DateUtils"
-import {clone, neverNull} from "../../../src/api/common/utils/Utils"
-import {mapToObject} from "../../api/TestUtils"
+import { createCalendarEvent } from "../../../src/api/entities/tutanota/CalendarEvent"
+import { createRepeatRuleWithValues, getAllDayDateUTCFromZone, getMonth, getTimeZone } from "../../../src/calendar/CalendarUtils"
+import { getStartOfDay } from "../../../src/api/common/utils/DateUtils"
+import { clone, neverNull } from "../../../src/api/common/utils/Utils"
+import { mapToObject } from "../../api/TestUtils"
 import {
 	addDaysForEvent,
 	addDaysForLongEvent,
@@ -12,10 +12,10 @@ import {
 	incrementByRepeatPeriod,
 	iterateEventOccurrences
 } from "../../../src/calendar/CalendarModel"
-import {AlarmInterval, EndType, RepeatPeriod} from "../../../src/api/common/TutanotaConstants"
-import {DateTime} from "luxon"
-import {generateEventElementId, getAllDayDateUTC} from "../../../src/api/common/utils/CommonCalendarUtils"
-import type {CalendarEvent} from "../../../src/api/entities/tutanota/CalendarEvent"
+import { AlarmInterval, EndType, RepeatPeriod, ByRuleType } from "../../../src/api/common/TutanotaConstants"
+import { DateTime } from "luxon"
+import { generateEventElementId, getAllDayDateUTC } from "../../../src/api/common/utils/CommonCalendarUtils"
+import type { CalendarEvent } from "../../../src/api/entities/tutanota/CalendarEvent"
 
 o.spec("CalendarModel", function () {
 	o.spec("addDaysForEvent", function () {
@@ -304,17 +304,17 @@ o.spec("CalendarModel", function () {
 			const event = createEvent(getAllDayDateUTC(new Date(2020, 1, 12)), getAllDayDateUTC(new Date(2020, 1, 13)))
 			event.repeatRule = createRepeatRuleWithValues(RepeatPeriod.WEEKLY, 1)
 			event.repeatRule.timeZone = 'America/Los_angeles'
-			const month = getMonth(DateTime.fromObject({year: 2020, month: 3, day: 1, zone}).toJSDate(), zone)
+			const month = getMonth(DateTime.fromObject({ year: 2020, month: 3, day: 1, zone }).toJSDate(), zone)
 			addDaysForRecurringEvent(eventsForDays, event, month, zone)
 
 			const expectedForMarch = {
-				[DateTime.fromObject({year: 2020, month: 3, day: 4, zone}).toMillis()]:
+				[DateTime.fromObject({ year: 2020, month: 3, day: 4, zone }).toMillis()]:
 					[cloneEventWithNewTime(event, getAllDayDateUTC(new Date(2020, 2, 4)), getAllDayDateUTC(new Date(2020, 2, 5)))],
-				[DateTime.fromObject({year: 2020, month: 3, day: 11, zone}).toMillis()]:
+				[DateTime.fromObject({ year: 2020, month: 3, day: 11, zone }).toMillis()]:
 					[cloneEventWithNewTime(event, getAllDayDateUTC(new Date(2020, 2, 11)), getAllDayDateUTC(new Date(2020, 2, 12)))],
-				[DateTime.fromObject({year: 2020, month: 3, day: 18, zone}).toMillis()]:
+				[DateTime.fromObject({ year: 2020, month: 3, day: 18, zone }).toMillis()]:
 					[cloneEventWithNewTime(event, getAllDayDateUTC(new Date(2020, 2, 18)), getAllDayDateUTC(new Date(2020, 2, 19)))],
-				[DateTime.fromObject({year: 2020, month: 3, day: 25, zone}).toMillis()]:
+				[DateTime.fromObject({ year: 2020, month: 3, day: 25, zone }).toMillis()]:
 					[cloneEventWithNewTime(event, getAllDayDateUTC(new Date(2020, 2, 25)), getAllDayDateUTC(new Date(2020, 2, 26)))],
 			}
 			o(mapToObject(eventsForDays)).deepEquals(expectedForMarch)
@@ -415,8 +415,8 @@ o.spec("CalendarModel", function () {
 		o("monthly with shorter month", function () {
 			// Potential problem with this case is that if the end date is calculated incorrectly, event might be shortened by a few
 			// days (see #1786).
-			const eventStart = getAllDayDateUTCFromZone(DateTime.fromISO("2020-03-29", {zone}).toJSDate(), zone)
-			const eventEnd = getAllDayDateUTCFromZone(DateTime.fromISO("2020-04-01", {zone}).toJSDate(), zone)
+			const eventStart = getAllDayDateUTCFromZone(DateTime.fromISO("2020-03-29", { zone }).toJSDate(), zone)
+			const eventEnd = getAllDayDateUTCFromZone(DateTime.fromISO("2020-04-01", { zone }).toJSDate(), zone)
 			const event = createEvent(eventStart, eventEnd)
 			const repeatRule = createRepeatRuleWithValues(RepeatPeriod.MONTHLY, 1)
 			repeatRule.endValue = "2"
@@ -426,22 +426,22 @@ o.spec("CalendarModel", function () {
 			addDaysForRecurringEvent(eventsForDays, event, getMonth(DateTime.local(2020, 3).toJSDate(), zone), zone)
 
 			const expectedForMarch = {
-				[DateTime.fromISO("2020-03-29", {zone}).toMillis()]: [event],
-				[DateTime.fromISO("2020-03-30", {zone}).toMillis()]: [event],
-				[DateTime.fromISO("2020-03-31", {zone}).toMillis()]: [event],
+				[DateTime.fromISO("2020-03-29", { zone }).toMillis()]: [event],
+				[DateTime.fromISO("2020-03-30", { zone }).toMillis()]: [event],
+				[DateTime.fromISO("2020-03-31", { zone }).toMillis()]: [event],
 			}
 			o(mapToObject(eventsForDays)).deepEquals(expectedForMarch)
 
 			addDaysForRecurringEvent(eventsForDays, event, getMonth(DateTime.local(2020, 4).toJSDate(), zone), zone)
 
 			const occurrence = cloneEventWithNewTime(event,
-				getAllDayDateUTCFromZone(DateTime.fromISO("2020-04-29", {zone}).toJSDate(), zone),
-				getAllDayDateUTCFromZone(DateTime.fromISO("2020-05-02", {zone}).toJSDate(), zone),
+				getAllDayDateUTCFromZone(DateTime.fromISO("2020-04-29", { zone }).toJSDate(), zone),
+				getAllDayDateUTCFromZone(DateTime.fromISO("2020-05-02", { zone }).toJSDate(), zone),
 			)
 			const expectedForApril = Object.assign({}, expectedForMarch, {
-				[DateTime.fromISO("2020-04-29", {zone}).toMillis()]: [occurrence],
-				[DateTime.fromISO("2020-04-30", {zone}).toMillis()]: [occurrence],
-				[DateTime.fromISO("2020-05-01", {zone}).toMillis()]: [occurrence],
+				[DateTime.fromISO("2020-04-29", { zone }).toMillis()]: [occurrence],
+				[DateTime.fromISO("2020-04-30", { zone }).toMillis()]: [occurrence],
+				[DateTime.fromISO("2020-05-01", { zone }).toMillis()]: [occurrence],
 			})
 			o(mapToObject(eventsForDays)).deepEquals(expectedForApril)
 		})
@@ -449,8 +449,8 @@ o.spec("CalendarModel", function () {
 		o("monthly with longer month", function () {
 			// Potential problem with this case is that if the end date is calculated incorrectly, event might be stretched by a few
 			// days (see #1786).
-			const eventStart = getAllDayDateUTCFromZone(DateTime.fromISO("2020-02-29", {zone}).toJSDate(), zone)
-			const eventEnd = getAllDayDateUTCFromZone(DateTime.fromISO("2020-03-01", {zone}).toJSDate(), zone)
+			const eventStart = getAllDayDateUTCFromZone(DateTime.fromISO("2020-02-29", { zone }).toJSDate(), zone)
+			const eventEnd = getAllDayDateUTCFromZone(DateTime.fromISO("2020-03-01", { zone }).toJSDate(), zone)
 			const event = createEvent(eventStart, eventEnd)
 			const repeatRule = createRepeatRuleWithValues(RepeatPeriod.MONTHLY, 1)
 			repeatRule.endValue = "2"
@@ -460,21 +460,140 @@ o.spec("CalendarModel", function () {
 			addDaysForRecurringEvent(eventsForDays, event, getMonth(DateTime.local(2020, 2).toJSDate(), zone), zone)
 
 			const expectedForFebruary = {
-				[DateTime.fromISO("2020-02-29", {zone}).toMillis()]: [event],
+				[DateTime.fromISO("2020-02-29", { zone }).toMillis()]: [event],
 			}
 			o(mapToObject(eventsForDays)).deepEquals(expectedForFebruary)
 
 			addDaysForRecurringEvent(eventsForDays, event, getMonth(DateTime.local(2020, 3).toJSDate(), zone), zone)
 
 			const occurrence = cloneEventWithNewTime(event,
-				getAllDayDateUTCFromZone(DateTime.fromISO("2020-03-29", {zone}).toJSDate(), zone),
-				getAllDayDateUTCFromZone(DateTime.fromISO("2020-03-30", {zone}).toJSDate(), zone),
+				getAllDayDateUTCFromZone(DateTime.fromISO("2020-03-29", { zone }).toJSDate(), zone),
+				getAllDayDateUTCFromZone(DateTime.fromISO("2020-03-30", { zone }).toJSDate(), zone),
 			)
 			const expectedForMarch = Object.assign({}, expectedForFebruary, {
-				[DateTime.fromISO("2020-03-29", {zone}).toMillis()]: [occurrence],
+				[DateTime.fromISO("2020-03-29", { zone }).toMillis()]: [occurrence],
 			})
 			o(mapToObject(eventsForDays)).deepEquals(expectedForMarch)
 		})
+
+		o.only("recuring event - weekly byday ", function () {
+			// RRULE:FREQ=WEEKLY;COUNT=10;WKST=SU;BYDAY=TU,TH
+
+			// ==> (1997 9:00 AM EDT) September 2,4,9,11,16,18,23,25,30;
+			// October 2
+
+			const event = createEvent(new Date(1997, 8, 2, 9), new Date(1997, 8, 2, 10))
+			event.repeatRule = createRepeatRuleWithValues(RepeatPeriod.WEEKLY, 1)
+			event.repeatRule.endType = EndType.Count
+			event.repeatRule.endValue = "10"
+			event.repeatRule.byKind = ByRuleType.BYDAY;
+			event.repeatRule.byValue = "TU,TH";
+
+			addDaysForRecurringEvent(eventsForDays, event, getMonth(new Date(1997, 8), zone), zone)
+
+			const expected = {
+				[new Date(1997, 8, 2).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 2, 9), new Date(1997, 8, 2, 10))],
+				[new Date(1997, 8, 4).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 4, 9), new Date(1997, 8, 4, 10))],
+				[new Date(1997, 8, 9).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 9, 9), new Date(1997, 8, 9, 10))],
+				[new Date(1997, 8, 11).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 11, 9), new Date(1997, 8, 11, 10))],
+				[new Date(1997, 8, 16).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 16, 9), new Date(1997, 8, 16, 10))],
+				[new Date(1997, 8, 18).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 18, 9), new Date(1997, 8, 18, 10))],
+				[new Date(1997, 8, 23).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 23, 9), new Date(1997, 8, 23, 10))],
+				[new Date(1997, 8, 25).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 25, 9), new Date(1997, 8, 25, 10))],
+				[new Date(1997, 8, 30).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 30, 9), new Date(1997, 8, 30, 10))]
+			}
+
+			o(Array.from(eventsForDays.keys()).map(d => new Date(d).toISOString())).deepEquals(Object.keys(expected).map(d => new Date(Number(d)).toISOString()))
+		})
+
+		o.only("recuring event - every 2 weeks byday", function () {
+			// Every other week on Monday, Wednesday, and Friday until December
+			// 24, 1997, starting on Monday, September 1, 1997:
+
+			//  DTSTART;TZID=America/New_York:19970901T090000
+			//  RRULE:FREQ=WEEKLY;INTERVAL=2;UNTIL=19971224T000000Z;WKST=SU;
+			//   BYDAY=MO,WE,FR
+
+
+			const event = createEvent(new Date(1997, 8, 1, 9), new Date(1997, 8, 1, 10))
+			event.repeatRule = createRepeatRuleWithValues(RepeatPeriod.WEEKLY, 2)
+			event.repeatRule.endType = EndType.UntilDate
+			event.repeatRule.endValue = "885596400000"
+			event.repeatRule.byKind = ByRuleType.BYDAY;
+			event.repeatRule.byValue = "MO,WE,FR";
+
+			addDaysForRecurringEvent(eventsForDays, event, getMonth(new Date(1997, 8), zone), zone)
+
+			// September 1,3,5,15,17,19,29;
+			const expected = {
+				[new Date(1997, 8, 1).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 2, 9), new Date(1997, 8, 2, 10))],
+				[new Date(1997, 8, 3).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 4, 9), new Date(1997, 8, 4, 10))],
+				[new Date(1997, 8, 5).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 9, 9), new Date(1997, 8, 9, 10))],
+				[new Date(1997, 8, 15).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 11, 9), new Date(1997, 8, 11, 10))],
+				[new Date(1997, 8, 17).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 16, 9), new Date(1997, 8, 16, 10))],
+				[new Date(1997, 8, 19).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 18, 9), new Date(1997, 8, 18, 10))],
+				[new Date(1997, 8, 29).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 23, 9), new Date(1997, 8, 23, 10))],
+			}
+
+			o(Array.from(eventsForDays.keys()).map(d => new Date(d).toISOString())).deepEquals(Object.keys(expected).map(d => new Date(Number(d)).toISOString()))
+		})
+
+		o.only("recuring event - every two weeks byday until 5 times", function () {
+			// RRULE:FREQ=WEEKLY;COUNT=10;WKST=SU;BYDAY=TU,TH
+
+			// ==> (1997 9:00 AM EDT) September 2,4,9,11,16,18,23,25,30;
+			// October 2
+
+			const event = createEvent(new Date(1997, 8, 2, 9), new Date(1997, 8, 2, 10))
+			event.repeatRule = createRepeatRuleWithValues(RepeatPeriod.WEEKLY, 2)
+			event.repeatRule.endType = EndType.Count
+			event.repeatRule.endValue = "5"
+			event.repeatRule.byKind = ByRuleType.BYDAY;
+			event.repeatRule.byValue = "TU,TH";
+
+			addDaysForRecurringEvent(eventsForDays, event, getMonth(new Date(1997, 8), zone), zone)
+
+			const expected = {
+				[new Date(1997, 8, 2).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 2, 9), new Date(1997, 8, 2, 10))],
+				[new Date(1997, 8, 4).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 4, 9), new Date(1997, 8, 4, 10))],
+				[new Date(1997, 8, 16).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 16, 9), new Date(1997, 8, 16, 10))],
+				[new Date(1997, 8, 18).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 18, 9), new Date(1997, 8, 18, 10))],
+				[new Date(1997, 8, 30).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 30, 9), new Date(1997, 8, 30, 10))]
+			}
+
+			o(Array.from(eventsForDays.keys()).map(d => new Date(d).toISOString())).deepEquals(Object.keys(expected).map(d => new Date(Number(d)).toISOString()))
+		})
+
+		o.only("recuring event - monthly on the first Friday", function () {
+			// Monthly on the first Friday until December 24, 1997:
+
+			// DTSTART;TZID=America/New_York:19970905T090000
+			// RRULE:FREQ=MONTHLY;UNTIL=19971224T000000Z;BYDAY=1FR
+	 
+			// ==> (1997 9:00 AM EDT) September 5; October 3
+			// 	(1997 9:00 AM EST) November 7; December 5
+
+			const event = createEvent(new Date(1997, 8, 5, 9), new Date(1997, 8, 5, 10))
+			event.repeatRule = createRepeatRuleWithValues(RepeatPeriod.MONTHLY, 1)
+			event.repeatRule.endType = EndType.UntilDate
+			event.repeatRule.endValue = "882918000000"
+			event.repeatRule.byKind = ByRuleType.BYDAY;
+			event.repeatRule.byValue = "1FR";
+
+			addDaysForRecurringEvent(eventsForDays, event, getMonth(new Date(1997, 8), zone), zone)
+			addDaysForRecurringEvent(eventsForDays, event, getMonth(new Date(1997, 9), zone), zone)
+			addDaysForRecurringEvent(eventsForDays, event, getMonth(new Date(1997, 10), zone), zone)
+			addDaysForRecurringEvent(eventsForDays, event, getMonth(new Date(1997, 11), zone), zone)
+			const expected = {
+				[new Date(1997, 8, 5).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 5, 9), new Date(1997, 8, 5, 10))],
+				[new Date(1997, 9, 3).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 4, 9), new Date(1997, 8, 4, 10))],
+				[new Date(1997, 10, 7).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 16, 9), new Date(1997, 8, 16, 10))],
+				[new Date(1997, 11, 5).getTime()]: [cloneEventWithNewTime(event, new Date(1997, 8, 18, 9), new Date(1997, 8, 18, 10))]
+			}
+
+			o(Array.from(eventsForDays.keys()).map(d => new Date(d).toISOString())).deepEquals(Object.keys(expected).map(d => new Date(Number(d)).toISOString()))
+		})
+
 	})
 
 	o.spec("addDaysForEvent for long events", function () {
@@ -585,52 +704,52 @@ o.spec("CalendarModel", function () {
 		const timeZone = 'Europe/Berlin'
 
 		o("with daylight saving", function () {
-			const daylightSavingDay = DateTime.fromObject({year: 2019, month: 10, day: 26, hour: 10, zone: 'Europe/Moscow'}).toJSDate()
-			const dayAfter = DateTime.fromObject({year: 2019, month: 10, day: 27, hour: 11, zone: 'Europe/Moscow'}).toJSDate()
+			const daylightSavingDay = DateTime.fromObject({ year: 2019, month: 10, day: 26, hour: 10, zone: 'Europe/Moscow' }).toJSDate()
+			const dayAfter = DateTime.fromObject({ year: 2019, month: 10, day: 27, hour: 11, zone: 'Europe/Moscow' }).toJSDate()
 
 			// event timezone is subject to daylight saving but observer is not
 			o(incrementByRepeatPeriod(daylightSavingDay, RepeatPeriod.DAILY, 1, timeZone).toISOString()).equals(dayAfter.toISOString())
 		})
 
 		o("event in timezone without daylight saving should not be subject to daylight saving", function () {
-			const daylightSavingDay = DateTime.fromObject({year: 2019, month: 10, day: 26, hour: 10, zone: 'Europe/Moscow'}).toJSDate()
-			const dayAfter = DateTime.fromObject({year: 2019, month: 10, day: 27, hour: 10, zone: 'Europe/Moscow'}).toJSDate()
+			const daylightSavingDay = DateTime.fromObject({ year: 2019, month: 10, day: 26, hour: 10, zone: 'Europe/Moscow' }).toJSDate()
+			const dayAfter = DateTime.fromObject({ year: 2019, month: 10, day: 27, hour: 10, zone: 'Europe/Moscow' }).toJSDate()
 
 			o(incrementByRepeatPeriod(daylightSavingDay, RepeatPeriod.DAILY, 1, 'Europe/Moscow').toISOString())
 				.equals(dayAfter.toISOString())
 		})
 
 		o("weekly", function () {
-			const onFriday = DateTime.fromObject({year: 2019, month: 5, day: 31, hour: 10, zone: timeZone}).toJSDate()
-			const nextFriday = DateTime.fromObject({year: 2019, month: 6, day: 7, hour: 10, zone: timeZone}).toJSDate()
+			const onFriday = DateTime.fromObject({ year: 2019, month: 5, day: 31, hour: 10, zone: timeZone }).toJSDate()
+			const nextFriday = DateTime.fromObject({ year: 2019, month: 6, day: 7, hour: 10, zone: timeZone }).toJSDate()
 
 			o(incrementByRepeatPeriod(onFriday, RepeatPeriod.WEEKLY, 1, timeZone).toISOString()).equals(nextFriday.toISOString())
 
-			const oneYearAfter = DateTime.fromObject({year: 2020, month: 5, day: 29, hour: 10, zone: timeZone}).toJSDate()
+			const oneYearAfter = DateTime.fromObject({ year: 2020, month: 5, day: 29, hour: 10, zone: timeZone }).toJSDate()
 			o(incrementByRepeatPeriod(onFriday, RepeatPeriod.WEEKLY, 52, timeZone).toISOString()).equals(oneYearAfter.toISOString())
 		})
 
 		o("monthly", function () {
-			const endOfMay = DateTime.fromObject({year: 2019, month: 5, day: 31, zone: timeZone}).toJSDate()
-			const endOfJune = DateTime.fromObject({year: 2019, month: 6, day: 30, zone: timeZone}).toJSDate()
+			const endOfMay = DateTime.fromObject({ year: 2019, month: 5, day: 31, zone: timeZone }).toJSDate()
+			const endOfJune = DateTime.fromObject({ year: 2019, month: 6, day: 30, zone: timeZone }).toJSDate()
 			const calculatedEndOfJune = incrementByRepeatPeriod(endOfMay, RepeatPeriod.MONTHLY, 1, timeZone)
 			o(calculatedEndOfJune.toISOString()).equals(endOfJune.toISOString())
 
-			const endOfJuly = DateTime.fromObject({year: 2019, month: 7, day: 31, zone: timeZone}).toJSDate()
+			const endOfJuly = DateTime.fromObject({ year: 2019, month: 7, day: 31, zone: timeZone }).toJSDate()
 			const endOfJulyString = endOfJuly.toISOString()
 			const incrementedDateString = incrementByRepeatPeriod(endOfMay, RepeatPeriod.MONTHLY, 2, timeZone).toISOString()
 			o(incrementedDateString).equals(endOfJulyString)
 		})
 
 		o("annually", function () {
-			const leapYear = DateTime.fromObject({year: 2020, month: 2, day: 29, zone: timeZone}).toJSDate()
-			const yearAfter = DateTime.fromObject({year: 2021, month: 2, day: 28, zone: timeZone}).toJSDate()
+			const leapYear = DateTime.fromObject({ year: 2020, month: 2, day: 29, zone: timeZone }).toJSDate()
+			const yearAfter = DateTime.fromObject({ year: 2021, month: 2, day: 28, zone: timeZone }).toJSDate()
 			o(incrementByRepeatPeriod(leapYear, RepeatPeriod.ANNUALLY, 1, timeZone).toISOString()).equals(yearAfter.toISOString())
 
-			const twoYearsAfter = DateTime.fromObject({year: 2022, month: 2, day: 28, zone: timeZone}).toJSDate()
+			const twoYearsAfter = DateTime.fromObject({ year: 2022, month: 2, day: 28, zone: timeZone }).toJSDate()
 			o(incrementByRepeatPeriod(leapYear, RepeatPeriod.ANNUALLY, 2, timeZone).toISOString()).equals(twoYearsAfter.toISOString())
 
-			const fourYearsAfter = DateTime.fromObject({year: 2024, month: 2, day: 29, zone: timeZone}).toJSDate()
+			const fourYearsAfter = DateTime.fromObject({ year: 2024, month: 2, day: 29, zone: timeZone }).toJSDate()
 			o(incrementByRepeatPeriod(leapYear, RepeatPeriod.ANNUALLY, 4, timeZone).toISOString()).equals(fourYearsAfter.toISOString())
 		})
 	})
@@ -638,30 +757,30 @@ o.spec("CalendarModel", function () {
 	o.spec("iterateEventOccurrences", function () {
 		const timeZone = 'Europe/Berlin'
 		o("iterates", function () {
-			const now = DateTime.fromObject({year: 2019, month: 5, day: 2, zone: timeZone}).toJSDate()
-			const eventStart = DateTime.fromObject({year: 2019, month: 5, day: 2, hour: 12, zone: timeZone}).toJSDate()
-			const eventEnd = DateTime.fromObject({year: 2019, month: 5, day: 2, hour: 14, zone: timeZone}).toJSDate()
+			const now = DateTime.fromObject({ year: 2019, month: 5, day: 2, zone: timeZone }).toJSDate()
+			const eventStart = DateTime.fromObject({ year: 2019, month: 5, day: 2, hour: 12, zone: timeZone }).toJSDate()
+			const eventEnd = DateTime.fromObject({ year: 2019, month: 5, day: 2, hour: 14, zone: timeZone }).toJSDate()
 			const occurrences = []
 			iterateEventOccurrences(now, timeZone, eventStart, eventEnd, RepeatPeriod.WEEKLY, 1, EndType.Never, 0, AlarmInterval.ONE_HOUR, timeZone, (time) => {
 				occurrences.push(time)
 			})
 
 			o(occurrences.slice(0, 4)).deepEquals([
-				DateTime.fromObject({year: 2019, month: 5, day: 2, hour: 11, zone: timeZone}).toJSDate(),
-				DateTime.fromObject({year: 2019, month: 5, day: 9, hour: 11, zone: timeZone}).toJSDate(),
-				DateTime.fromObject({year: 2019, month: 5, day: 16, hour: 11, zone: timeZone}).toJSDate(),
-				DateTime.fromObject({year: 2019, month: 5, day: 23, hour: 11, zone: timeZone}).toJSDate()
+				DateTime.fromObject({ year: 2019, month: 5, day: 2, hour: 11, zone: timeZone }).toJSDate(),
+				DateTime.fromObject({ year: 2019, month: 5, day: 9, hour: 11, zone: timeZone }).toJSDate(),
+				DateTime.fromObject({ year: 2019, month: 5, day: 16, hour: 11, zone: timeZone }).toJSDate(),
+				DateTime.fromObject({ year: 2019, month: 5, day: 23, hour: 11, zone: timeZone }).toJSDate()
 			])
 		})
 
 		o("ends for all-day event correctly", function () {
 			const repeatRuleTimeZone = "Asia/Anadyr" // +12
 
-			const now = DateTime.fromObject({year: 2019, month: 5, day: 1, zone: timeZone}).toJSDate()
+			const now = DateTime.fromObject({ year: 2019, month: 5, day: 1, zone: timeZone }).toJSDate()
 			// UTC date just encodes the date, whatever you pass to it. You just have to extract consistently
-			const eventStart = getAllDayDateUTC(DateTime.fromObject({year: 2019, month: 5, day: 2}).toJSDate())
-			const eventEnd = getAllDayDateUTC(DateTime.fromObject({year: 2019, month: 5, day: 3}).toJSDate())
-			const repeatEnd = getAllDayDateUTC(DateTime.fromObject({year: 2019, month: 5, day: 4}).toJSDate())
+			const eventStart = getAllDayDateUTC(DateTime.fromObject({ year: 2019, month: 5, day: 2 }).toJSDate())
+			const eventEnd = getAllDayDateUTC(DateTime.fromObject({ year: 2019, month: 5, day: 3 }).toJSDate())
+			const repeatEnd = getAllDayDateUTC(DateTime.fromObject({ year: 2019, month: 5, day: 4 }).toJSDate())
 			const occurrences = []
 			iterateEventOccurrences(now, repeatRuleTimeZone, eventStart, eventEnd, RepeatPeriod.DAILY, 1, EndType.UntilDate,
 				repeatEnd.getTime(), AlarmInterval.ONE_DAY,
@@ -671,8 +790,8 @@ o.spec("CalendarModel", function () {
 				})
 
 			o(occurrences).deepEquals([
-				DateTime.fromObject({year: 2019, month: 5, day: 1, hour: 0, zone: timeZone}).toJSDate(),
-				DateTime.fromObject({year: 2019, month: 5, day: 2, hour: 0, zone: timeZone}).toJSDate(),
+				DateTime.fromObject({ year: 2019, month: 5, day: 1, hour: 0, zone: timeZone }).toJSDate(),
+				DateTime.fromObject({ year: 2019, month: 5, day: 2, hour: 0, zone: timeZone }).toJSDate(),
 			])
 		})
 	})
