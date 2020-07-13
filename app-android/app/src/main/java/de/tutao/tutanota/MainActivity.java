@@ -95,6 +95,7 @@ public class MainActivity extends ComponentActivity {
 		this.setupPushNotifications();
 
 		webView = new WebView(this);
+		webView.getSettings().setBuiltInZoomControls(true);
 		webView.setBackgroundColor(getResources().getColor(android.R.color.transparent));
 		setContentView(webView);
 		final String appUrl = getUrl();

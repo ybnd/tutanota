@@ -76,6 +76,7 @@ import type {PasswordChannelReturn} from "../../entities/tutanota/PasswordChanne
 import type {SaltReturn} from "../../entities/sys/SaltReturn"
 import type {GroupMembership} from "../../entities/sys/GroupMembership"
 import type {EntityUpdate} from "../../entities/sys/EntityUpdate"
+import {createEntropyData} from "../../entities/tutanota/EntropyData"
 
 assertWorkerOrNode()
 
@@ -528,11 +529,12 @@ export class LoginFacade {
 
 	storeEntropy(): Promise<void> {
 		if (!this._accessToken) return Promise.resolve()
-		return loadRoot(TutanotaPropertiesTypeRef, this.getUserGroupId()).then(tutanotaProperties => {
-			tutanotaProperties.groupEncEntropy = encryptBytes(this.getUserGroupKey(), random.generateRandomData(32))
-			return update(tutanotaProperties)
-				.catch(LockedError, noOp)
-		}).catch(ConnectionError, e => {
+		const userGroupKey = this.getUserGroupKey()
+		const entropyData = createEntropyData({
+			groupEncEntropy: encryptBytes(userGroupKey, random.generateRandomData(32))
+		})
+		return serviceRequestVoid(TutanotaService.EntropyService, HttpMethod.PUT, entropyData)
+		.catch(ConnectionError, e => {
 			console.log("could not store entropy", e)
 		}).catch(ServiceUnavailableError, e => {
 			console.log("could not store entropy", e)

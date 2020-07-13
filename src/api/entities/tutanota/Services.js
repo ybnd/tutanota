@@ -21,5 +21,6 @@ export const TutanotaService = {
 	ListUnsubscribeService: "listunsubscribeservice",
 	CalendarService: "calendarservice",
 	GroupInvitationService: "groupinvitationservice",
-	ReportPhishingService: "reportphishingservice"
+	ReportPhishingService: "reportphishingservice",
+	EntropyService: "entropyservice"
 }
