@@ -24,7 +24,6 @@ import type {ContactFormAccountReturn} from "../entities/tutanota/ContactFormAcc
 import type {PaymentDataServicePutReturn} from "../entities/sys/PaymentDataServicePutReturn"
 import type {EntityUpdate} from "../entities/sys/EntityUpdate"
 import type {WebsocketCounterData} from "../entities/sys/WebsocketCounterData"
-import type {PhishingMarkerWebsocketData} from "../entities/tutanota/PhishingMarkerWebsocketData"
 
 assertWorkerOrNode()
 
@@ -334,6 +333,15 @@ export class WorkerImpl {
 			},
 			checkMailForPhishing: (message: Request) => {
 				return locator.mail.checkMailForPhishing(...message.args)
+			},
+			addAllowedExternalSender: (message: Request) => {
+				return locator.indexer.addAllowedExternalSender(...message.args)
+			},
+			removeAllowedExternalSender: (message: Request) => {
+				return locator.indexer.removeAllowedExternalSender(...message.args)
+			},
+			isAllowedExternalSender: (message: Request) => {
+				return locator.indexer.isAllowedExternalSender(...message.args)
 			}
 		})
 

@@ -585,6 +585,18 @@ export class WorkerClient {
 	checkMailForPhishing(mail: Mail, links: Array<string>): Promise<boolean> {
 		return this._queue.postMessage(new Request("checkMailForPhishing", [mail, links]))
 	}
+
+	addAllowedExternalSender(address: string): Promise<void> {
+		return this._queue.postMessage(new Request("addAllowedExternalSender", [address]))
+	}
+
+	removeAllowedExternalSender(address: string): Promise<void> {
+		return this._queue.postMessage(new Request("removeAllowedExternalSender", [address]))
+	}
+
+	isAllowedExternalSender(address: string): Promise<boolean> {
+		return this._queue.postMessage(new Request("isAllowedExternalSender", [address]))
+	}
 }
 
 export const worker = new WorkerClient()
