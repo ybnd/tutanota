@@ -33,7 +33,6 @@ import {ExpanderButtonN, ExpanderPanelN} from "../gui/base/ExpanderN"
 import {client} from "../misc/ClientDetector"
 import type {Guest} from "./CalendarEventViewModel"
 import {CalendarEventViewModel, createCalendarEventViewModel} from "./CalendarEventViewModel"
-import {theme} from "../gui/theme"
 import type {RecipientInfo} from "../api/common/RecipientInfo"
 import {RecipientInfoType} from "../api/common/RecipientInfo"
 import {PasswordIndicator} from "../gui/base/PasswordIndicator"
@@ -41,6 +40,7 @@ import {getPasswordStrength} from "../misc/PasswordUtils"
 import {animations, height} from "../gui/animation/Animations"
 import {UserError} from "../api/common/error/UserError"
 import type {Mail} from "../api/entities/tutanota/Mail"
+import {theme} from "../gui/theme"
 
 const iconForStatus = {
 	[CalendarAttendeeStatus.ACCEPTED]: Icons.CircleCheckmark,
@@ -167,7 +167,7 @@ export function showCalendarEventDialog(date: Date, calendars: Map<Id, CalendarI
 	const attendeesExpanded = stream(viewModel.attendees().length > 0)
 
 	const renderInvitationField = (): Children => viewModel.canModifyGuests()
-		? m(".mt-negative-m", m(attendeesField))
+		? m(attendeesField)
 		: null
 
 	function renderAttendees() {
@@ -325,20 +325,6 @@ export function showCalendarEventDialog(date: Date, calendars: Map<Id, CalendarI
 		return m(".calendar-edit-container.pb", [
 				renderHeading(),
 				renderChangesMessage(),
-				renderDateTimePickers(),
-				m(".flex.items-center", [
-					m(CheckboxN, {
-						checked: viewModel.allDay,
-						disabled: viewModel.readOnly,
-						label: () => lang.get("allDay_label")
-					}),
-					m(".flex-grow"),
-					m(ExpanderButtonN, {
-						label: "guests_label",
-						expanded: attendeesExpanded,
-						style: {paddingTop: 0},
-					})
-				]),
 				m(ExpanderPanelN, {
 						expanded: attendeesExpanded,
 						class: "mb",
@@ -348,6 +334,15 @@ export function showCalendarEventDialog(date: Date, calendars: Map<Id, CalendarI
 						m(".flex-grow", renderAttendees())
 					],
 				),
+				renderDateTimePickers(),
+				m(".flex.items-center.mt-s", [
+					m(CheckboxN, {
+						checked: viewModel.allDay,
+						disabled: viewModel.readOnly,
+						label: () => lang.get("allDay_label")
+					}),
+					m(".flex-grow"),
+				]),
 				renderRepeatRulePicker(),
 				m(".flex", [
 					renderCalendarPicker(),
@@ -405,27 +400,19 @@ export function showCalendarEventDialog(date: Date, calendars: Map<Id, CalendarI
 		))
 		: null
 
-	const renderConfidentialButton = () => viewModel.attendees().find(a => a.type === RecipientInfoType.EXTERNAL)
-		? m(ButtonN, {
-				label: "confidential_action",
-				click: () => viewModel.setConfidential(!viewModel.isConfidential()),
-				icon: () => viewModel.isConfidential() ? Icons.Lock : Icons.Unlock,
-				isSelected: () => viewModel.isConfidential(),
-				noBubble: true,
-			}
-		)
-		: null
-
 	function renderHeading() {
 		return m(".flex.items-end", [
 			m(TextFieldN, {
 				label: "title_placeholder",
 				value: viewModel.summary,
 				disabled: viewModel.readOnly,
-				class: "big-input pt flex-grow mr-s"
+				class: "big-input pt flex-grow mr-s",
+				injectionsRight: () => m(ExpanderButtonN, {
+					label: "guests_label",
+					expanded: attendeesExpanded,
+					// style: {paddingTop: 0},
+				})
 			}),
-			renderConfidentialButton(),
-			renderDeleteButton(),
 		])
 	}
 
@@ -468,8 +455,8 @@ function renderStatusIcon(viewModel: CalendarEventViewModel, attendee: Guest, ow
 	]
 
 	const iconElement = icon
-		? m(Icon, {icon, large: true})
-		: m(".icon-large", {
+		? m(Icon, {icon})
+		: m(".icon", {
 			style: {display: "block"}
 		})
 	const status: CalendarAttendeeStatusEnum = downcast(attendee.status)
@@ -553,6 +540,7 @@ function makeBubbleHandler(viewModel: CalendarEventViewModel, onBubbleCreated: (
 	})
 
 	const invitePeopleValueTextField = new BubbleTextField("addGuest_label", bubbleHandler, {marginLeft: 0})
+	invitePeopleValueTextField.textField._injectionsRight = () => renderConfidentialButton(viewModel)
 	return invitePeopleValueTextField
 }
 
@@ -583,9 +571,12 @@ function renderGuest(guest: Guest, index: number, viewModel: CalendarEventViewMo
 	}, [
 		m(".flex.col.flex-grow.overflow-hidden.flex-no-grow-shrink-auto", [
 			m(".flex.flex-grow.items-center",
-				m("div.text-ellipsis", {style: {lineHeight: px(24)}},
-					guest.address.name ? `${guest.address.name} ${guest.address.address}` : guest.address.address
-				),
+				[
+					renderStatusIcon(viewModel, guest, ownAttendee),
+					m("div.text-ellipsis", {style: {lineHeight: px(24)}},
+						guest.address.name ? `${guest.address.name} ${guest.address.address}` : guest.address.address
+					),
+				]
 			),
 			m(".small", lang.get(isOrganizer ? "organizer_label" : "guest_label")
 				+ (guest === ownAttendee ? ` | ${lang.get("you_label")}` : "")),
@@ -593,9 +584,10 @@ function renderGuest(guest: Guest, index: number, viewModel: CalendarEventViewMo
 		m(".flex-grow"),
 		[
 			isOrganizer && viewModel.canModifyOrganizer()
-				? m(".mr-s.flew-grow", m(ButtonN, {
+				? m(".mr-negative-s", m(ButtonN, {
 					label: "edit_action",
-					type: ButtonType.Secondary,
+					type: ButtonType.Action,
+					icon: () => Icons.Edit,
 					click: createDropdown(() => {
 						return viewModel.possibleOrganizers.map((organizer) => {
 								return {
@@ -609,13 +601,26 @@ function renderGuest(guest: Guest, index: number, viewModel: CalendarEventViewMo
 				}))
 				: null,
 			!isOrganizer && viewModel.canModifyGuests()
-				? m(".mr-s-flex-grow", m(ButtonN, {
+				? m(".mr-negative-s", m(ButtonN, {
 					label: "remove_action",
-					type: ButtonType.Secondary,
+					type: ButtonType.Action,
+					icon: () => Icons.Cancel,
 					click: () => viewModel.removeAttendee(guest)
 				}))
 				: null,
-			renderStatusIcon(viewModel, guest, ownAttendee)
 		]
 	])
+}
+
+function renderConfidentialButton(viewModel) {
+	return viewModel.attendees().find(a => a.type === RecipientInfoType.EXTERNAL)
+		? m(ButtonN, {
+				label: "confidential_action",
+				click: () => viewModel.setConfidential(!viewModel.isConfidential()),
+				icon: () => viewModel.isConfidential() ? Icons.Lock : Icons.Unlock,
+				isSelected: () => viewModel.isConfidential(),
+				noBubble: true,
+			}
+		)
+		: null
 }
