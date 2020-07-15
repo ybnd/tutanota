@@ -84,6 +84,6 @@ export function replyToEventInvitation(
 	eventClone.sequence = incrementSequence(eventClone.sequence)
 	return locator.mailModel.getMailboxDetailsForMail(previousMail).then(mailboxDetails => {
 		const sendMailModel = new SendMailModel(logins, locator.mailModel, locator.contactModel, locator.eventController, mailboxDetails)
-		return calendarUpdateDistributor.sendResponse(event, sendMailModel, foundAttendee.address.address, previousMail, decision)
+		return calendarUpdateDistributor.sendResponse(eventClone, sendMailModel, foundAttendee.address.address, previousMail, decision)
 	})
 }
