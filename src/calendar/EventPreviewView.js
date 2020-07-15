@@ -14,6 +14,7 @@ import {getTimeZone} from "./CalendarUtils"
 import {px, size} from "../gui/size"
 import {memoized} from "../api/common/utils/Utils"
 import {htmlSanitizer} from "../misc/HtmlSanitizer"
+import {iconForAttendeeStatus} from "./CalendarEventEditDialog"
 
 export type Attrs = {
 	event: CalendarEvent,
@@ -36,7 +37,11 @@ export class EventPreviewView implements MComponent<Attrs> {
 				event.location ? m(".flex.pb-s.items-center", [renderSectionIndicator(Icons.Pin), event.location]) : null,
 				event.attendees.length
 					? m(".flex.pb-s.items-center", [
-						renderSectionIndicator(BootIcons.Contacts), event.attendees.map(a => a.address.address).join(", ")
+						renderSectionIndicator(BootIcons.Contacts),
+						m(".flex-wrap", event.attendees.map(a => m(".flex.items-center", [
+							m(".span.mr-s.line-break-anywhere", a.address.address),
+							m(Icon, {icon: iconForAttendeeStatus[a.status]})
+						]))),
 					])
 					: null,
 				!!event.description

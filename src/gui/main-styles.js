@@ -1,4 +1,3 @@
-
 //@flow
 import {styles} from "./styles"
 import {px, size} from "./size"
@@ -256,6 +255,7 @@ styles.registerStyle('main', () => {
 		'.text-prewrap': {'white-space': 'pre-wrap'},
 		'.text-preline': {'white-space': 'pre-line'},
 		'.text-pre': {'white-space': 'pre'},
+		'.line-break-anywhere': {'line-break': 'anywhere'},
 		'.z1': {'z-index': '1'},
 		'.z2': {'z-index': '2'},
 		'.z3': {'z-index': '3'},

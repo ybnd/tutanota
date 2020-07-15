@@ -42,13 +42,13 @@ import {UserError} from "../api/common/error/UserError"
 import type {Mail} from "../api/entities/tutanota/Mail"
 import {theme} from "../gui/theme"
 
-const iconForStatus = {
+export const iconForAttendeeStatus = Object.freeze({
 	[CalendarAttendeeStatus.ACCEPTED]: Icons.CircleCheckmark,
 	[CalendarAttendeeStatus.TENTATIVE]: Icons.CircleHelp,
 	[CalendarAttendeeStatus.DECLINED]: Icons.CircleReject,
 	[CalendarAttendeeStatus.NEEDS_ACTION]: Icons.CircleEmpty,
 	[CalendarAttendeeStatus.ADDED]: Icons.CircleEmpty,
-}
+})
 
 const alarmIntervalItems = [
 	{name: lang.get("comboBoxSelectionNone_msg"), value: null},
@@ -443,7 +443,7 @@ export function showCalendarEventDialog(date: Date, calendars: Map<Id, CalendarI
 
 
 function renderStatusIcon(viewModel: CalendarEventViewModel, attendee: Guest): Children {
-	const icon = iconForStatus[attendee.status]
+	const icon = iconForAttendeeStatus[attendee.status]
 
 	return m(Icon, {icon, class: "mr-s"})
 }
