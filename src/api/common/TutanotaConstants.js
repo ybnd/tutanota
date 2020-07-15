@@ -10,7 +10,7 @@ import type {CertificateInfo} from "../entities/sys/CertificateInfo"
 import type {UserSettingsGroupRoot} from "../entities/tutanota/UserSettingsGroupRoot"
 import type {CalendarEventAttendee} from "../entities/tutanota/CalendarEventAttendee"
 
-export const reverse = (objectMap: Object) => Object.keys(objectMap)
+export const reverse = (objectMap: Object): {} => Object.keys(objectMap)
                                                     .reduce((r, k) => Object.assign(r, {[objectMap[k]]: k}), {})
 
 export const GroupType = Object.freeze({
@@ -26,7 +26,7 @@ export const GroupType = Object.freeze({
 	Calendar: "9"
 })
 export type GroupTypeEnum = $Values<typeof GroupType>;
-export const getMembershipGroupType = (membership: GroupMembership) => downcast(membership.groupType)
+export const getMembershipGroupType = (membership: GroupMembership): GroupTypeEnum => downcast(membership.groupType)
 
 export const PermissionType = Object.freeze({
 	Public: "0",
@@ -132,7 +132,7 @@ export const BookingItemFeatureType = Object.freeze({
 	Sharing: '9'
 })
 export type BookingItemFeatureTypeEnum = $Values<typeof BookingItemFeatureType>;
-export const BookingItemFeatureByCode = reverse(BookingItemFeatureType)
+export const BookingItemFeatureByCode: {} = reverse(BookingItemFeatureType)
 
 
 export const PaymentMethodType = Object.freeze({
@@ -144,7 +144,7 @@ export const PaymentMethodType = Object.freeze({
 export type PaymentMethodTypeEnum = $Values<typeof PaymentMethodType>;
 export const getPaymentMethodType = (accountingInfo: AccountingInfo): PaymentMethodTypeEnum => downcast(accountingInfo.paymentMethod)
 
-export const ValueToPaymentMethodType = reverse(PaymentMethodType)
+export const ValueToPaymentMethodType: {} = reverse(PaymentMethodType)
 
 
 export const Const = {
@@ -328,7 +328,7 @@ export const FeatureType = Object.freeze({
 	DisableCalendar: "9",
 })
 export type FeatureTypeEnum = $Values<typeof FeatureType>;
-export const ValueToFeatureType = reverse(FeatureType)
+export const ValueToFeatureType: {} = reverse(FeatureType)
 
 export const BootstrapFeatureType = Object.freeze({
 	DisableSavePassword: "0",
@@ -391,7 +391,7 @@ export const InvoiceStatus = Object.freeze({
 	SECONDREMINDER: "11"
 })
 export type InvoiceStatusEnum = $Values<typeof InvoiceStatus>;
-export const ValueToInvoiceStatus = reverse(FeatureType)
+export const ValueToInvoiceStatus: {} = reverse(FeatureType)
 
 export const CloseEventBusOption = Object.freeze({
 	Terminate: "terminate",

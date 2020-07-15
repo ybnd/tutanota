@@ -38,7 +38,7 @@ function getParsedEvent(fileData: DataFile): ?{event: CalendarEvent, uid: string
 	}
 }
 
-export function showEventDetails(event: CalendarEvent, mail: ?Mail) {
+export function showEventDetails(event: CalendarEvent, mail: ?Mail): Promise<void> {
 	return Promise.all([
 		loadOrCreateCalendarInfo(),
 		locator.mailModel.getUserMailboxDetails(),

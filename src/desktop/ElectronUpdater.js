@@ -19,7 +19,7 @@ export class ElectronUpdater {
 	_checkUpdateSignature: boolean;
 	_errorCount: number;
 	_fallbackPollInterval: number = 15 * 60 * 1000;
-	_installOnQuit = false;
+	_installOnQuit: boolean = false;
 	_logger: {info(string, ...args: any): void, warn(string, ...args: any): void, error(string, ...args: any): void}
 
 	constructor(conf: DesktopConfigHandler, notifier: DesktopNotifier, fallbackPollInterval: ?number) {
@@ -94,7 +94,7 @@ export class ElectronUpdater {
 		})
 	}
 
-	+_enableAutoUpdateListener = () => this.start()
+	+_enableAutoUpdateListener: (() => void) = () => this.start()
 
 	start() {
 		try {

@@ -144,7 +144,7 @@ export class RestClient {
 
 }
 
-export function addParamsToUrl(url: string, urlParams: Params) {
+export function addParamsToUrl(url: string, urlParams: Params): string {
 	if (urlParams) {
 		url += "?"
 		for (var key in urlParams) {

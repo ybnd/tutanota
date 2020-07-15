@@ -17,6 +17,7 @@ import {asyncImport} from "../../api/common/utils/Utils"
 import type {PosRect} from "./Dropdown"
 import {Keys} from "../../api/common/TutanotaConstants"
 import {newMouseEvent} from "../HtmlUtils"
+import type {Shortcut} from "../../misc/KeyManager"
 
 assertMainOrNodeBoot()
 
@@ -168,7 +169,7 @@ export class DropdownN {
 		}
 	}
 
-	_createShortcuts() {
+	_createShortcuts(): Array<Shortcut> {
 		return [
 			{
 				key: Keys.ESC,
@@ -222,7 +223,7 @@ export class DropdownN {
 		return true
 	}
 
-	chooseMatch = () => {
+	chooseMatch: (() => boolean) = () => {
 		const filterString = this._filterString().toLowerCase()
 		let visibleElements: Array<ButtonAttrs | NavButtonAttrs> = (this._visibleChildren().filter(b => (typeof b !== "string")): any)
 		let matchingButton = visibleElements.length === 1
@@ -238,7 +239,7 @@ export class DropdownN {
 		return true
 	}
 
-	show(domElement: HTMLElement) {
+	show(domElement: HTMLElement): Promise<void> {
 		this._domContents = domElement
 		if (this.origin) {
 			let left = this.origin.left
@@ -284,6 +285,8 @@ export class DropdownN {
 					button && button.focus()
 				}
 			})
+		} else {
+			return Promise.resolve()
 		}
 	}
 
@@ -326,6 +329,7 @@ export function createDropdown(lazyButtons: lazy<$ReadOnlyArray<DropDownChildAtt
 	return createAsyncDropdown(() => Promise.resolve(lazyButtons()), width)
 }
 
+const importBase = typeof module !== "undefined" ? module.id : __moduleName
 export function createAsyncDropdown(lazyButtons: lazyAsync<$ReadOnlyArray<DropDownChildAttrs>>, width: number = 200): clickHandler {
 	// not all browsers have the actual button as e.currentTarget, but all of them send it as a second argument (see https://github.com/tutao/tutanota/issues/1110)
 	return ((e, dom) => {
@@ -337,8 +341,7 @@ export function createAsyncDropdown(lazyButtons: lazyAsync<$ReadOnlyArray<DropDo
 					originalButtons,
 					Promise.all([
 						Promise.delay(100),
-						asyncImport(typeof module !== "undefined" ? module.id : __moduleName,
-							`${env.rootPathPrefix}src/gui/base/ProgressDialog.js`)
+						asyncImport(importBase, `${env.rootPathPrefix}src/gui/base/ProgressDialog.js`)
 					]).then(([_, module]) => {
 						if (originalButtons.isPending()) {
 							return module.showProgressDialog("loading_msg", originalButtons)

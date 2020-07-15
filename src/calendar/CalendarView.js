@@ -747,7 +747,7 @@ export class CalendarView implements CurrentView {
 		return getHourOfDay(visibleStartOfView, DEFAULT_HOUR_OF_DAY)
 	}
 
-	_getNextHalfHour() {
+	_getNextHalfHour(): Date {
 		let date: Date = new Date()
 		if (date.getMinutes() > 30) {
 			date.setHours(date.getHours() + 1, 0)
@@ -757,7 +757,7 @@ export class CalendarView implements CurrentView {
 		return date
 	}
 
-	view() {
+	view(): Children {
 		return m(".main-view", m(this.viewSlider))
 	}
 
@@ -1009,7 +1009,7 @@ export class CalendarView implements CurrentView {
 		this._replaceEvents(newMap)
 	}
 
-	getViewSlider() {
+	getViewSlider(): ViewSlider {
 		return this.viewSlider
 	}
 

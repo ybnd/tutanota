@@ -454,7 +454,7 @@ export class CalendarModelImpl implements CalendarModel {
 		return erase(event)
 	}
 
-	_loadAndProcessCalendarUpdates() {
+	_loadAndProcessCalendarUpdates(): Promise<void> {
 		return locator.mailModel.getUserMailboxDetails().then((mailboxDetails) => {
 			const {calendarEventUpdates} = mailboxDetails.mailboxGroupRoot
 			if (calendarEventUpdates == null) return
@@ -467,7 +467,7 @@ export class CalendarModelImpl implements CalendarModel {
 		})
 	}
 
-	_handleCalendarEventUpdate(update: CalendarEventUpdate) {
+	_handleCalendarEventUpdate(update: CalendarEventUpdate): Promise<void> {
 		return load(FileTypeRef, update.file)
 			.then((file) => this._worker.downloadFileContent(file))
 			.then((dataFile: DataFile) => parseCalendarFile(dataFile))
@@ -477,15 +477,15 @@ export class CalendarModelImpl implements CalendarModel {
 
 	// We need to separate processing from talking to the worker
 
-	processCalendarUpdate(sender: string, calendarData: ParsedCalendarData) {
+	processCalendarUpdate(sender: string, calendarData: ParsedCalendarData): Promise<void> {
 		if (calendarData.contents.length !== 1) {
 			console.log(`Calendar update with ${calendarData.contents.length} events, ignoring`)
-			return
+			return Promise.resolve()
 		}
 		const {event} = calendarData.contents[0]
 		if (event == null || event.uid == null) {
 			console.log("Invalid event: ", event)
-			return
+			return Promise.resolve()
 		}
 		const uid = event.uid
 
@@ -712,4 +712,4 @@ function repeatRulesEqual(repeatRule: ?CalendarRepeatRule, repeatRule2: ?Calenda
 			repeatRule.timeZone === repeatRule2.timeZone)
 }
 
-export const calendarModel = new CalendarModelImpl(new Notifications, locator.eventController, worker, logins)
+export const calendarModel: CalendarModelImpl = new CalendarModelImpl(new Notifications, locator.eventController, worker, logins)

@@ -45,7 +45,7 @@ export class DesktopSettingsViewer implements UpdatableSettingsViewer {
 		this._requestDesktopConfig()
 	}
 
-	view() {
+	view(): Children {
 		const setDefaultMailtoHandlerAttrs: DropDownSelectorAttrs<boolean> = {
 			label: "defaultMailHandler_label",
 			helpLabel: () => lang.get("defaultMailHandler_msg"),
@@ -227,5 +227,5 @@ export class DesktopSettingsViewer implements UpdatableSettingsViewer {
 	}
 
 	// this is all local for now
-	entityEventsReceived = noOp
+	entityEventsReceived: (() => void) = noOp
 }

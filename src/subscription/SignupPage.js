@@ -139,7 +139,7 @@ export class SignupPage implements WizardPage<UpgradeSubscriptionData> {
 		return Promise.resolve(null)
 	}
 
-	isNextAvailable() {
+	isNextAvailable(): boolean {
 		return false
 	}
 
@@ -156,12 +156,12 @@ export class SignupPage implements WizardPage<UpgradeSubscriptionData> {
 	}
 
 
-	_getTermsLink() {
+	_getTermsLink(): string {
 		return (lang.code === "de" || lang.code === "de_sie") ?
 			"https://tutanota.com/de/terms#terms-free" : "https://tutanota.com/terms#terms-free"
 	}
 
-	_getPrivacyLink() {
+	_getPrivacyLink(): string {
 		return (lang.code === "de" || lang.code === "de_sie") ?
 			"https://tutanota.com/de/terms#privacy" : "https://tutanota.com/terms#privacy"
 	}
@@ -306,7 +306,7 @@ export class SignupPage implements WizardPage<UpgradeSubscriptionData> {
 			})
 	}
 
-	isEnabled(data: UpgradeSubscriptionData) {
+	isEnabled(data: UpgradeSubscriptionData): boolean {
 		return true
 	}
 }

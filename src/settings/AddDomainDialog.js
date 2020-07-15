@@ -85,7 +85,7 @@ export function showAddDomainDialog(customerInfo: CustomerInfo, domainDnsStatus:
 	})
 }
 
-export function createDnsRecordTable(records: DnsRecord[]) {
+export function createDnsRecordTable(records: DnsRecord[]): Children {
 	return m(TableN, {
 		columnHeading: ["type_label", "dnsRecordHostOrName_label", "dnsRecordValueOrPointsTo_label"],
 		columnWidths: [ColumnWidth.Small, ColumnWidth.Small, ColumnWidth.Largest],

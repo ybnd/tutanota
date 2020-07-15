@@ -47,7 +47,7 @@ export class CalendarEventPopup implements ModalComponent {
 		}
 	}
 
-	view(vnode: Vnode<any>) {
+	view(vnode: Vnode<any>): Children {
 		return m(".abs.content-bg.plr.border-radius", {
 				style: {
 					width: "400px",
@@ -115,7 +115,7 @@ export class CalendarEventPopup implements ModalComponent {
 		modal.remove(this)
 	}
 
-	hideAnimation() {
+	hideAnimation(): Promise<void> {
 		return Promise.resolve()
 	}
 

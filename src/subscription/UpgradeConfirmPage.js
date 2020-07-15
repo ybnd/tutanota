@@ -149,7 +149,7 @@ export class UpgradeConfirmPage implements WizardPage<UpgradeSubscriptionData> {
 		return Promise.resolve(null)
 	}
 
-	isNextAvailable() {
+	isNextAvailable(): boolean {
 		return false
 	}
 
@@ -184,7 +184,7 @@ export class UpgradeConfirmPage implements WizardPage<UpgradeSubscriptionData> {
 		return this._upgradeData
 	}
 
-	isEnabled(data: UpgradeSubscriptionData) {
+	isEnabled(data: UpgradeSubscriptionData): boolean {
 		return true
 	}
 }

@@ -159,7 +159,7 @@ export class MailViewer {
 	_inlineImages: Promise<InlineImages>;
 	_suspicious: boolean;
 	_domBodyDeferred: DeferredObject<HTMLElement>;
-	_lastBodyTouchEndTime = 0;
+	_lastBodyTouchEndTime: number = 0;
 	_lastTouchStart: {x: number, y: number, time: number};
 	_domForScrolling: ?HTMLElement
 	_warningDismissed: boolean;
@@ -376,7 +376,7 @@ export class MailViewer {
 		this._setupShortcuts()
 	}
 
-	_createDetailsExpander(bubbleMenuWidth: number, mail: Mail, expanderStyle: {}) {
+	_createDetailsExpander(bubbleMenuWidth: number, mail: Mail, expanderStyle: {}): ExpanderButton {
 		return new ExpanderButton("showMore_action", new ExpanderPanel({
 			view: () => {
 				const envelopeSender = this.mail.differentEnvelopeSender
@@ -473,7 +473,7 @@ export class MailViewer {
 		return dialog
 	}
 
-	_unsubscribe() {
+	_unsubscribe(): Promise<void> {
 		if (this.mail.headers) {
 			return showProgressDialog("pleaseWait_msg", load(MailHeadersTypeRef, this.mail.headers).then(mailHeaders => {
 				let headers = getMailHeaders(mailHeaders).split("\n").filter(headerLine =>
@@ -717,7 +717,7 @@ export class MailViewer {
 		showProgressDialog("pleaseWait_msg", exportPromise).then(df => fileController.open(df))
 	}
 
-	_markAsNotPhishing() {
+	_markAsNotPhishing(): Promise<void> {
 		const oldStatus = this.mail.phishingStatus
 		if (oldStatus === MailPhishingStatus.WHITELISTED) {
 			return
@@ -812,7 +812,7 @@ export class MailViewer {
 	/** @return list of inline referenced cid */
 	_loadMailBody(mail: Mail): Promise<Array<string>> {
 		return load(MailBodyTypeRef, mail.body).then(body => {
-			this._mailBody = body
+			this._mailBody =  body
 			let sanitizeResult = htmlSanitizer.sanitizeFragment(this._getMailBody(), true, isTutanotaTeamMail(mail))
 			this._checkMailForPhishing(mail, sanitizeResult.links)
 
@@ -1150,7 +1150,7 @@ export class MailViewer {
 			.catch(NotFoundError, noOp)
 	}
 
-	_editDraft() {
+	_editDraft(): Promise<void> {
 		return checkApprovalStatus(false).then(sendAllowed => {
 			if (sendAllowed) {
 				return locator.mailModel.getMailboxDetailsForMail(this.mail)
@@ -1170,7 +1170,7 @@ export class MailViewer {
 		})
 	}
 
-	_reply(replyAll: boolean) {
+	_reply(replyAll: boolean): Promise<void> {
 		if (this._isAnnouncement()) {
 			return
 		}
@@ -1235,7 +1235,7 @@ export class MailViewer {
 		})
 	}
 
-	_getMailBody() {
+	_getMailBody(): string {
 		if (this._mailBody) {
 			return getMailBodyText(this._mailBody)
 		} else {
@@ -1243,7 +1243,7 @@ export class MailViewer {
 		}
 	}
 
-	_forward() {
+	_forward(): Promise<void> {
 		return checkApprovalStatus(false).then(sendAllowed => {
 			if (sendAllowed) {
 				return this._createForwardingMailEditor([], [], true, true).then(editor => {

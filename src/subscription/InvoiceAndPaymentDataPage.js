@@ -88,7 +88,7 @@ export class InvoiceAndPaymentDataPage implements WizardPage<UpgradeSubscription
 	}
 
 
-	isNextAvailable() {
+	isNextAvailable(): boolean {
 		return false
 	}
 
@@ -131,7 +131,7 @@ export class InvoiceAndPaymentDataPage implements WizardPage<UpgradeSubscription
 		})
 	}
 
-	isEnabled(data: UpgradeSubscriptionData) {
+	isEnabled(data: UpgradeSubscriptionData): boolean {
 		return data.type !== SubscriptionType.Free
 	}
 

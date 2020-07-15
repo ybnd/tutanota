@@ -79,7 +79,7 @@ export class MailFacade {
 		this._deferredDraftUpdate = null
 	}
 
-	createMailFolder(name: string, parent: IdTuple, ownerGroupId: Id) {
+	createMailFolder(name: string, parent: IdTuple, ownerGroupId: Id): Promise<void> {
 		let mailGroupKey = this._login.getGroupKey(ownerGroupId)
 		let sk = aes128RandomKey()
 		let newFolder = createCreateMailFolderData()
@@ -426,7 +426,7 @@ export class MailFacade {
 	 * @param verifier The external user's verifier, base64 encoded.
 	 * @return Resolves to the the external user's group key and the external user's mail group key, rejected if an error occured
 	 */
-	_getExternalGroupKey = function (recipientInfo: RecipientInfo, externalUserPwKey: Aes128Key, verifier: Uint8Array): Promise<{externalUserGroupKey: Aes128Key, externalMailGroupKey: Aes128Key}> {
+	_getExternalGroupKey: ((RecipientInfo, Aes128Key, Uint8Array) => Promise<{externalMailGroupKey: Aes128Key, externalUserGroupKey: Aes128Key}>) = function (recipientInfo: RecipientInfo, externalUserPwKey: Aes128Key, verifier: Uint8Array): Promise<{externalUserGroupKey: Aes128Key, externalMailGroupKey: Aes128Key}> {
 		return loadRoot(GroupRootTypeRef, this._login.getUserGroupId()).then(groupRoot => {
 			let cleanedMailAddress = recipientInfo.mailAddress.trim().toLocaleLowerCase()
 			let mailAddressId = stringToCustomId(cleanedMailAddress)
@@ -510,7 +510,7 @@ export class MailFacade {
 	}
 }
 
-export function phishingMarkerValue(type: ReportedMailFieldTypeEnum, value: string) {
+export function phishingMarkerValue(type: ReportedMailFieldTypeEnum, value: string): string {
 	return type + murmurHash(value.replace(/\s/g, ""))
 }
 

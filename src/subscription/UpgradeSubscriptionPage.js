@@ -110,7 +110,7 @@ export class UpgradeSubscriptionPage implements WizardPage<UpgradeSubscriptionDa
 		return Promise.resolve(null)
 	}
 
-	isNextAvailable() {
+	isNextAvailable(): boolean {
 		return false
 	}
 
@@ -126,7 +126,7 @@ export class UpgradeSubscriptionPage implements WizardPage<UpgradeSubscriptionDa
 		return this._upgradeData
 	}
 
-	isEnabled(data: UpgradeSubscriptionData) {
+	isEnabled(data: UpgradeSubscriptionData): boolean {
 		return isTutanotaDomain() && !(isApp() && client.isIos())
 	}
 

@@ -13,6 +13,7 @@ import {lang} from "../../misc/LanguageViewModel"
 import {windowFacade} from "../../misc/WindowFacade"
 import {Keys} from "../../api/common/TutanotaConstants"
 import {newMouseEvent} from "../HtmlUtils"
+import type {Shortcut} from "../../misc/KeyManager"
 
 assertMainOrNodeBoot()
 
@@ -193,7 +194,7 @@ export class Dropdown {
 		return this._isFilterable ? size.button_height + size.vpad_xs : 0
 	}
 
-	_createShortcuts() {
+	_createShortcuts(): Array<Shortcut> {
 		const next = () => {
 			let visibleElements = this._visibleItems().filter(b => (typeof b !== "string"))
 			visibleElements = ((visibleElements: any): Array<Button>).map(b => b._domButton)
@@ -298,7 +299,7 @@ export class Dropdown {
 		this.close()
 	}
 
-	show(domElement: HTMLElement, animate: boolean = true) {
+	show(domElement: HTMLElement, animate: boolean = true): Promise<void> {
 		this._domContents = domElement
 		if (this.origin) {
 			let left = this.origin.left
@@ -356,6 +357,8 @@ export class Dropdown {
 						this._domContents.style.overflowY = client.overflowAuto
 					}
 				})
+		} else {
+			return Promise.resolve()
 		}
 	}
 

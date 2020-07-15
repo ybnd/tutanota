@@ -20,7 +20,7 @@ function keep(socketeer: Socketeer) {
  * preload can only require modules that were previously loaded in the node thread
  */
 const PreloadImports = {
-	startClient: (cb: (string)=>void) => sock.startClient(cb),
+	startClient: (cb: (string)=>void): void => sock.startClient(cb),
 	isMailAddress,
 	Request,
 	lang,

@@ -38,7 +38,7 @@ import type {GroupMembership} from "../api/entities/sys/GroupMembership"
 
 assertMainOrNode()
 
-export const CALENDAR_EVENT_HEIGHT = size.calendar_line_height + 2
+export const CALENDAR_EVENT_HEIGHT: number = size.calendar_line_height + 2
 export const CALENDAR_MIME_TYPE = "text/calendar"
 
 export type CalendarMonthTimeRange = {
@@ -193,7 +193,7 @@ export function createRepeatRuleWithValues(frequency: RepeatPeriodEnum, interval
 	return rule
 }
 
-export function isColorLight(c: string) {
+export function isColorLight(c: string): boolean {
 	const rgb = parseInt(c, 16);   // convert rrggbb to decimal
 	const r = (rgb >> 16) & 0xff;  // extract red
 	const g = (rgb >> 8) & 0xff;  // extract green
@@ -556,7 +556,7 @@ export function hasAlarmsForTheUser(event: CalendarEvent): boolean {
 	return event.alarmInfos.some(([listId]) => isSameId(listId, useAlarmList))
 }
 
-export function formatEventDuration(event: CalendarEvent, zone: string) {
+export function formatEventDuration(event: CalendarEvent, zone: string): string {
 	const startTime = getEventStart(event, zone)
 	const endTime = getEventEnd(event, zone)
 	if (isAllDayEvent(event)) {
