@@ -91,7 +91,6 @@ export class SendMailModel {
 	_body: string; // only defined till the editor is initialized
 	_conversationType: ConversationTypeEnum;
 	_previousMessageId: ?Id; // only needs to be the correct value if this is a new email. if we are editing a draft, conversationType is not used
-	// TODO
 	_confidentialButtonState: boolean;
 
 	_attachments: Array<EditorAttachment>; // contains either Files from Tutanota or DataFiles of locally loaded files. these map 1:1 to the _attachmentButtons

@@ -116,7 +116,7 @@ export function showCalendarEventDialog(date: Date, calendars: Map<Id, CalendarI
 		// We only set it once, we don't viewModel on every change, that would be slow
 		.setValue(viewModel.note)
 
-	const okAction = (dialog) => {
+	const okAction = () => {
 		const description = descriptionEditor.getValue()
 		if (description === "<div><br></div>") {
 			viewModel.changeDescription("")
@@ -420,7 +420,7 @@ export function showCalendarEventDialog(date: Date, calendars: Map<Id, CalendarI
 	const dialog = Dialog.largeDialog(
 		{
 			left: [{label: "cancel_action", click: finish, type: ButtonType.Secondary}],
-			right: [{label: "save_action", click: () => okAction(dialog), type: ButtonType.Primary}],
+			right: [{label: "save_action", click: () => okAction(), type: ButtonType.Primary}],
 			middle: () => lang.get("createEvent_label"),
 		},
 		{view: () => m(".calendar-edit-container.pb", renderDialogContent())}
@@ -431,7 +431,7 @@ export function showCalendarEventDialog(date: Date, calendars: Map<Id, CalendarI
 	}).addShortcut({
 		key: Keys.S,
 		ctrl: true,
-		exec: () => okAction(dialog),
+		exec: () => okAction(),
 		help: "save_action"
 	})
 	if (client.isMobileDevice()) {

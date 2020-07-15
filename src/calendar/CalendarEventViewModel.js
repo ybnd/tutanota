@@ -559,11 +559,22 @@ export class CalendarEventViewModel {
 		return Promise.resolve()
 	}
 
+	_checkPasswords(): void {
+		const needsPassword = this.attendees().some((a) => a.type === RecipientInfoType.EXTERNAL
+			&& (a.password == null || a.password === ""))
+		if (needsPassword) {
+			throw new UserError("noPreSharedPassword_msg")
+		}
+	}
+
 	/**
 	 * @reject UserError
 	 */
 	onOkPressed(): Promise<EventCreateResult> {
 		return Promise.resolve().then(() => {
+			// We check it here because updated are send asynchronously and dialog wil be already closed
+			this._checkPasswords()
+
 			// We have to use existing instance to get all the final fields correctly
 			// Using clone feels hacky but otherwise we need to save all attributes of the existing event somewhere and if dialog is
 			// cancelled we also don't want to modify passed event
