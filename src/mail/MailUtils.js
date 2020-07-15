@@ -66,10 +66,13 @@ assertMainOrNode()
  */
 export function createRecipientInfo(mailAddress: string, name: ?string, contact: ?Contact): RecipientInfo {
 	let type = isTutanotaMailAddress(mailAddress) ? RecipientInfoType.INTERNAL : RecipientInfoType.UNKNOWN
+	const usedName = name != null
+		? name
+		: contact != null ? getContactDisplayName(contact) : ""
 	return {
 		type,
 		mailAddress,
-		name: name || "", // "" will be replaced as soon as a contact is found
+		name: usedName,
 		contact: contact,
 		resolveContactPromise: null
 	}

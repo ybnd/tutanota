@@ -17,7 +17,7 @@ import {ButtonN, ButtonType} from "../gui/base/ButtonN"
 import type {CalendarAttendeeStatusEnum} from "../api/common/TutanotaConstants"
 import {AlarmInterval, CalendarAttendeeStatus, EndType, Keys, RepeatPeriod} from "../api/common/TutanotaConstants"
 import {findAndRemove, numberRange, remove} from "../api/common/utils/ArrayUtils"
-import {calendarAttendeeStatusDescription, getCalendarName, getStartOfTheWeekOffsetForUser} from "./CalendarUtils"
+import {getCalendarName, getStartOfTheWeekOffsetForUser} from "./CalendarUtils"
 import {TimePicker} from "../gui/base/TimePicker"
 import {getDisplayText} from "../mail/MailUtils"
 import type {MailboxDetail} from "../mail/MailModel"
@@ -400,20 +400,19 @@ export function showCalendarEventDialog(date: Date, calendars: Map<Id, CalendarI
 		))
 		: null
 
+
 	function renderHeading() {
-		return m(".flex.items-end", [
-			m(TextFieldN, {
-				label: "title_placeholder",
-				value: viewModel.summary,
-				disabled: viewModel.readOnly,
-				class: "big-input pt flex-grow mr-s",
-				injectionsRight: () => m(ExpanderButtonN, {
-					label: "guests_label",
-					expanded: attendeesExpanded,
-					// style: {paddingTop: 0},
-				})
-			}),
-		])
+		return m(TextFieldN, {
+			label: "title_placeholder",
+			value: viewModel.summary,
+			disabled: viewModel.readOnly,
+			class: "big-input pt flex-grow",
+			injectionsRight: () => m(ExpanderButtonN, {
+				label: "guests_label",
+				expanded: attendeesExpanded,
+				style: {paddingTop: 0},
+			})
+		})
 	}
 
 	viewModel.attendees.map(m.redraw)
@@ -443,47 +442,10 @@ export function showCalendarEventDialog(date: Date, calendars: Map<Id, CalendarI
 }
 
 
-function renderStatusIcon(viewModel: CalendarEventViewModel, attendee: Guest, ownAttendee: ?Guest): Children {
+function renderStatusIcon(viewModel: CalendarEventViewModel, attendee: Guest): Children {
 	const icon = iconForStatus[attendee.status]
 
-	const editable = ownAttendee === attendee && viewModel.canModifyOwnAttendance()
-
-	const selectors: SelectorItemList<CalendarAttendeeStatusEnum> = [
-		{name: "Yes", value: CalendarAttendeeStatus.ACCEPTED},
-		{name: "Maybe", value: CalendarAttendeeStatus.TENTATIVE},
-		{name: "No", value: CalendarAttendeeStatus.DECLINED},
-	]
-
-	const iconElement = icon
-		? m(Icon, {icon})
-		: m(".icon", {
-			style: {display: "block"}
-		})
-	const status: CalendarAttendeeStatusEnum = downcast(attendee.status)
-
-	return m("button.button-width.flex.items-center", {
-		title: calendarAttendeeStatusDescription(status),
-		disabled: !editable ? "true" : null,
-		onclick: (e) => {
-			if (editable) {
-				const openDropdown = createDropdown(() => {
-					return selectors.map(selector => {
-						const checkedIcon = selector.icon
-						return {
-							label: () => selector.name,
-							click: () => viewModel.selectGoing(selector.value),
-							type: ButtonType.Dropdown,
-							icon: checkedIcon ? () => checkedIcon : null
-						}
-					})
-				})
-				openDropdown(e, e.target)
-			}
-		}
-	}, [
-		iconElement,
-		editable ? m(Icon, {icon: BootIcons.Expand, style: {fill: theme.content_button}}) : m(".icon")
-	])
+	return m(Icon, {icon, class: "mr-s"})
 }
 
 
@@ -559,9 +521,41 @@ function renderTwoColumnsIfFits(left: Children, right: Children): Children {
 }
 
 
+function showOrganizerDropdown(viewModel: CalendarEventViewModel, e: MouseEvent) {
+	const makeButtons = () => viewModel.possibleOrganizers.map((organizer) => {
+		return {
+			label: () => organizer.address,
+			type: ButtonType.Dropdown,
+			click: () => viewModel.setOrganizer(organizer),
+		}
+	})
+	createDropdown(makeButtons, 300)(e, (e.target: any))
+}
+
+function showOwnAttendanceButton(viewModel: CalendarEventViewModel, e: MouseEvent) {
+	const selectors: SelectorItemList<CalendarAttendeeStatusEnum> = [
+		{name: lang.get("yes_label"), value: CalendarAttendeeStatus.ACCEPTED},
+		{name: lang.get("maybe_label"), value: CalendarAttendeeStatus.TENTATIVE},
+		{name: lang.get("no_label"), value: CalendarAttendeeStatus.DECLINED},
+	]
+	const makeButtons = () => {
+		return selectors.map(selector => {
+			const checkedIcon = selector.icon
+			return {
+				label: () => selector.name,
+				click: () => viewModel.selectGoing(selector.value),
+				type: ButtonType.Dropdown,
+				icon: checkedIcon ? () => checkedIcon : null
+			}
+		})
+	}
+	createDropdown(makeButtons)(e, (e.target: any))
+}
+
 function renderGuest(guest: Guest, index: number, viewModel: CalendarEventViewModel, ownAttendee: ?Guest): Children {
 	const {organizer} = viewModel
 	const isOrganizer = organizer && guest.address.address === organizer.address
+	const editableOrganizer = isOrganizer && viewModel.canModifyOrganizer()
 	return m(".flex", {
 		style: {
 			height: px(size.button_height),
@@ -570,37 +564,34 @@ function renderGuest(guest: Guest, index: number, viewModel: CalendarEventViewMo
 		},
 	}, [
 		m(".flex.col.flex-grow.overflow-hidden.flex-no-grow-shrink-auto", [
-			m(".flex.flex-grow.items-center",
+			m(".flex.flex-grow.items-center" + (editableOrganizer ? ".click" : ""),
+				editableOrganizer
+					? {
+						onclick: (e) => showOrganizerDropdown(viewModel, e)
+					}
+					: {},
 				[
-					renderStatusIcon(viewModel, guest, ownAttendee),
 					m("div.text-ellipsis", {style: {lineHeight: px(24)}},
 						guest.address.name ? `${guest.address.name} ${guest.address.address}` : guest.address.address
 					),
+					editableOrganizer ? m(Icon, {icon: BootIcons.Expand, style: {fill: theme.content_fg}}) : null,
 				]
 			),
-			m(".small", lang.get(isOrganizer ? "organizer_label" : "guest_label")
-				+ (guest === ownAttendee ? ` | ${lang.get("you_label")}` : "")),
+			m(".small.flex.center-vertically", [
+				renderStatusIcon(viewModel, guest),
+				lang.get(isOrganizer ? "organizer_label" : "guest_label") + (guest === ownAttendee ? ` | ${lang.get("you_label")}` : "")
+			]),
 		]),
 		m(".flex-grow"),
 		[
-			isOrganizer && viewModel.canModifyOrganizer()
+			ownAttendee === guest && viewModel.canModifyOwnAttendance()
 				? m(".mr-negative-s", m(ButtonN, {
 					label: "edit_action",
 					type: ButtonType.Action,
 					icon: () => Icons.Edit,
-					click: createDropdown(() => {
-						return viewModel.possibleOrganizers.map((organizer) => {
-								return {
-									label: () => organizer.address,
-									click: () => viewModel.setOrganizer(organizer),
-									type: ButtonType.Dropdown
-								}
-							}
-						)
-					}, 300)
+					click: (e) => showOwnAttendanceButton(viewModel, e)
 				}))
-				: null,
-			!isOrganizer && viewModel.canModifyGuests()
+				: viewModel.canModifyGuests()
 				? m(".mr-negative-s", m(ButtonN, {
 					label: "remove_action",
 					type: ButtonType.Action,
@@ -612,7 +603,7 @@ function renderGuest(guest: Guest, index: number, viewModel: CalendarEventViewMo
 	])
 }
 
-function renderConfidentialButton(viewModel) {
+function renderConfidentialButton(viewModel: CalendarEventViewModel) {
 	return viewModel.attendees().find(a => a.type === RecipientInfoType.EXTERNAL)
 		? m(ButtonN, {
 				label: "confidential_action",

@@ -125,7 +125,7 @@ export class CalendarEventViewModel {
 	+_guestStatuses: Stream<$ReadOnlyMap<string, CalendarAttendeeStatusEnum>>;
 	+_sendModelFactory: () => SendMailModel;
 	/** Our own attendee, it should not be included in any of the sendMailModels. */
-	_ownAttendee: ?EncryptedMailAddress;
+	+_ownAttendee: Stream<?EncryptedMailAddress>;
 	_responseTo: ?Mail
 
 	constructor(
@@ -155,41 +155,43 @@ export class CalendarEventViewModel {
 		this._guestStatuses = stream(new Map())
 		this._sendModelFactory = () => sendMailModelFactory(mailboxDetail, "response")
 		this._mailAddresses = getEnabledMailAddressesWithUser(mailboxDetail, userController.userGroupInfo)
+		this._ownAttendee = stream(null)
 
-		this.attendees = stream.merge([this._inviteModel.recipientsChanged, this._updateModel.recipientsChanged, this._guestStatuses])
-		                       .map(() => {
-			                       const guests = this._inviteModel._bccRecipients.concat(this._updateModel._bccRecipients)
-			                                          .map((recipientInfo) => {
-				                                          const password =
-					                                          recipientInfo.contact && recipientInfo.contact.presharedPassword || null
-				                                          return {
-					                                          address: createEncryptedMailAddress({
-						                                          name: recipientInfo.name,
-						                                          address: recipientInfo.mailAddress
-					                                          }),
-					                                          status: this._guestStatuses().get(recipientInfo.mailAddress)
-						                                          || CalendarAttendeeStatus.NEEDS_ACTION,
-					                                          type: recipientInfo.type,
-					                                          password,
-				                                          }
-			                                          })
-			                       const ownAttendee = this._ownAttendee
-			                       if (ownAttendee) {
-				                       guests.unshift({
-					                       address: ownAttendee,
-					                       status: this._guestStatuses().get(ownAttendee.address) || CalendarAttendeeStatus.ACCEPTED,
-					                       type: RecipientInfoType.INTERNAL,
-					                       password: null,
-				                       })
-			                       }
-			                       return guests
-		                       })
+		this.attendees = stream.merge(
+			[this._inviteModel.recipientsChanged, this._updateModel.recipientsChanged, this._guestStatuses, this._ownAttendee]
+		).map(() => {
+			const guests = this._inviteModel._bccRecipients.concat(this._updateModel._bccRecipients)
+			                   .map((recipientInfo) => {
+				                   const password =
+					                   recipientInfo.contact && recipientInfo.contact.presharedPassword || null
+				                   return {
+					                   address: createEncryptedMailAddress({
+						                   name: recipientInfo.name,
+						                   address: recipientInfo.mailAddress,
+					                   }),
+					                   status: this._guestStatuses().get(recipientInfo.mailAddress)
+						                   || CalendarAttendeeStatus.NEEDS_ACTION,
+					                   type: recipientInfo.type,
+					                   password,
+				                   }
+			                   })
+			const ownAttendee = this._ownAttendee()
+			if (ownAttendee) {
+				guests.unshift({
+					address: ownAttendee,
+					status: this._guestStatuses().get(ownAttendee.address) || CalendarAttendeeStatus.ACCEPTED,
+					type: RecipientInfoType.INTERNAL,
+					password: null,
+				})
+			}
+			return guests
+		})
 
 		if (existingEvent) {
 			const newStatuses = new Map()
 			existingEvent.attendees.forEach((attendee) => {
 				if (this._mailAddresses.includes(attendee.address.address)) {
-					this._ownAttendee = copyMailAddress(attendee.address)
+					this._ownAttendee(copyMailAddress(attendee.address))
 				} else {
 					this._updateModel.addRecipient("bcc", {
 						name: attendee.address.name,
@@ -509,6 +511,7 @@ export class CalendarEventViewModel {
 	setOrganizer(newOrganizer: EncryptedMailAddress): void {
 		if (this.canModifyOrganizer()) {
 			this.organizer = newOrganizer
+			this._ownAttendee(newOrganizer)
 		}
 	}
 
@@ -698,12 +701,12 @@ export class CalendarEventViewModel {
 
 	selectGoing(going: CalendarAttendeeStatusEnum) {
 		if (this.canModifyOwnAttendance()) {
-			const ownAttendee = this._ownAttendee
+			const ownAttendee = this._ownAttendee()
 			if (ownAttendee) {
 				this._guestStatuses(addMapEntry(this._guestStatuses(), ownAttendee.address, going))
 			} else if (this._eventType === EventType.OWN) {
 				const newOwnAttendee = createEncryptedMailAddress({address: firstThrow(this._mailAddresses)})
-				this._ownAttendee = newOwnAttendee
+				this._ownAttendee(newOwnAttendee)
 				this._guestStatuses(addMapEntry(this._guestStatuses(), newOwnAttendee.address, going))
 			}
 		}
