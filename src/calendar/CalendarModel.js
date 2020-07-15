@@ -454,8 +454,7 @@ export class CalendarModelImpl implements CalendarModel {
 		return erase(event)
 	}
 
-	_processCalendarReplies() {
-		// TOOD: inject mailModel
+	_loadAndProcessCalendarUpdates() {
 		return locator.mailModel.getUserMailboxDetails().then((mailboxDetails) => {
 			const {calendarEventUpdates} = mailboxDetails.mailboxGroupRoot
 			if (calendarEventUpdates == null) return
@@ -566,7 +565,7 @@ export class CalendarModelImpl implements CalendarModel {
 
 	init(): Promise<void> {
 		return this.scheduleAlarmsLocally()
-		           .then(() => this._processCalendarReplies())
+		           .then(() => this._loadAndProcessCalendarUpdates())
 	}
 
 	scheduleAlarmsLocally(): Promise<void> {
