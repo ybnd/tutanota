@@ -9,7 +9,7 @@ import {ButtonColors, ButtonN, ButtonType} from "../gui/base/ButtonN"
 import type {NavButtonAttrs} from "../gui/base/NavButtonN"
 import {isNavButtonSelected, isSelectedPrefix} from "../gui/base/NavButtonN"
 import {TutanotaService} from "../api/entities/tutanota/Services"
-import {load, serviceRequestVoid, update} from "../api/main/Entity"
+import {load, loadAll, serviceRequestVoid, update} from "../api/main/Entity"
 import {MailViewer} from "./MailViewer"
 import {Dialog} from "../gui/base/Dialog"
 import {worker} from "../api/main/WorkerClient"
@@ -34,7 +34,7 @@ import {theme} from "../gui/theme"
 import {LockedError, NotFoundError, PreconditionFailedError} from "../api/common/error/RestError"
 import {showProgressDialog} from "../gui/base/ProgressDialog"
 import {
-	archiveMails,
+	archiveMails, exportMails,
 	getFolder,
 	getFolderIcon,
 	getFolderName,
@@ -671,8 +671,20 @@ export class MailView implements CurrentView {
 						      }
 					      })
 				}
+			},
+			{
+				label: "export_action",
+				icon: () => Icons.Export,
+				type: ButtonType.Dropdown,
+				click: () => {
+					this._getFolderMails(folder).then(mails => exportMails(mails))
+				}
 			}
 		])
+	}
+
+	_getFolderMails(folder: MailFolder): Promise<Array<Mail>> {
+		return loadAll(MailTypeRef, folder.mails)
 	}
 
 	_newMail(): Promise<MailEditor> {
