@@ -71,7 +71,7 @@ export class NavBar {
 		}
 
 		if (!isAdminClient()) {
-			import(`../../search/SearchBar.js`)
+			import('../../search/SearchBar.js')
 				.then((searchBarModule) => {
 					this.searchBar = new searchBarModule.SearchBar()
 				})

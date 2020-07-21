@@ -13,7 +13,6 @@ import {NavButtonN} from "./NavButtonN"
 import {assertMainOrNodeBoot} from "../../api/Env"
 import {lang} from "../../misc/LanguageViewModel"
 import stream from "mithril/stream/stream.js"
-import {asyncImport} from "../../api/common/utils/Utils"
 
 assertMainOrNodeBoot()
 
@@ -324,7 +323,7 @@ export function createAsyncDropdown(lazyButtons: lazyAsync<$ReadOnlyArray<DropDo
 	return ((e, dom) => {
 		let buttonPromise = lazyButtons()
 		if (!buttonPromise.isFulfilled()) {
-			buttonPromise = import(`./ProgressDialog.js`)
+			buttonPromise = import('./ProgressDialog.js')
 				.then(module => {
 					return module.showProgressDialog("loading_msg", buttonPromise)
 				})

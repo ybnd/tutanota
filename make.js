@@ -20,7 +20,7 @@ try {
 }
 // const desktopBuilder = require("./buildSrc/DesktopBuilder")
 
-const rollup = require("rollup")
+const nollup = require("nollup")
 
 
 async function createHtml(env, watch) {
@@ -78,7 +78,7 @@ async function prepareAssets(watch) {
 }
 
 function startFlowCheck() {
-	spawn(flow, [], {stdio: [process.stdin, process.stdout, process.stderr]})
+	// spawn(flow, [], {stdio: [process.stdin, process.stdout, process.stderr]})
 }
 
 /** Returns cache or null. */
@@ -109,7 +109,7 @@ async function build({watch, desktop}) {
 			port: 8080
 		})
 		let startTime
-		rollup.watch(Object.assign({}, inputOptions, {output: outputOptions})).on("event", (e) => {
+		nollup.watch(Object.assign({}, inputOptions, {output: outputOptions})).on("event", (e) => {
 			switch (e.code) {
 				case "START":
 					console.log("Started bundling")
@@ -134,24 +134,34 @@ async function build({watch, desktop}) {
 			}
 		})
 	} else {
-		const cacheLocation = "./build/main-bundle-cache"
-		console.log("Reading cache")
-		const readCacheStart = Date.now()
-		const cache = readCache(cacheLocation)
-		cache && console.log("using cache for web bundle")
-		const startBundle = Date.now()
-		console.log("Finished reading cache in", startBundle - readCacheStart)
-
-		const bundle = await rollup.rollup(Object.assign({}, inputOptions, {cache}))
-		const endBundle = Date.now()
-		console.log("Finished bundling in ", endBundle - startBundle, bundle.getTimings())
-
-		await bundle.write(outputOptions)
-		const endWrite = Date.now()
-		console.log("Finished writing bundles in ", endWrite - endBundle)
-
-		await fs.writeFileAsync(cacheLocation, JSON.stringify(bundle.cache))
-		console.log("Finished writing cache in ", Date.now() - endBundle)
+		// // const cacheLocation = "./build/main-bundle-cache"
+		// // console.log("Reading cache")
+		// // const readCacheStart = Date.now()
+		// // const cache = readCache(cacheLocation)
+		// // cache && console.log("using cache for web bundle")
+		// const startBundle = Date.now()
+		// // console.log("Finished reading cache in", startBundle - readCacheStart)
+		//
+		// console.log("Started bundling")
+		// const bundle = await nollup(Object.assign({}, inputOptions, {}))
+		// const endBundle = Date.now()
+		// // console.log("Finished bundling in ", endBundle - startBundle, bundle.getTimings())
+		//
+		// const {output} = await bundle.generate(outputOptions)
+		// const endWrite = Date.now()
+		// console.log("Finished writing bundles in ", endWrite - endBundle)
+		// //
+		// // await fs.writeFileAsync(cacheLocation, JSON.stringify(bundle.cache))
+		// // console.log("Finished writing cache in ", Date.now() - endBundle)
+		let NollupDevServer = require('nollup/lib/dev-server');
+		NollupDevServer({
+			hot: true,
+			port: 9001,
+			config: path.resolve(process.cwd(), "./buildSrc/RollupDebugConfig.js"),
+			contentBase: "build",
+			// publicPath: "build",
+			verbose: true,
+		})
 	}
 	if (desktop) {
 		await startDesktop()
@@ -203,7 +213,7 @@ async function startDesktop() {
 	const cacheLocation = "./build/desktop-bundle-cache"
 	const cache = readCache(cacheLocation)
 	cache && console.log("using cache for desktop bundle")
-	const bundle = await rollup.rollup({
+	const bundle = await nollup.rollup({
 		input: ["src/desktop/DesktopMain.js", "src/desktop/preload.js"],
 		plugins: [
 			babel({

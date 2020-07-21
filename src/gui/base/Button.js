@@ -318,7 +318,7 @@ export function createAsyncDropDownButton(labelTextIdOrTextFunction: string | la
 		let buttonPromise = lazyButtons()
 		let resultPromise = buttonPromise
 		if (!resultPromise.isFulfilled()) {
-			resultPromise = import(`./ProgressDialog.js`)
+			resultPromise = import('./ProgressDialog.js')
 				.then(module => {
 					return module.showProgressDialog("loading_msg", buttonPromise)
 				})
@@ -326,7 +326,7 @@ export function createAsyncDropDownButton(labelTextIdOrTextFunction: string | la
 		const initialButtonRect: PosRect = mainButton._domButton.getBoundingClientRect()
 		resultPromise.then(buttons => {
 			if (buttons.length === 0) {
-				import( `./Dialog.js`)
+				import( './Dialog.js')
 					.then(module => {
 						return module.Dialog.error("selectionNotAvailable_msg")
 					})

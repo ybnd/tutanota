@@ -239,7 +239,6 @@ let initialized = lang.init(en).then(() => {
 	})
 
 	const workerPromise = import("./api/main/WorkerClient.js")
-		.then(module => module.worker)
 	workerPromise.then(() => {
 		import("./gui/InfoMessageHandler.js")
 	})

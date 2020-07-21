@@ -12,13 +12,13 @@ export function handleUncaughtError(e: Error) {
 	}
 
 	// decoupled to remove size of boot bundle
-	import(`./ErrorHandlerImpl.js`).then(module => {
+	import('./ErrorHandlerImpl.js').then(module => {
 		module.handleUncaughtError(e)
 	})
 }
 
 export function logginOut() {
-	import(`./ErrorHandlerImpl.js`).then(module => {
+	import('./ErrorHandlerImpl.js').then(module => {
 		module.loggingOut()
 	})
 }

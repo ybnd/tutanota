@@ -167,12 +167,12 @@ class Header {
 			]))
 		}
 
-		import(`../../search/SearchBar.js`)
+		import('../../search/SearchBar.js')
 			.then((searchBarModule) => {
 				this.searchBar = new searchBarModule.SearchBar()
 			})
 
-		import(`../../api/main/WorkerClient.js`)
+		import('../../api/main/WorkerClient.js')
 			.then(workerClientModule => {
 				(workerClientModule.worker: WorkerClient).wsConnection().map(state => {
 					this._wsState = state
@@ -227,7 +227,7 @@ class Header {
 	}
 
 	_showUpgradeDialog() {
-		import(`../../subscription/UpgradeSubscriptionWizard.js`)
+		import('../../subscription/UpgradeSubscriptionWizard.js')
 			.then(upgradeWizard => {
 					return upgradeWizard.showUpgradeWizard()
 				}
@@ -235,12 +235,12 @@ class Header {
 	}
 
 	_writeSupportMail() {
-		import(`../../mail/MailEditor.js`)
+		import('../../mail/MailEditor.js')
 			.then(mailEditorModule => mailEditorModule.MailEditor.writeSupportMail())
 	}
 
 	_writeInviteMail() {
-		import(`../../mail/MailEditor.js`)
+		import('../../mail/MailEditor.js')
 			.then(mailEditorModule => mailEditorModule.MailEditor.writeInviteMail())
 	}
 

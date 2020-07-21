@@ -1,5 +1,5 @@
 // @flow
-import sjcl from "./lib/crypto-sjcl-1.0.7"
+import sjcl from "./lib/crypto-sjcl-1.0.7.js"
 import {assertWorkerOrNode} from "../../Env"
 
 assertWorkerOrNode()

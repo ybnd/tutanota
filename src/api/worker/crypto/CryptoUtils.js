@@ -1,15 +1,10 @@
 // @flow
-import {
-	uint8ArrayToBase64,
-	base64ToBase64Url,
-	base64ToUint8Array,
-	uint8ArrayToArrayBuffer
-} from "../../common/utils/Encoding"
+import {base64ToBase64Url, base64ToUint8Array, uint8ArrayToArrayBuffer, uint8ArrayToBase64} from "../../common/utils/Encoding"
 import {concat} from "../../common/utils/ArrayUtils"
 import {hash} from "./Sha256"
 import {CryptoError} from "../../common/error/CryptoError"
 import {assertWorkerOrNode} from "../../Env"
-import sjcl from "../../worker/crypto/lib/crypto-sjcl-1.0.7"
+import sjcl from "../../worker/crypto/lib/crypto-sjcl-1.0.7.js"
 
 assertWorkerOrNode()
 

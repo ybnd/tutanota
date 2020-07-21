@@ -12,6 +12,7 @@ export type MainLocatorType = {
 	eventController: EventController;
 	entropyCollector: EntropyCollector;
 	search: SearchModel;
+	worker: WorkerClient,
 }
 
 export const locator: MainLocatorType = ({}: any)
@@ -24,4 +25,5 @@ export function initLocator(worker: WorkerClient) {
 	locator.eventController = new EventController(logins)
 	locator.entropyCollector = new EntropyCollector(worker)
 	locator.search = new SearchModel()
+	locator.worker = worker
 }

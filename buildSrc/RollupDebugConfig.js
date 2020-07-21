@@ -31,11 +31,8 @@ function rollupDebugPlugins(baseDir) {
 	]
 }
 
-const outConfig = {
-	output: {format: "system"}
-}
-
 module.exports = {
-	outConfig,
-	rollupDebugPlugins,
+	input: ["src/app.js", "src/api/worker/WorkerImpl.js"],
+	plugins: rollupDebugPlugins(""),
+	output: {format: "es", sourcemap: "inline", dir: "build"},
 }

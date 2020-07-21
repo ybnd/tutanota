@@ -43,43 +43,45 @@ export class WorkerClient {
 
 	constructor() {
 		this.infoMessages = stream()
-		initLocator(this)
-		this._initWorker()
-		this.initialized.then(() => {
-			this._queue.setCommands({
-				execNative: (message: Message) =>
-					nativeApp.invokeNative(new Request(downcast(message.args[0]), downcast(message.args[1]))),
-				entityEvent: (message: Message) => {
-					locator.eventController.notificationReceived(downcast(message.args[0]), downcast(message.args[1]))
-					return Promise.resolve()
-				},
-				error: (message: Message) => {
-					throw objToError((message: any).args[0])
-				},
-				progress: (message: Message) => {
-					if (this._progressUpdater) {
-						this._progressUpdater(message.args[0])
+		Promise.resolve().then(() => {
+			initLocator(this)
+			this._initWorker()
+			this.initialized.then(() => {
+				this._queue.setCommands({
+					execNative: (message: Message) =>
+						nativeApp.invokeNative(new Request(downcast(message.args[0]), downcast(message.args[1]))),
+					entityEvent: (message: Message) => {
+						locator.eventController.notificationReceived(downcast(message.args[0]), downcast(message.args[1]))
+						return Promise.resolve()
+					},
+					error: (message: Message) => {
+						throw objToError((message: any).args[0])
+					},
+					progress: (message: Message) => {
+						if (this._progressUpdater) {
+							this._progressUpdater(message.args[0])
+						}
+						return Promise.resolve()
+					},
+					updateIndexState: (message: Message) => {
+						locator.search.indexState(downcast(message.args[0]))
+						return Promise.resolve()
+					},
+					updateWebSocketState: (message: Message) => {
+						this._wsConnection(downcast(message.args[0]));
+						return Promise.resolve()
+					},
+					counterUpdate: (message: Message) => {
+						locator.eventController.counterUpdateReceived(downcast(message.args[0]))
+						return Promise.resolve()
+					},
+					infoMessage: (message: Message) => {
+						this.infoMessages(downcast(message.args[0]))
+						return Promise.resolve()
 					}
-					return Promise.resolve()
-				},
-				updateIndexState: (message: Message) => {
-					locator.search.indexState(downcast(message.args[0]))
-					return Promise.resolve()
-				},
-				updateWebSocketState: (message: Message) => {
-					this._wsConnection(downcast(message.args[0]));
-					return Promise.resolve()
-				},
-				counterUpdate: (message: Message) => {
-					locator.eventController.counterUpdateReceived(downcast(message.args[0]))
-					return Promise.resolve()
-				},
-				infoMessage: (message: Message) => {
-					this.infoMessages(downcast(message.args[0]))
-					return Promise.resolve()
-				}
+				})
+				this._initServices()
 			})
-			this._initServices()
 		})
 	}
 

@@ -271,7 +271,7 @@ export class SignupPage implements WizardPage<UpgradeSubscriptionData> {
 
 
 	showTerms(section: string) {
-		import(`./terms.js`)
+		import('./terms.js')
 			.then(terms => {
 				let dialog: Dialog
 				let visibleLang = lang.code
