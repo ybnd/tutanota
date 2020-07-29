@@ -1,11 +1,17 @@
-global.env = require('../../../../buildSrc/env.js')
-	.create(null,
-		"http://localhost:9000",
-		require('../../../../package.json').version,
-		"Test")
+import * as env from "../../../buildSrc/env.js"
+import bluebird from "bluebird"
+import crypto from "crypto"
+import xhr2 from "xhr2"
+import express from "express"
+import server_destroy from "server-destroy"
+import body_parser from "body-parser"
+
+const version = "3.0.0"
+
+global.env = env.create("http://localhost:9000", version, "Test")
 
 // node environment: mock a few browser functions
-global.Promise = require("bluebird")
+global.Promise = bluebird.Promise
 Promise.config({
 	longStackTraces: true
 })
@@ -18,9 +24,6 @@ global.btoa = function (str) {
 global.atob = function (b64Encoded) {
 	return Buffer.from(b64Encoded, 'base64').toString('binary')
 }
-
-let crypto = require('crypto')
-
 global.crypto = {
 	getRandomValues: function (bytes) {
 		let randomBytes = crypto.randomBytes(bytes.length)
@@ -28,10 +31,10 @@ global.crypto = {
 	}
 }
 
-global.XMLHttpRequest = require('xhr2')
-global.express = require('express')
-global.enableDestroy = require('server-destroy')
-global.bodyParser = require('body-parser')
+global.XMLHttpRequest = xhr2
+global.express = express
+global.enableDestroy = server_destroy
+global.bodyParser = body_parser
 
 global.WebSocket = function () {
 }
@@ -51,25 +54,6 @@ global.performance = {
 	measure: noOp,
 }
 
-
-const path = require('path')
-global.System = {
-	'import': function (modulePath) {
-		let systemBaseDir = path.resolve(__dirname, "../../")
-		let absolutePath = path.resolve(systemBaseDir, modulePath)
-		return Promise.resolve(require(absolutePath))
-	}
-}
-
-// provide the mapping of the @hot module (maps in system js to @empty; an empty module)
-const Module = require('module').Module;
-Module._cache['@hot'] = {exports: {module: undefined}}
-const resolveFilenameNode = Module._resolveFilename
-Module._resolveFilename = function (request, parent, isMain) {
-	if (request === '@hot') return request
-	return resolveFilenameNode(request, parent, isMain)
-}
-
 /**
  * runs this test exclusively on browsers (not nodec)
  */
@@ -85,6 +69,7 @@ global.node = function (func) {
 	return func
 }
 
-require("../../src/api/Env").bootFinished()
-
-require('./Suite.js')
+import("../../src/api/Env.js").then((module) => {
+	module.bootFinished()
+	import('./Suite.js')
+})

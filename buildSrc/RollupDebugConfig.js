@@ -34,5 +34,6 @@ function rollupDebugPlugins(baseDir) {
 module.exports = {
 	input: ["src/app.js", "src/api/worker/WorkerImpl.js"],
 	plugins: rollupDebugPlugins(""),
+	treeshake: false, // disable tree-shaking for faster development builds
 	output: {format: "es", sourcemap: "inline", dir: "build"},
 }

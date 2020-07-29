@@ -1,19 +1,21 @@
-const SystemConfig = require('./SystemConfig.js')
-const {babel} = require("@rollup/plugin-babel")
-const commonjs = require("@rollup/plugin-commonjs")
-const path = require("path")
+import {dependencyMap} from "./SystemConfig.js"
+import path from "path"
+import babelPlugin from "@rollup/plugin-babel"
+import commonjs from "@rollup/plugin-commonjs"
+
+const {babel} = babelPlugin
 
 function resolveLibs(baseDir = ".") {
 	return {
 		name: "resolve-libs",
 		resolveId(source) {
-			const resolved = SystemConfig.dependencyMap[source]
+			const resolved = dependencyMap[source]
 			return resolved && path.join(baseDir, resolved)
 		}
 	}
 }
 
-function rollupDebugPlugins(baseDir) {
+export function rollupDebugPlugins(baseDir) {
 	return [
 		babel({
 			plugins: [
@@ -31,11 +33,6 @@ function rollupDebugPlugins(baseDir) {
 	]
 }
 
-const outConfig = {
-	output: {format: "system"}
-}
-
-module.exports = {
-	outConfig,
-	rollupDebugPlugins,
+export const outConfig = {
+	output: {format: "esm"}
 }

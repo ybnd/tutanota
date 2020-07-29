@@ -1,15 +1,12 @@
-const Promise = require('bluebird')
-const path = require("path")
-const destDir = path.join(__dirname, "../build/")
-const fs = Promise.Promise.promisifyAll(require("fs-extra"))
-const child_process = require('child_process')
-const env = require('../buildSrc/env.js')
-const LaunchHtml = require('../buildSrc/LaunchHtml.js')
-const SystemConfig = require('../buildSrc/SystemConfig.js')
-const rollup = require("rollup")
-const flow = require('flow-bin')
-const {rollupDebugPlugins} = require("../buildSrc/RollupConfig")
-
+import Promise from "bluebird"
+import path from "path"
+import child_process from "child_process"
+import * as env from "../buildSrc/env.js"
+import {renderHtml} from "../buildSrc/LaunchHtml.js"
+import rollup from "rollup"
+import flow from "flow-bin"
+import {rollupDebugPlugins} from "../buildSrc/RollupConfig.js"
+import fs from "fs-extra"
 
 let project
 if (process.argv.indexOf("api") !== -1) {
@@ -47,7 +44,7 @@ function resolveTestLibsPlugin() {
 }
 
 async function copyLibs() {
-	return fs.copyAsync('../libs', '../build/libs')
+	return fs.copy('../libs', '../build/libs')
 }
 
 async function build() {
@@ -62,11 +59,9 @@ async function build() {
 	})
 
 	return Promise.all([
-		fs.copyFileAsync(`${project}/bootstrapNode.js`, `../build/node/test/${project}/bootstrapNode.js`),
-		bundle.cache && await fs.writeFileAsync(cacheLocation, JSON.stringify(bundle.cache)),
-		// Error: UMD and IIFE output formats are not supported for code-splitting builds.
-		bundle.write({sourcemap: false, dir: "../build/node", format: "cjs"}),
-		bundle.write({sourcemap: "inline", dir: "../build/browser", format: "system"}),
+		fs.copy(`${project}/bootstrapNode.js`, `../build/test/${project}/bootstrapNode.js`),
+		bundle.cache && fs.writeFile(cacheLocation, JSON.stringify(bundle.cache)),
+		bundle.write({sourcemap: false, dir: "../build/", format: "esm"}),
 		copyLibs()
 	])
 }
@@ -75,8 +70,8 @@ async function build() {
 	try {
 		console.log("Building")
 		await build()
-		console.log("Testing")
 		await createUnitTestHtml()
+		console.log("Testing")
 		const statusCode = await runTest()
 		process.exit(statusCode)
 	} catch (e) {
@@ -95,7 +90,7 @@ function runTest() {
 		console.log("> skipping test run as test are already executed")
 	} else {
 		return new Promise((resolve) => {
-			let testRunner = child_process.fork(`../build/node/test/${project}/bootstrapNode.js`)
+			let testRunner = child_process.fork(`../build/test/${project}/bootstrapNode.js`)
 			testRunner.on('exit', (code) => {
 				resolve(code)
 				testRunner = null
@@ -105,8 +100,8 @@ function runTest() {
 }
 
 async function createUnitTestHtml(watch) {
-	let localEnv = env.create(SystemConfig.devTestConfig(), null, "unit-test", "Test")
-	let imports = SystemConfig.baseDevDependencies.concat([`test-${project}.js`])
+	let localEnv = env.create(null, "unit-test", "Test")
+	let imports = [`test-${project}.js`]
 
 	const template = "System.import('./browser/test/bootstrapBrowser.js')"
 	await _writeFile(`../build/test-${project}.js`, [
@@ -115,12 +110,12 @@ async function createUnitTestHtml(watch) {
 		watch ? "new WebSocket('ws://localhost:8080').addEventListener('message', (e) => window.hotReload())" : "",
 	].join("\n") + "\n" + template)
 
-	const html = await LaunchHtml.renderHtml(imports, localEnv)
+	const html = await renderHtml(imports, localEnv)
 	await _writeFile(`../build/test-${project}.html`, html)
 
-	fs.copyFileSync(`${project}/bootstrapBrowser.js`, "../build/browser/test/bootstrapBrowser.js")
+	await fs.copy(`${project}/bootstrapBrowser.js`, "../build/test/bootstrapBrowser.js")
 }
 
 function _writeFile(targetFile, content) {
-	return fs.mkdirsAsync(path.dirname(targetFile)).then(() => fs.writeFileAsync(targetFile, content, 'utf-8'))
+	return fs.mkdirs(path.dirname(targetFile)).then(() => fs.writeFile(targetFile, content, 'utf-8'))
 }

@@ -18,9 +18,8 @@ try {
 	console.log("flow-bin not found, stubbing it")
 	flow = 'true'
 }
-// const desktopBuilder = require("./buildSrc/DesktopBuilder")
 
-const nollup = require("nollup")
+// const desktopBuilder = require("./buildSrc/DesktopBuilder")
 
 
 async function createHtml(env, watch) {
@@ -104,36 +103,55 @@ async function build({watch, desktop}) {
 	const outputOptions = {format: "system", sourcemap: "inline", dir: "build"}
 
 	if (watch) {
-		const WebSocket = require("ws")
-		const server = new WebSocket.Server({
-			port: 8080
-		})
-		let startTime
-		nollup.watch(Object.assign({}, inputOptions, {output: outputOptions})).on("event", (e) => {
-			switch (e.code) {
-				case "START":
-					console.log("Started bundling")
-					startTime = Date.now()
-					break
-				case "BUNDLE_START":
-					console.log("Started bundle", e.input)
-					break
-				case "BUNDLE_END":
-					console.log("Finished bundle ", e.input, " in ", e.duration)
-					server.clients.forEach((c) => c.send("reload"))
-					break
-				case "END":
-					console.log("Finished bundling", Date.now() - startTime)
-					break
-				case "ERROR":
-					console.warn("Error during bundling", e)
-					break
-				case "FATAL":
-					console.error("Fatal error duing bundling", e)
-					break
-			}
+		// const WebSocket = require("ws")
+		// const server = new WebSocket.Server({
+		// 	port: 8080
+		// })
+		// let startTime
+		// nollup.watch(Object.assign({}, inputOptions, {output: outputOptions})).on("event", (e) => {
+		// 	switch (e.code) {
+		// 		case "START":
+		// 			console.log("Started bundling")
+		// 			startTime = Date.now()
+		// 			break
+		// 		case "BUNDLE_START":
+		// 			console.log("Started bundle", e.input)
+		// 			break
+		// 		case "BUNDLE_END":
+		// 			console.log("Finished bundle ", e.input, " in ", e.duration)
+		// 			server.clients.forEach((c) => c.send("reload"))
+		// 			break
+		// 		case "END":
+		// 			console.log("Finished bundling", Date.now() - startTime)
+		// 			break
+		// 		case "ERROR":
+		// 			console.warn("Error during bundling", e)
+		// 			break
+		// 		case "FATAL":
+		// 			console.error("Fatal error duing bundling", e)
+		// 			break
+		// 	}
+		// })
+		let NollupDevServer = require('nollup/lib/dev-server');
+		NollupDevServer({
+			hot: true,
+			port: 9001,
+			config: path.resolve(process.cwd(), "./buildSrc/RollupDebugConfig.js"),
+			contentBase: "build",
+			verbose: true,
 		})
 	} else {
+		const start = Date.now()
+		const nollup = require('nollup')
+		const debugConfig = require('./buildSrc/RollupDebugConfig.js')
+		console.log("Bundling...")
+		const bundle = await nollup(debugConfig)
+		console.log("Generating...")
+		const result = await bundle.generate(debugConfig.output)
+		result.stats && console.log("Generated in", result.stats.time)
+
+		await Promise.map(result.output, (o) => _writeFile(path.join("build", o.fileName), o.code))
+		console.log("Built in", Date.now() - start)
 		// // const cacheLocation = "./build/main-bundle-cache"
 		// // console.log("Reading cache")
 		// // const readCacheStart = Date.now()
@@ -153,15 +171,7 @@ async function build({watch, desktop}) {
 		// //
 		// // await fs.writeFileAsync(cacheLocation, JSON.stringify(bundle.cache))
 		// // console.log("Finished writing cache in ", Date.now() - endBundle)
-		let NollupDevServer = require('nollup/lib/dev-server');
-		NollupDevServer({
-			hot: true,
-			port: 9001,
-			config: path.resolve(process.cwd(), "./buildSrc/RollupDebugConfig.js"),
-			contentBase: "build",
-			// publicPath: "build",
-			verbose: true,
-		})
+
 	}
 	if (desktop) {
 		await startDesktop()

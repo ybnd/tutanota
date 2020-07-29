@@ -15,7 +15,7 @@ const urlWithoutQuery = (urlString) => {
 }
 
 
-class ServiceWorker {
+export class ServiceWorker {
 	_caches: CacheStorage
 	_cacheName: string
 	_selfLocation: string
@@ -102,9 +102,9 @@ class ServiceWorker {
 		return this._caches
 		           .open(this._cacheName)
 		           .then(cache => cache.match(requestUrl))
-		           // Cache magically disappears on iOS 12.1 after the browser restart.
-		           // See #758. See https://bugs.webkit.org/show_bug.cgi?id=190269
-		           .then(r => r || fetch(requestUrl))
+			// Cache magically disappears on iOS 12.1 after the browser restart.
+			// See #758. See https://bugs.webkit.org/show_bug.cgi?id=190269
+			       .then(r => r || fetch(requestUrl))
 	}
 
 	// needed because FF fails to cache.addAll()
@@ -170,9 +170,7 @@ const init = (sw: ServiceWorker) => {
 }
 
 // do not add listeners for Node tests
-if (typeof env !== "undefined" && env.mode === "Test") {
-	module.exports = {ServiceWorker}
-} else {
+if (!(typeof env !== "undefined" && env.mode === "Test")) {
 	const cacheName = "CODE_CACHE-v" + version()
 	const selfLocation = self.location.href.substring(0, self.location.href.indexOf("sw.js"))
 	const exclusions = customDomainCacheExclusions()
