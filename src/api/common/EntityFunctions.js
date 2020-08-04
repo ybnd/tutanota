@@ -84,12 +84,14 @@ export function resolveTypeReference(typeRef: TypeRef<any>): Promise<TypeModel> 
 	const modelMap = modelMaps[typeRef.app]
 
 	if (modelMap[typeRef.type] == null) {
-		throw new Error("Cannot find TypeRef: " + String(typeRef))
+		return Promise.reject(new Error("Cannot find TypeRef: " + String(typeRef)))
+	} else {
+		// Wrap in Bluebird promise
+		return Promise.resolve(modelMap[typeRef.type]())
+		              .then(module => {
+			              return module._TypeModel
+		              })
 	}
-	return modelMap[typeRef.type]()
-		.then(module => {
-			return module._TypeModel
-		})
 }
 
 export function create<T>(typeModel: TypeModel, typeRef: TypeRef<T>): T {

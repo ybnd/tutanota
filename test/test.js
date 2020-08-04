@@ -30,6 +30,9 @@ function readCache(cacheLocation) {
 	}
 }
 
+// We use this homebrew plugin so that libs are copies to _virtual folder and *not* build/node_modules
+// (which would be the case with preserve_modules).
+// Files in build/node_modules are treated as separate libraries and ES mode resets back to commonjs.
 function resolveTestLibsPlugin() {
 	const testLibs = {
 		ospec: "../node_modules/ospec/ospec.js"

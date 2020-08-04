@@ -5,7 +5,13 @@ import type {Db, ElementDataDbRow, IndexUpdate} from "../../../../src/api/worker
 import {_createNewIndexUpdate, encryptIndexKeyBase64, typeRefToTypeInfo} from "../../../../src/api/worker/search/IndexUtils"
 import {ElementDataOS, GroupDataOS, MetaDataOS} from "../../../../src/api/worker/search/DbFacade"
 import type {MailStateEnum, OperationTypeEnum} from "../../../../src/api/common/TutanotaConstants"
-import {FULL_INDEXED_TIMESTAMP, GroupType, MailState, NOTHING_INDEXED_TIMESTAMP, OperationType} from "../../../../src/api/common/TutanotaConstants"
+import {
+	FULL_INDEXED_TIMESTAMP,
+	GroupType,
+	MailState,
+	NOTHING_INDEXED_TIMESTAMP,
+	OperationType
+} from "../../../../src/api/common/TutanotaConstants"
 import {IndexerCore} from "../../../../src/api/worker/search/IndexerCore"
 import {aes256RandomKey} from "../../../../src/api/worker/crypto/Aes"
 import {createUser} from "../../../../src/api/entities/sys/User"
@@ -171,12 +177,11 @@ o.spec("MailIndexer test", () => {
 		}).then(done)
 	})
 
-	o("processNewMail catches NotFoundError", function (done) {
+	o("processNewMail catches NotFoundError", async function () {
 		const indexer = new MailIndexer((null: any), (null: any), (null: any), entityMock, entityMock, dateProvider)
 		let event: EntityUpdate = ({instanceListId: "lid", instanceId: "eid"}: any)
-		indexer.processNewMail(event).then(result => {
-			o(result).equals(null)
-		}).then(done)
+		const result = await indexer.processNewMail(event)
+		o(result).equals(null)
 	})
 
 	o("processNewMail catches NotAuthorizedError", function (done) {
@@ -411,15 +416,23 @@ o.spec("MailIndexer test", () => {
 			folder1 = _addFolder(mailbox)
 			folder2 = _addFolder(mailbox)
 
-			;({mail: mail0, body: body0} = createMailInstances([folder1.mails, timestampToGeneratedId(rangeEndShifted2Days, 1)], entityMock.getNextId()))
-			;({mail: mail1, body: body1} = createMailInstances([folder1.mails, timestampToGeneratedId(rangeEnd - 1, 1)], entityMock.getNextId()))
-			;({mail: mail2, body: body2, files} = createMailInstances([folder1.mails, timestampToGeneratedId(rangeEnd + 1, 1)], entityMock.getNextId(),
+			;({mail: mail0, body: body0} = createMailInstances([
+				folder1.mails, timestampToGeneratedId(rangeEndShifted2Days, 1)
+			], entityMock.getNextId()))
+			;({mail: mail1, body: body1} = createMailInstances([
+				folder1.mails, timestampToGeneratedId(rangeEnd - 1, 1)
+			], entityMock.getNextId()))
+			;({mail: mail2, body: body2, files} = createMailInstances([
+					folder1.mails, timestampToGeneratedId(rangeEnd + 1, 1)
+				], entityMock.getNextId(),
 				["attachment-listId", entityMock.getNextId()],
 				["attachment-listId1", entityMock.getNextId()]))
 			;({mail: mail3, body: body3} = createMailInstances([
 				folder1.mails, timestampToGeneratedId(rangeEnd + 3 * 24 * 60 * 60 * 1000, 1)
 			], entityMock.getNextId()))
-			;({mail: mail4, body: body4} = createMailInstances([folder2.mails, timestampToGeneratedId(rangeEnd + 5, 1)], entityMock.getNextId()))
+			;({mail: mail4, body: body4} = createMailInstances([
+				folder2.mails, timestampToGeneratedId(rangeEnd + 5, 1)
+			], entityMock.getNextId()))
 
 			entityMock.addElementInstances(body0, body1, body2, body3, body4, mailbox)
 			entityMock.addListInstances(mail0, mail1, mail2, mail3, mail4, folder1, folder2, ...files)
