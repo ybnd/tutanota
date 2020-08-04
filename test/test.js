@@ -3,10 +3,21 @@ import path from "path"
 import child_process from "child_process"
 import * as env from "../buildSrc/env.js"
 import {renderHtml} from "../buildSrc/LaunchHtml.js"
-import rollup from "rollup"
+import nollup from 'nollup'
 import flow from "flow-bin"
 import {rollupDebugPlugins} from "../buildSrc/RollupConfig.js"
 import fs from "fs-extra"
+import replace from "rollup-plugin-replace"
+
+
+// WORK IN PROGRESS
+// Currently requires changes:
+// ospec: replace require() with import()
+// https://github.com/MithrilJS/ospec/pull/26#issuecomment-668544078
+//
+// nollup: support `global` from node
+// https://github.com/PepsRyuu/nollup/issues/110#issuecomment-668582374
+// (or alternatively use rollup)
 
 let project
 if (process.argv.indexOf("api") !== -1) {
@@ -19,6 +30,8 @@ if (process.argv.indexOf("api") !== -1) {
 }
 
 let testRunner = null
+
+const localEnv = env.create("localhost:9000", "unit-test", "Test")
 
 /** Returns cache or null. */
 function readCache(cacheLocation) {
@@ -41,6 +54,16 @@ function resolveTestLibsPlugin() {
 	return {
 		name: "resolve-test-libs",
 		resolveId(source) {
+			switch (source) {
+				case "util":
+				case "bluebird":
+				case "crypto":
+				case "xhr2":
+				case "express":
+				case "server-destroy":
+				case "body-parser":
+					return false
+			}
 			return testLibs[source]
 		}
 	}
@@ -51,22 +74,29 @@ async function copyLibs() {
 }
 
 async function build() {
-	const cacheLocation = "../build/test-cache"
-	const cache = readCache(cacheLocation)
-	const bundle = await rollup.rollup({
-		input: [`${project}/Suite.js`],
-		plugins: rollupDebugPlugins("..").concat(resolveTestLibsPlugin()),
+	const start = Date.now()
+
+	// TODO: we could add some watch mode with invalidation for super quick builds
+	console.log("Bundling...")
+	const bundle = await nollup({
+		input: [`${project}/bootstrapNode.js`, `${project}/bootstrapBrowser.js`],
+		plugins: [
+			replace({
+				__TUTANOTA_ENV: JSON.stringify(localEnv),
+				include: "**/bootstrap*"
+			}),
+			...rollupDebugPlugins(".."),
+			resolveTestLibsPlugin(),
+		],
 		treeshake: false,
 		preserveModules: true,
-		cache
 	})
+	console.log("Generating...")
+	const result = await bundle.generate({sourcemap: false, dir: "../build/", format: "esm"})
+	result.stats && console.log("Generated in", result.stats.time)
 
-	return Promise.all([
-		fs.copy(`${project}/bootstrapNode.js`, `../build/test/${project}/bootstrapNode.js`),
-		bundle.cache && fs.writeFile(cacheLocation, JSON.stringify(bundle.cache)),
-		bundle.write({sourcemap: false, dir: "../build/", format: "esm"}),
-		copyLibs()
-	])
+	await Promise.map(result.output, (o) => _writeFile(path.join("..", "build", o.fileName), o.code))
+	console.log("Built in", Date.now() - start)
 }
 
 (async function () {
@@ -93,7 +123,7 @@ function runTest() {
 		console.log("> skipping test run as test are already executed")
 	} else {
 		return new Promise((resolve) => {
-			let testRunner = child_process.fork(`../build/test/${project}/bootstrapNode.js`)
+			let testRunner = child_process.fork(`../build/bootstrapNode.js`)
 			testRunner.on('exit', (code) => {
 				resolve(code)
 				testRunner = null
@@ -103,7 +133,6 @@ function runTest() {
 }
 
 async function createUnitTestHtml(watch) {
-	let localEnv = env.create(null, "unit-test", "Test")
 	let imports = [`test-${project}.js`]
 
 	const template = "System.import('./browser/test/bootstrapBrowser.js')"

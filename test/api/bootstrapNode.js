@@ -1,4 +1,3 @@
-import * as env from "../../../buildSrc/env.js"
 import bluebird from "bluebird"
 import crypto from "crypto"
 import xhr2 from "xhr2"
@@ -6,9 +5,7 @@ import express from "express"
 import server_destroy from "server-destroy"
 import body_parser from "body-parser"
 
-const version = "3.0.0"
-
-global.env = env.create("http://localhost:9000", version, "Test")
+global.env = __TUTANOTA_ENV
 
 // node environment: mock a few browser functions
 global.Promise = bluebird.Promise
@@ -55,7 +52,7 @@ global.performance = {
 }
 
 /**
- * runs this test exclusively on browsers (not nodec)
+ * runs this test exclusively on browsers (not node)
  */
 global.browser = function (func) {
 	return function () {

@@ -1,6 +1,7 @@
-const SystemConfig = require('./SystemConfig.js')
-const {babel} = require("@rollup/plugin-babel")
-const commonjs = require("@rollup/plugin-commonjs")
+import SystemConfig from "./SystemConfig.js"
+import {babel} from "@rollup/plugin-babel"
+import commonjs from "@rollup/plugin-commonjs"
+
 const path = require("path")
 
 function resolveLibs(baseDir = ".") {
@@ -31,7 +32,7 @@ function rollupDebugPlugins(baseDir) {
 	]
 }
 
-module.exports = {
+export default {
 	input: ["src/app.js", "src/api/worker/WorkerImpl.js"],
 	plugins: rollupDebugPlugins(""),
 	treeshake: false, // disable tree-shaking for faster development builds
