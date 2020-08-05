@@ -51,6 +51,15 @@ export const _TypeModel: TypeModel = {
 			"final": true,
 			"encrypted": false
 		},
+		"deletionWarningDisplayed": {
+			"name": "deletionWarningDisplayed",
+			"id": 1759,
+			"since": 63,
+			"type": "Boolean",
+			"cardinality": "One",
+			"final": false,
+			"encrypted": false
+		},
 		"externalUserWelcomeMessage": {
 			"name": "externalUserWelcomeMessage",
 			"id": 661,
@@ -100,7 +109,7 @@ export const _TypeModel: TypeModel = {
 		}
 	},
 	"app": "sys",
-	"version": "62"
+	"version": "63"
 }
 
 export function createCustomerProperties(values?: $Shape<$Exact<CustomerProperties>>): CustomerProperties {
@@ -114,6 +123,7 @@ export type CustomerProperties = {
 	_id: Id;
 	_ownerGroup: ?Id;
 	_permissions: Id;
+	deletionWarningDisplayed: boolean;
 	externalUserWelcomeMessage: string;
 	lastUpgradeReminder: ?Date;
 

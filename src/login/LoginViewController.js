@@ -5,6 +5,7 @@ import {Dialog} from "../gui/base/Dialog"
 import {
 	AccessBlockedError,
 	AccessDeactivatedError,
+	AccessExpiredError,
 	BadRequestError,
 	ConnectionError,
 	LockedError,
@@ -17,7 +18,6 @@ import {assertMainOrNode, isAdminClient, isApp, LOGIN_TITLE, Mode} from "../api/
 import {CloseEventBusOption, Const} from "../api/common/TutanotaConstants"
 import {CustomerPropertiesTypeRef} from "../api/entities/sys/CustomerProperties"
 import {neverNull, noOp} from "../api/common/utils/Utils"
-import {CustomerInfoTypeRef} from "../api/entities/sys/CustomerInfo"
 import {lang} from "../misc/LanguageViewModel"
 import {windowFacade} from "../misc/WindowFacade"
 import {pushServiceApp} from "../native/PushServiceApp"
@@ -38,11 +38,12 @@ import {loadSignupWizard, showUpgradeWizard} from "../subscription/UpgradeSubscr
 import {createReceiveInfoServiceData} from "../api/entities/tutanota/ReceiveInfoServiceData"
 import {HttpMethod} from "../api/common/EntityFunctions"
 import {TutanotaService} from "../api/entities/tutanota/Services"
-import {formatPrice} from "../subscription/SubscriptionUtils"
 import {locator} from "../api/main/MainLocator"
 import {checkApprovalStatus} from "../misc/LoginUtils"
 import {calendarModel} from "../calendar/CalendarModel"
 import {getHourCycle} from "../misc/Formatter"
+import {formatPrice} from "../subscription/SubscriptionUtils"
+import {CustomerInfoTypeRef} from "../api/entities/sys/CustomerInfo"
 
 assertMainOrNode()
 
@@ -176,6 +177,14 @@ export class LoginViewController implements ILoginViewController {
 			            m.redraw()
 			            return errorAction()
 		            })
+		            .catch(AccessExpiredError, e => {
+			            this.view.helpText = m("span", [
+				            lang.get('inactiveAccount_msg'),
+				            m("a", {href: "https://tutanota.com/faq/#inactive-accounts"}, "https://tutanota.com/faq/#inactive-accounts")
+			            ])
+			            m.redraw()
+			            return errorAction()
+		            })
 		            .catch(TooManyRequestsError, e => {
 			            this.view.helpText = lang.get('tooManyAttempts_msg')
 			            m.redraw()
@@ -264,30 +273,43 @@ export class LoginViewController implements ILoginViewController {
 	}
 
 	_showUpgradeReminder(): Promise<void> {
-		if (logins.getUserController().isFreeAccount() && env.mode !== Mode.App) {
+		if (logins.getUserController().isFreeAccount()) {
 			return logins.getUserController().loadCustomer().then(customer => {
 				return load(CustomerPropertiesTypeRef, neverNull(customer.properties)).then(properties => {
-					return load(CustomerInfoTypeRef, customer.customerInfo).then(customerInfo => {
-						if (properties.lastUpgradeReminder == null && (customerInfo.creationTime.getTime()
-							+ Const.UPGRADE_REMINDER_INTERVAL) < new Date().getTime()) {
-							let message = lang.get("premiumOffer_msg", {"{1}": formatPrice(1, true)})
-							let title = lang.get("upgradeReminderTitle_msg")
-							return Dialog.reminder(title, message, "https://tutanota.com/blog/posts/premium-pro-business").then(confirm => {
-								if (confirm) {
-									showUpgradeWizard()
-								}
-							}).then(function () {
-								properties.lastUpgradeReminder = new Date()
-								update(properties).catch(LockedError, noOp)
-							})
-						}
-					})
+					if (!properties.deletionWarningDisplayed) {
+						let message = lang.get("deletionWarning_msg")
+						let title = lang.get("deletionWarningTitle_msg")
+						return Dialog.reminder(title, message, "https://tutanota.com/blog/posts/premium-pro-business").then(confirm => {
+							if (confirm) {
+								showUpgradeWizard()
+							}
+						}).then(function () {
+							properties.deletionWarningDisplayed = true
+							update(properties).catch(LockedError, noOp)
+						})
+					}
+					if (env.mode !== Mode.App) {
+						return load(CustomerInfoTypeRef, customer.customerInfo).then(customerInfo => {
+							if (properties.lastUpgradeReminder == null && (customerInfo.creationTime.getTime()
+								+ Const.UPGRADE_REMINDER_INTERVAL) < new Date().getTime()) {
+								let message = lang.get("premiumOffer_msg", {"{1}": formatPrice(1, true)})
+								let title = lang.get("upgradeReminderTitle_msg")
+								return Dialog.reminder(title, message, "https://tutanota.com/blog/posts/premium-pro-business").then(confirm => {
+									if (confirm) {
+										showUpgradeWizard()
+									}
+								}).then(function () {
+									properties.lastUpgradeReminder = new Date()
+									update(properties).catch(LockedError, noOp)
+								})
+							}
+						})
+					}
 				})
 			});
 		} else {
 			return Promise.resolve();
 		}
-
 	}
 
 	_checkStorageWarningLimit(): Promise<void> {

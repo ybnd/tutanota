@@ -11,7 +11,7 @@ module.exports = {
 		"other"
 	],
 	"created_at": "2015-02-02T10:54:47Z",
-	"updated_at": "2020-08-06T07:32:28Z",
+	"updated_at": "2020-08-06T14:06:23Z",
 	"source_locale": {
 		"id": "1c50f9a9b6bd977b100d4e27f07e8319",
 		"name": "pt",
