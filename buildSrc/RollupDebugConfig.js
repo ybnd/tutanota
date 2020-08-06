@@ -1,8 +1,9 @@
-import SystemConfig from "./SystemConfig.js"
-import {babel} from "@rollup/plugin-babel"
+import * as SystemConfig from "./SystemConfig.js"
+import pluginBabel from "@rollup/plugin-babel"
 import commonjs from "@rollup/plugin-commonjs"
+import path from "path"
 
-const path = require("path")
+const {babel} = pluginBabel
 
 function resolveLibs(baseDir = ".") {
 	return {

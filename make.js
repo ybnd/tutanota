@@ -1,26 +1,17 @@
-const {Promise} = require("bluebird")
-const options = require('commander')
-const path = require("path")
-const fs = Promise.promisifyAll(require("fs-extra"))
-const env = require('./buildSrc/env.js')
-const LaunchHtml = require('./buildSrc/LaunchHtml.js')
-const SystemConfig = require('./buildSrc/SystemConfig.js')
-const os = require("os")
+import options from "commander"
+import path from "path"
+import * as env from "./buildSrc/env.js"
+import fs from "fs-extra"
+import * as LaunchHtml from "./buildSrc/LaunchHtml.js"
+import * as SystemConfig from "./buildSrc/SystemConfig.js"
+import os from "os"
+import {spawn} from "child_process"
+import * as RollupConfig from "./buildSrc/RollupConfig.js"
+import {fileURLToPath} from 'url';
+import {dirname} from 'path';
+import Promise from "bluebird"
 
-const {spawn} = require("child_process")
-const RollupConfig = require("./buildSrc/RollupConfig")
-
-let flow
-try {
-	flow = require('flow-bin')
-} catch (e) {
-	// we don't have flow on F-Droid
-	console.log("flow-bin not found, stubbing it")
-	flow = 'true'
-}
-
-// const desktopBuilder = require("./buildSrc/DesktopBuilder")
-
+const __dirname = dirname(fileURLToPath(import.meta.url))
 
 async function createHtml(env, watch) {
 	let filenamePrefix
@@ -46,16 +37,16 @@ async function createHtml(env, watch) {
 }
 
 function _writeFile(targetFile, content) {
-	return fs.mkdirsAsync(path.dirname(targetFile)).then(() => fs.writeFileAsync(targetFile, content, 'utf-8'))
+	return fs.mkdirs(path.dirname(targetFile)).then(() => fs.writeFile(targetFile, content, 'utf-8'))
 }
 
 async function prepareAssets(watch) {
 	let restUrl
 	await Promise.all([
-		await fs.emptyDirAsync("build/images"),
-		fs.copyAsync(path.join(__dirname, '/resources/favicon'), path.join(__dirname, '/build/images')),
-		fs.copyAsync(path.join(__dirname, '/resources/images/'), path.join(__dirname, '/build/images')),
-		fs.copyAsync(path.join(__dirname, '/libs'), path.join(__dirname, '/build/libs'))
+		await fs.emptyDir("build/images"),
+		fs.copy(path.join(__dirname, '/resources/favicon'), path.join(__dirname, '/build/images')),
+		fs.copy(path.join(__dirname, '/resources/images/'), path.join(__dirname, '/build/images')),
+		fs.copy(path.join(__dirname, '/libs'), path.join(__dirname, '/build/libs'))
 	])
 	if (options.stage === 'test') {
 		restUrl = 'https://test.tutanota.com'
@@ -67,17 +58,26 @@ async function prepareAssets(watch) {
 		restUrl = options.host
 	}
 
-	await fs.copyFileAsync(path.join(__dirname, "/src/api/worker/WorkerBootstrap.js"), path.join(__dirname, '/build/WorkerBootstrap.js'))
+	await fs.copyFile(path.join(__dirname, "/src/api/worker/WorkerBootstrap.js"), path.join(__dirname, '/build/WorkerBootstrap.js'))
+
+	const version = JSON.parse(await fs.readFile("package.json", "utf8"))
 
 	return Promise.all([
-		createHtml(env.create(SystemConfig.devConfig(true), (options.stage === 'local') ? null : restUrl, version, "Browser"), watch),
-		createHtml(env.create(SystemConfig.devConfig(true), restUrl, version, "App"), watch),
-		createHtml(env.create(SystemConfig.devConfig(false), restUrl, version, "Desktop"), watch)
+		createHtml(env.create((options.stage === 'local') ? null : restUrl, version, "Browser"), watch),
+		createHtml(env.create(restUrl, version, "App"), watch),
+		createHtml(env.create(restUrl, version, "Desktop"), watch)
 	])
 }
 
-function startFlowCheck() {
-	// spawn(flow, [], {stdio: [process.stdin, process.stdout, process.stderr]})
+async function startFlowCheck() {
+	let flow
+	// We can't use flow in F-Droid builds because it uses prebuilt binary.
+	try {
+		flow = await import("flow-bin")
+		spawn(flow, [], {stdio: [process.stdin, process.stdout, process.stderr]})
+	} catch (e) {
+		console.log("flow was not found")
+	}
 }
 
 /** Returns cache or null. */
@@ -91,6 +91,7 @@ function readCache(cacheLocation) {
 }
 
 async function build({watch, desktop}) {
+	// noinspection ES6MissingAwait
 	startFlowCheck()
 	await prepareAssets(watch)
 
@@ -132,7 +133,7 @@ async function build({watch, desktop}) {
 		// 			break
 		// 	}
 		// })
-		let NollupDevServer = require('nollup/lib/dev-server');
+		let NollupDevServer = await import('nollup/lib/dev-server');
 		NollupDevServer({
 			hot: true,
 			port: 9001,
@@ -142,8 +143,8 @@ async function build({watch, desktop}) {
 		})
 	} else {
 		const start = Date.now()
-		const nollup = require('nollup')
-		const debugConfig = require('./buildSrc/RollupDebugConfig.js')
+		const nollup = (await import('nollup')).default
+		const debugConfig = (await import('./buildSrc/RollupDebugConfig.js')).default
 		console.log("Bundling...")
 		const bundle = await nollup(debugConfig)
 		console.log("Generating...")
@@ -178,9 +179,6 @@ async function build({watch, desktop}) {
 	}
 }
 
-const packageJSON = require('./package.json')
-const version = packageJSON.version
-
 options
 	.usage('[options] [test|prod|local|host <url>], "local" is default')
 	.arguments('[stage] [host]')
@@ -201,7 +199,7 @@ options
 
 if (options.clean) {
 	console.log("cleaning build dir")
-	fs.emptyDirAsync("build")
+	fs.emptyDir("build")
 }
 
 build(options)
@@ -217,13 +215,14 @@ async function startDesktop() {
 	)
 	const content = JSON.stringify(packageJSON)
 
-	await fs.createFileAsync("./build/package.json")
-	await fs.writeFileAsync("./build/package.json", content, 'utf-8')
+	await fs.createFile("./build/package.json")
+	await fs.writeFile("./build/package.json", content, 'utf-8')
 
 	const cacheLocation = "./build/desktop-bundle-cache"
 	const cache = readCache(cacheLocation)
 	cache && console.log("using cache for desktop bundle")
-	const bundle = await nollup.rollup({
+	const nollup = (await import('nollup')).default
+	const bundle = await nollup({
 		input: ["src/desktop/DesktopMain.js", "src/desktop/preload.js"],
 		plugins: [
 			babel({
@@ -242,7 +241,7 @@ async function startDesktop() {
 		preserveModules: true,
 		cache,
 	})
-	await fs.writeFileAsync(cacheLocation, JSON.stringify(bundle.cache))
+	await fs.writeFile(cacheLocation, JSON.stringify(bundle.cache))
 
 
 	await bundle.write({
