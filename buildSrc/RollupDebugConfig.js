@@ -2,6 +2,8 @@ import * as SystemConfig from "./SystemConfig.js"
 import pluginBabel from "@rollup/plugin-babel"
 import commonjs from "@rollup/plugin-commonjs"
 import path from "path"
+import Promise from "bluebird"
+import fs from "fs"
 
 const {babel} = pluginBabel
 
@@ -38,4 +40,8 @@ export default {
 	plugins: rollupDebugPlugins(""),
 	treeshake: false, // disable tree-shaking for faster development builds
 	output: {format: "es", sourcemap: "inline", dir: "build"},
+}
+
+export function writeNollupBundle(generatedBundle) {
+	return Promise.map(generatedBundle.output, (o) => fs.writeFile(path.join("build", o.fileName), o.code))
 }

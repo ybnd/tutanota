@@ -10,6 +10,7 @@ import * as RollupConfig from "./buildSrc/RollupConfig.js"
 import {fileURLToPath} from 'url';
 import {dirname} from 'path';
 import Promise from "bluebird"
+import {default as RollupDebugConfig, writeNollupBundle} from "./buildSrc/RollupDebugConfig.js"
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
@@ -151,7 +152,7 @@ async function build({watch, desktop}) {
 		const result = await bundle.generate(debugConfig.output)
 		result.stats && console.log("Generated in", result.stats.time)
 
-		await Promise.map(result.output, (o) => _writeFile(path.join("build", o.fileName), o.code))
+		writeNollupBundle(result)
 		console.log("Built in", Date.now() - start)
 		// // const cacheLocation = "./build/main-bundle-cache"
 		// // console.log("Reading cache")
@@ -206,7 +207,7 @@ build(options)
 
 async function startDesktop() {
 	console.log("Building desktop client...")
-	const packageJSON = require('./buildSrc/electron-package-json-template.js')(
+	const packageJSON = (await import('./buildSrc/electron-package-json-template.js')).default(
 		"",
 		"0.0.1",
 		"http://localhost:9000",
@@ -224,31 +225,19 @@ async function startDesktop() {
 	const nollup = (await import('nollup')).default
 	const bundle = await nollup({
 		input: ["src/desktop/DesktopMain.js", "src/desktop/preload.js"],
-		plugins: [
-			babel({
-				plugins: [
-					// Using Flow plugin and not preset to run before class-properties and avoid generating strange property code
-					"@babel/plugin-transform-flow-strip-types",
-					"@babel/plugin-proposal-class-properties",
-					"@babel/plugin-syntax-dynamic-import"
-				],
-			}),
-			commonjs({
-				exclude: "src/**",
-			}),
-		],
+		plugins: RollupDebugConfig.plugins,
 		treeshake: false, // disable tree-shaking for faster development builds
 		preserveModules: true,
 		cache,
 	})
-	await fs.writeFile(cacheLocation, JSON.stringify(bundle.cache))
+	// await fs.writeFile(cacheLocation, JSON.stringify(bundle.cache))
 
 
-	await bundle.write({
-		format: "cjs",
-		sourcemap: "inline",
-		dir: "build/desktop"
-	})
+	// await bundle.write({
+	// 	format: "cjs",
+	// 	sourcemap: "inline",
+	// 	dir: "build/desktop"
+	// })
 	console.log("Bundled desktop client")
 
 	spawn("/bin/sh", ["-c", "npm start"], {

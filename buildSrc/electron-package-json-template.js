@@ -1,4 +1,4 @@
-const path = require('path')
+import path from "path"
 
 /**
  * This is used for launching electron:
@@ -6,7 +6,7 @@ const path = require('path')
  * 2. copied to app-desktop/build/dist from dist.js (DesktopBuilder)
  */
 
-module.exports = function (nameSuffix, version, targetUrl, iconPath, sign) {
+export default function generateTemplate(nameSuffix, version, targetUrl, iconPath, sign) {
 	return {
 		"name": "tutanota-desktop" + nameSuffix,
 		"main": "./desktop/desktop/DesktopMain.js",
