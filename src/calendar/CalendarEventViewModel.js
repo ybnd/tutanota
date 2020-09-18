@@ -376,6 +376,7 @@ export class CalendarEventViewModel {
 			return
 		}
 		const recipientInfo = this._inviteModel.addRecipient("bcc", {address: mailAddress, contact, name: null})
+		if (!recipientInfo) return
 		const isOwnAttendee = this._mailAddresses.includes(mailAddress)
 		const status = isOwnAttendee ? CalendarAttendeeStatus.ACCEPTED : CalendarAttendeeStatus.ADDED
 		this._guestStatuses(addMapEntry(this._guestStatuses(), recipientInfo.mailAddress, status))
@@ -517,7 +518,7 @@ export class CalendarEventViewModel {
 		for (const model of [this._inviteModel, this._updateModel, this._cancelModel]) {
 			const recipientInfo = model._bccRecipients.find(r => r.mailAddress === guest.address.address)
 			if (recipientInfo) {
-				model.removeRecipient("bcc", recipientInfo)
+				model.removeRecipient(recipientInfo, "bcc")
 
 				const newStatuses = new Map(this._guestStatuses())
 				newStatuses.delete(recipientInfo.mailAddress)
@@ -829,7 +830,7 @@ export class CalendarEventViewModel {
 	}
 
 	_allRecipients(): Array<RecipientInfo> {
-		return this._inviteModel._allRecipients().concat(this._updateModel._allRecipients()).concat(this._cancelModel._allRecipients())
+		return this._inviteModel.allRecipients().concat(this._updateModel.allRecipients()).concat(this._cancelModel.allRecipients())
 	}
 
 	dispose(): void {

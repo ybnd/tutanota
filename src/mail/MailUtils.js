@@ -382,7 +382,7 @@ export function getEnabledMailAddressesWithUser(mailboxDetail: MailboxDetail, us
 }
 
 export function isUserMailbox(mailboxDetails: MailboxDetail) {
-	return mailboxDetails.mailGroup.user != null
+	return mailboxDetails.mailGroup && mailboxDetails.mailGroup.user
 }
 
 
@@ -434,7 +434,8 @@ export function getSenderNameForUser(mailboxDetails: MailboxDetail, userControll
 	}
 }
 
-export function getEmailSignature(): string {
+export function getEmailSignature(_logins?: LoginController): string {
+	const logins = _logins || logins
 	// provide the user signature, even for shared mail groups
 	const type = logins.getUserController().props.emailSignatureType;
 	if (type === TutanotaConstants.EMAIL_SIGNATURE_TYPE_DEFAULT) {
