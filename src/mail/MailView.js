@@ -65,7 +65,7 @@ import {FolderColumnView} from "../gui/base/FolderColumnView"
 import {modal} from "../gui/base/Modal"
 import {DomRectReadOnlyPolyfilled} from "../gui/base/Dropdown"
 import type {MailFolder} from "../api/entities/tutanota/MailFolder"
-import {writeNewMail} from "./MailEditorN"
+import {newMailEditor} from "./MailEditorN"
 
 assertMainOrNode()
 
@@ -676,7 +676,7 @@ export class MailView implements CurrentView {
 	}
 
 	_newMail(): Promise<Dialog> {
-		return this._getMailboxDetails().then(mailboxDetails => writeNewMail(mailboxDetails)).then(dialog => dialog.show())
+		return this._getMailboxDetails().then(mailboxDetails => newMailEditor(mailboxDetails)).then(dialog => dialog.show())
 	}
 
 	_getMailboxDetails(): Promise<MailboxDetail> {

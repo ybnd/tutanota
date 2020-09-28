@@ -47,7 +47,6 @@ import {RecipientNotResolvedError} from "../api/common/error/RecipientNotResolve
 import stream from "mithril/stream/stream.js"
 import type {EntityEventsListener} from "../api/main/EventController"
 import {EventController, isUpdateForTypeRef} from "../api/main/EventController"
-import type {InlineImages} from "./MailViewer"
 import {isMailAddress} from "../misc/FormatValidator"
 import {createApprovalMail} from "../api/entities/monitor/ApprovalMail"
 import type {EncryptedMailAddress} from "../api/entities/tutanota/EncryptedMailAddress"
@@ -98,10 +97,8 @@ export class SendMailModel {
 	_bccRecipients: Array<RecipientInfo>;
 	_senderAddress: string;
 	_isConfidential: boolean;
-	_totalAttachmentSize: number;
 	_attachments: Array<Attachment>; // contains either Files from Tutanota or DataFiles of locally loaded files. these map 1:1 to the _attachmentButtons
 	_replyTos: Array<RecipientInfo>;
-	_blockExternalContent: boolean;
 	_previousMessageId: ?Id; // only needs to be the correct value if this is a new email. if we are editing a draft, conversationType is not used
 	_previousMail: ?Mail;
 
@@ -110,7 +107,6 @@ export class SendMailModel {
 
 	_entityEventReceived: EntityEventsListener;
 	_mailChanged: boolean;
-
 
 	// TODO
 	// These are so that the model can notify the bubble handlers in MailEditorN when recipients are deleted or updated
@@ -151,10 +147,8 @@ export class SendMailModel {
 		this._bccRecipients = []
 		this._senderAddress = getDefaultSender(this._logins, this._mailboxDetails)
 		this._isConfidential = !userProps.defaultUnconfidential
-		this._totalAttachmentSize = 0
 		this._attachments = []
 		this._replyTos = []
-		this._blockExternalContent = true
 		this._previousMessageId = null
 		this._previousMail = null
 
@@ -232,7 +226,6 @@ export class SendMailModel {
 	}
 
 	setPassword(recipient: RecipientInfo, password: string) {
-		// TODO what happens if the contact is null here because the contact promise hasn't resolved?
 		if (recipient.contact) {
 			recipient.contact.presharedPassword = password
 		}
@@ -240,7 +233,6 @@ export class SendMailModel {
 	}
 
 	getPassword(recipientInfo: RecipientInfo): string {
-		// TODO what happens if the contact is null here because the contact promise hasn't resolved?
 		return recipientInfo.contact && recipientInfo.contact.presharedPassword || ""
 	}
 
@@ -258,6 +250,15 @@ export class SendMailModel {
 		this._mailChanged = subject.trim() !== this._subject
 		this._subject = subject.trim()
 
+	}
+
+	getBody(): string {
+		return this._body
+	}
+
+	setBody(body: string) {
+		this._body = body
+		this.setMailChanged(true)
 	}
 
 	selectSender(senderAddress: string) {
@@ -287,27 +288,21 @@ export class SendMailModel {
 		this.onMailChanged() // if this method is called wherever state gets changed, onMailChanged should function properly
 	}
 
-	doBlockExternalContent(): boolean {
-		return this._blockExternalContent
-	}
 
 	initAsResponse({
 		               previousMail, conversationType, senderMailAddress, recipients, attachments, subject, bodyText, replyTos,
-		               addSignature, inlineImages, blockExternalContent
+		               addSignature
 	               }: {
 		previousMail: Mail,
 		conversationType: ConversationTypeEnum,
 		senderMailAddress: string,
 		recipients: Recipients,
-		attachments: TutanotaFile[],
+		attachments: $ReadOnlyArray<TutanotaFile>,
 		subject: string,
 		bodyText: string,
 		replyTos: EncryptedMailAddress[],
 		addSignature: boolean,
-		inlineImages?: ?Promise<InlineImages>,
-		blockExternalContent: boolean
 	}): Promise<SendMailModel> {
-		this._blockExternalContent = blockExternalContent
 		if (addSignature) {
 			bodyText = "<br/><br/><br/>" + bodyText
 			let signature = getEmailSignature()
@@ -324,8 +319,18 @@ export class SendMailModel {
 				console.log("could not load conversation entry", e);
 			})
 			.then(() => {
-				return this._setMailData(previousMail, previousMail.confidential, conversationType, previousMessageId, senderMailAddress,
-					recipients, attachments, subject, bodyText, replyTos)
+				return this.init({
+					conversationType,
+					subject,
+					bodyText,
+					recipients,
+					senderMailAddress,
+					confidential: previousMail.confidential,
+					attachments,
+					replyTos,
+					previousMail,
+					previousMessageId
+				})
 			})
 	}
 
@@ -345,12 +350,17 @@ export class SendMailModel {
 		bodyText: string,
 		confidential: ?boolean,
 		senderMailAddress?: string): Promise<SendMailModel> {
-		const sender = senderMailAddress ? senderMailAddress : this._senderAddress
-		return this._setMailData(null, confidential, ConversationType.NEW, null, sender, recipients, [], subject, bodyText, [])
+		return this.init({
+			conversationType: ConversationType.NEW,
+			subject,
+			bodyText,
+			recipients,
+			confidential: confidential || undefined,
+			senderMailAddress
+		})
 	}
 
 	initWithMailtoUrl(mailtoUrl: string, confidential: boolean): Promise<SendMailModel> {
-
 
 		const {to, cc, bcc, subject, body} = parseMailtoUrl(mailtoUrl)
 		const recipients: Recipients = {
@@ -362,23 +372,25 @@ export class SendMailModel {
 		let signature = getEmailSignature()
 		const bodyText = this._logins.getUserController.isInternalUser() && signature ? body + signature : body
 
-		return this._setMailData(null, confidential, ConversationType.NEW, null, this._senderAddress, recipients, [], subject, bodyText, [])
+		return this.init({
+			conversationType: ConversationType.NEW,
+			subject,
+			bodyText,
+			confidential,
+			recipients,
+		})
 	}
 
-	initFromDraft({draftMail, attachments, bodyText, blockExternalContent}: {
-		draftMail: Mail,
+	initFromDraft({draft, attachments, bodyText}: {
+		draft: Mail,
 		attachments: TutanotaFile[],
 		bodyText: string,
-		blockExternalContent: boolean,
-		inlineImages?: Promise<InlineImages>
 	}): Promise<SendMailModel> {
 		let conversationType: ConversationTypeEnum = ConversationType.NEW
 		let previousMessageId: ?string = null
 		let previousMail: ?Mail = null
-		this._draft = draftMail
-		this._blockExternalContent = blockExternalContent
 
-		return load(ConversationEntryTypeRef, draftMail.conversationEntry).then(ce => {
+		return load(ConversationEntryTypeRef, draft.conversationEntry).then(ce => {
 			conversationType = downcast(ce.conversationType)
 			if (ce.previous) {
 				return load(ConversationEntryTypeRef, ce.previous).then(previousCe => {
@@ -393,34 +405,58 @@ export class SendMailModel {
 				})
 			}
 		}).then(() => {
-			const {confidential, sender, toRecipients, ccRecipients, bccRecipients, subject, replyTos} = draftMail
+			const {confidential, sender, toRecipients, ccRecipients, bccRecipients, subject, replyTos} = draft
 			const recipients: Recipients = {
 				to: toRecipients.map(mailAddressToRecipient),
 				cc: ccRecipients.map(mailAddressToRecipient),
 				bcc: bccRecipients.map(mailAddressToRecipient),
 			}
-			// We don't want to wait for the editor to be initialized, otherwise it will never be shown
-			return this._setMailData(previousMail, confidential, conversationType, previousMessageId, sender.address, recipients, attachments,
-				subject, bodyText, replyTos)
+			return this.init({
+				conversationType: ConversationType.NEW,
+				subject,
+				bodyText,
+				recipients,
+				draft,
+				sender: sender.address,
+				confidential,
+				attachments,
+				replyTos,
+				previousMail,
+				previousMessageId
+			})
 		})
 	}
 
-	init(
+
+	init({
+		     conversationType,
+		     subject,
+		     bodyText,
+		     draft,
+		     recipients,
+		     senderMailAddress,
+		     confidential,
+		     attachments,
+		     replyTos,
+		     previousMail,
+		     previousMessageId,
+	     }: {
 		conversationType: ConversationTypeEnum,
 		subject: string,
-		body: string,
+		bodyText: string,
 		recipients: Recipients,
-		replyTos: EncryptedMailAddress[],
-		isConfidential: ?boolean,
-		attachments: ?$ReadOnlyArray<TutanotaFile>,
-		senderMailAddress: ?string,
-		previousMail: ?Mail,
-		previousMessageId: ?string,
-	): Promise<SendMailModel> {
+		draft?: ?Mail,
+		senderMailAddress?: string,
+		confidential?: boolean,
+		attachments?: $ReadOnlyArray<TutanotaFile>,
+		replyTos?: EncryptedMailAddress[],
+		previousMail?: ?Mail,
+		previousMessageId?: ?string,
+	}): Promise<SendMailModel> {
 		this._conversationType = conversationType
 		this._subject = subject
-		this._body = body
-
+		this._body = bodyText
+		this._draft = draft || null
 		const {to = [], cc = [], bcc = []} = recipients
 		const makeRecipientInfo = (r: Recipient) => this._createRecipientInfo(r.name, r.address, r.contact, false)
 		this._toRecipients = to.filter(r => isMailAddress(r.address, false))
@@ -430,7 +466,11 @@ export class SendMailModel {
 		this._bccRecipients = bcc.filter(r => isMailAddress(r.address, false))
 		                         .map(makeRecipientInfo)
 
-		this._replyTos = replyTos.map(ema => {
+		this._senderAddress = senderMailAddress || getDefaultSender(this._logins, this._mailboxDetails)
+		this._isConfidential = confidential != null && confidential || !this.user().props.defaultUnconfidential
+		this._attachments = []
+		if (attachments) this.attachFiles(attachments)
+		this._replyTos = (replyTos || []).map(ema => {
 			const ri = createRecipientInfo(ema.address, ema.name, null)
 			if (this._logins.isInternalUserLoggedIn()) {
 				resolveRecipientInfoContact(ri, this._contactModel, this._logins.getUserController().user)
@@ -438,16 +478,13 @@ export class SendMailModel {
 			}
 			return ri
 		})
-		this._isConfidential = isConfidential != null && isConfidential || this._isConfidential
-		this._attachments = []
-		if (attachments) this.attachFiles(attachments)
-		this._senderAddress = senderMailAddress || this._senderAddress
-		this._previousMail = previousMail
-		this._previousMessageId = previousMessageId
+		this._previousMail = previousMail || null
+		this._previousMessageId = previousMessageId || null
 
 		this._mailChanged = false
 		return Promise.resolve(this)
 	}
+
 
 	/**
 	 * Either make a new recipient info or returns a recipient info that exists
@@ -536,33 +573,24 @@ export class SendMailModel {
 		this._eventController.removeEntityListener(this._entityEventReceived)
 	}
 
-	getAttachments(): Array<Attachment> {
-		return this._attachments
-	}
-
-	/**
-	 * @param file
-	 * @throws UserError if the file is too big to attach
-	 */
-	attachFile(file: Attachment): void {
-		if (this._totalAttachmentSize + Number(file.size) > MAX_ATTACHMENT_SIZE) {
-			throw new UserError(() => lang.get("tooBigAttachment_msg") + file.name)
-		}
-		this._attachments.push(file)
-		this.setMailChanged(true)
-	}
-
 	/**
 	 * @param files
 	 * @throws UserError in the case that any files were too big to attach. Small enough files will still have been attached
 	 */
+	getAttachments(): $ReadOnlyArray<Attachment> {
+		return this._attachments
+	}
+
+	/** @throws UserError in case files are too big to add */
 	attachFiles(files: $ReadOnlyArray<Attachment>): void {
+		let totalSize = this._attachments.reduce((total, file) => total + Number(file.size), 0)
 		const tooBigFiles: Array<string> = [];
 		files.forEach(file => {
-			try {
-				this.attachFile(file)
-			} catch (e) {
+			if (totalSize + Number(file.size) > MAX_ATTACHMENT_SIZE) {
 				tooBigFiles.push(file.name)
+			} else {
+				totalSize += Number(file.size)
+				this._attachments.push(file)
 			}
 		})
 
@@ -573,14 +601,8 @@ export class SendMailModel {
 
 	removeAttachment(file: Attachment): void {
 		if (remove(this._attachments, file)) {
-			this._totalAttachmentSize -= Number(file.size)
 			this.setMailChanged(true)
 		}
-	}
-
-	clearAttachments(): void {
-		this._attachments = []
-		this._totalAttachmentSize = 0
 	}
 
 	getSenderName() {

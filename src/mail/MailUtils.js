@@ -435,13 +435,13 @@ export function getSenderNameForUser(mailboxDetails: MailboxDetail, userControll
 }
 
 export function getEmailSignature(_logins?: LoginController): string {
-	const logins = _logins || logins
+	const localLogins = _logins || logins
 	// provide the user signature, even for shared mail groups
-	const type = logins.getUserController().props.emailSignatureType;
+	const type = localLogins.getUserController().props.emailSignatureType;
 	if (type === TutanotaConstants.EMAIL_SIGNATURE_TYPE_DEFAULT) {
 		return getDefaultSignature()
 	} else if (TutanotaConstants.EMAIL_SIGNATURE_TYPE_CUSTOM === type) {
-		return logins.getUserController().props.customEmailSignature
+		return localLogins.getUserController().props.customEmailSignature
 	} else {
 		return ""
 	}

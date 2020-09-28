@@ -9,19 +9,18 @@ import {Dialog} from "../gui/base/Dialog"
 import {lang} from "../misc/LanguageViewModel"
 import type {MailboxDetail} from "./MailModel"
 import {checkApprovalStatus} from "../misc/LoginUtils"
-import {getDefaultSender, getEmailSignature, getEnabledMailAddressesWithUser, parseMailtoUrl} from "./MailUtils"
+import {getDefaultSender, getEnabledMailAddressesWithUser, parseMailtoUrl, replaceCidsWithInlineImages} from "./MailUtils"
 import {PermissionError} from "../api/common/error/PermissionError"
 import {locator} from "../api/main/MainLocator"
 import {logins} from "../api/main/LoginController"
 import {formatPrice} from "../subscription/SubscriptionUtils"
-import {showUpgradeWizard} from "../subscription/UpgradeSubscriptionWizard"
 import type {ConversationTypeEnum} from "../api/common/TutanotaConstants"
-import {ALLOWED_IMAGE_FORMATS, ConversationType, Keys, MailMethod} from "../api/common/TutanotaConstants"
+import {ALLOWED_IMAGE_FORMATS, Keys, MailMethod} from "../api/common/TutanotaConstants"
 import {FileNotFoundError} from "../api/common/error/FileNotFoundError"
-import {NotFoundError, PreconditionFailedError} from "../api/common/error/RestError"
+import {PreconditionFailedError} from "../api/common/error/RestError"
 import type {DialogHeaderBarAttrs} from "../gui/base/DialogHeaderBar"
 import {ButtonN, ButtonType} from "../gui/base/ButtonN"
-import {attachDropdown} from "../gui/base/DropdownN"
+import {attachDropdown, createDropdown} from "../gui/base/DropdownN"
 import {fileController} from "../file/FileController"
 import {RichTextToolbar} from "../gui/base/RichTextToolbar"
 import {isApp} from "../api/Env"
@@ -57,8 +56,9 @@ import type {MailAddress} from "../api/entities/tutanota/MailAddress"
 import type {File as TutanotaFile} from "../api/entities/tutanota/File"
 import type {EncryptedMailAddress} from "../api/entities/tutanota/EncryptedMailAddress"
 import type {InlineImages} from "./MailViewer"
-import {load} from "../api/main/Entity"
-import {ConversationEntryTypeRef} from "../api/entities/tutanota/ConversationEntry"
+import {FileOpenError} from "../api/common/error/FileOpenError"
+import {downcast} from "../api/common/utils/Utils"
+import {showUpgradeWizard} from "../subscription/UpgradeSubscriptionWizard"
 
 
 export type MailEditorAttrs = {
@@ -68,14 +68,15 @@ export type MailEditorAttrs = {
 	inlineImageElements: Array<HTMLElement>,
 	doBlockExternalContent: Stream<boolean>,
 	doShowToolbar: Stream<boolean>,
-	doFocusEditorOnLoad: lazy<boolean>,
+	doFocusEditorOnLoad: boolean,
 	onload?: Function,
 	onclose?: Function,
 	areDetailsExpanded: Stream<boolean>,
-	selectedNotificationLanguage: Stream<string>
+	selectedNotificationLanguage: Stream<string>,
+	inlineImages?: Promise<InlineImages> // TODO replace inline images on creation
 }
 
-export function createMailEditorAttrs(doBlockExternalContent: boolean, doShowToolbar: boolean, doFocusEditorOnLoad: boolean): MailEditorAttrs {
+export function createMailEditorAttrs(doBlockExternalContent: boolean, doFocusEditorOnLoad: boolean, inlineImages?: Promise<InlineImages>): MailEditorAttrs {
 	const attrs = {
 		body: stream(""),
 		objectUrls: [],
@@ -83,9 +84,10 @@ export function createMailEditorAttrs(doBlockExternalContent: boolean, doShowToo
 		inlineImageElements: [],
 		doBlockExternalContent: stream(doBlockExternalContent),
 		doShowToolbar: stream(false),
-		doFocusEditorOnLoad: () => doFocusEditorOnLoad,
+		doFocusEditorOnLoad: doFocusEditorOnLoad,
 		areDetailsExpanded: stream(false),
-		selectedNotificationLanguage: stream("") // init in view
+		selectedNotificationLanguage: stream(""),
+		inlineImages: inlineImages,
 	}
 	return attrs
 }
@@ -176,8 +178,31 @@ export function MailEditorN(model: SendMailModel): Class<MComponent<MailEditorAt
 				this.toRecipientsField.textField.setDisabled()
 			}
 
-			// TODO: Selecting a language for the notification message isn't working
+			if (a.inlineImages) {
+				a.inlineImages.then((loadedInlineImages) => {
+					Object.keys(loadedInlineImages).forEach((key) => {
+						const {file} = loadedInlineImages[key]
+						if (!model.getAttachments().includes(file)) model.attachFiles([file])
+					})
+					m.redraw()
 
+					this.editor.initialized.promise.then(() => {
+
+						a.inlineImageElements = replaceCidsWithInlineImages(this.editor.getDOM(), loadedInlineImages, (file, event, dom) => {
+							createDropdown(() => [
+								{
+									label: "download_action",
+									click: () => {
+										fileController.downloadAndOpen(file, true)
+										              .catch(FileOpenError, () => Dialog.error("canNotOpenFileOnDevice_msg"))
+									},
+									type: ButtonType.Dropdown
+								}
+							])(downcast(event), dom)
+						})
+					})
+				})
+			}
 
 			model.onMailChanged = () => {
 				// TODO what else go here?????
@@ -296,7 +321,7 @@ export function MailEditorN(model: SendMailModel): Class<MComponent<MailEditorAt
 					}
 				},
 				onload: (ev) => {
-					a.doFocusEditorOnLoad() && this.editor.focus()
+					a.doFocusEditorOnLoad && this.editor.focus()
 				}
 			}, [
 				m(this.toRecipientsField),
@@ -373,7 +398,7 @@ type ResponseMailParameters = {
 	bodyText: string,
 	replyTos: EncryptedMailAddress[],
 	addSignature: boolean,
-	inlineImages?: ?Promise<InlineImages>,
+	inlineImages?: Promise<InlineImages>,
 	blockExternalContent: boolean
 }
 
@@ -395,66 +420,27 @@ export function newResponseMailEditor(args: ResponseMailParameters, mailboxDetai
 	} = args
 
 	const init = (mailbox) => {
-		if (addSignature) {
-			bodyText = "<br/><br/><br/>" + bodyText
-			let signature = getEmailSignature()
-			if (logins.getUserController().isInternalUser() && signature) {
-				bodyText = signature + bodyText
-			}
-		}
-		if (conversationType === ConversationType.REPLY) {
-			this.dialog.setFocusOnLoadFunction(() => this._focusBodyOnLoad())
-		}
-		let previousMessageId: ?string = null
-		return load(ConversationEntryTypeRef, previousMail.conversationEntry)
-			.then(ce => {
-				previousMessageId = ce.messageId
-			})
-			.catch(NotFoundError, e => {
-				console.log("could not load conversation entry", e);
-			})
-			.then(() => {
-				// We don't want to wait for the editor to be initialized, otherwise it will never be shown
-				this._setMailData(previousMail, previousMail.confidential, conversationType, previousMessageId, senderMailAddress, toRecipients, ccRecipients, bccRecipients, attachments, subject, bodyText, replyTos)
-				    .then(() => this._replaceInlineImages(inlineImages))
-			})
-	}
 
-}
-
-export function newSupportMailEditor(subject: string = "", mailboxDetails?: MailboxDetail): Promise<Dialog> {
-	if (!logins.getUserController().isPremiumAccount()) {
-		const message = lang.get("premiumOffer_msg", {"{1}": formatPrice(1, true)})
-		const title = lang.get("upgradeReminderTitle_msg")
-
-		return Dialog.reminder(title, message, lang.getInfoLink("premiumProBusiness_link")).then(confirm => {
-			if (confirm) {
-				showUpgradeWizard()
-			}
-		})
-	}
-
-	const init = mailbox => {
 		const recipients = {
-			to: [{name: null, address: "premium@tutao.de"}]
+			to: toRecipients.map(mailAddressToRecipient),
+			cc: ccRecipients.map(mailAddressToRecipient),
+			bcc: bccRecipients.map(mailAddressToRecipient)
 		}
-		return newMailEditorFromTemplate(mailbox, recipients, "", "<br/>", getSupportMailSignature())
-	}
 
-	return mailboxDetails
-		? init(mailboxDetails)
-		: locator.mailModel.getUserMailboxDetails().then(mailbox => init(mailbox))
-}
-
-export function newInviteMailEditor(mailboxDetails?: MailboxDetail): Promise<Dialog> {
-	const init = mailbox => {
-		const username = logins.getUserController().userGroupInfo.name;
-		const body = lang.get("invitationMailBody_msg", {
-			'{registrationLink}': "https://mail.tutanota.com/signup",
-			'{username}': username,
-			'{githubLink}': "https://github.com/tutao/tutanota"
+		return defaultSendMailModel(mailbox).initAsResponse({
+			previousMail,
+			conversationType,
+			senderMailAddress,
+			recipients,
+			attachments,
+			subject,
+			bodyText,
+			replyTos,
+			addSignature,
 		})
-		return newMailEditorFromTemplate(mailbox, {}, lang.get("invitationMailSubject_msg"), body, null, false)
+		                                    .then(model => {
+			                                    return _createMailEditorDialog(model, blockExternalContent, inlineImages)
+		                                    })
 	}
 
 	return mailboxDetails
@@ -499,7 +485,15 @@ export function newMailEditorFromTemplate(
 		})
 }
 
-function _createMailEditorDialog(model: SendMailModel): Dialog {
+/**
+ * Creates a new Dialog with a MailEditorN inside.
+ * @param model
+ * @param blockExternalContent
+ * @param inlineImages
+ * @returns {Dialog}
+ * @private
+ */
+function _createMailEditorDialog(model: SendMailModel, blockExternalContent: boolean = false, inlineImages?: Promise<InlineImages>): Dialog {
 	let dialog: Dialog
 	let mailEditorAttrs: MailEditorAttrs
 	let domCloseButton: HTMLElement
@@ -566,7 +560,7 @@ function _createMailEditorDialog(model: SendMailModel): Dialog {
 		}
 	}
 
-	mailEditorAttrs = createMailEditorAttrs(false, false, model.toRecipients().length !== 0);
+	mailEditorAttrs = createMailEditorAttrs(blockExternalContent, model.toRecipients().length !== 0, inlineImages);
 
 	dialog = Dialog.largeDialogN(headerBarAttrs, MailEditorN(model), mailEditorAttrs)
 	               .addShortcut({
@@ -613,4 +607,60 @@ function _createMailEditorDialog(model: SendMailModel): Dialog {
 	               }).setCloseHandler(() => closeButtonAttrs.click(newMouseEvent(), domCloseButton))
 
 	return dialog
+}
+
+
+/**
+ * Create and show a new mail editor with a support query, addressed to premium support,
+ * or show an option to upgrade
+ * @param subject
+ * @param mailboxDetails
+ * @returns {Promise<any>|Promise<R>|*}
+ */
+export function writeSupportMail(subject: string = "", mailboxDetails?: MailboxDetail) {
+
+	if (logins.getUserController().isPremiumAccount()) {
+		const show = mailbox => {
+			const recipients = {
+				to: [{name: null, address: "premium@tutao.de"}]
+			}
+			newMailEditorFromTemplate(mailbox, recipients, "", "<br/>", getSupportMailSignature()).then(dialog => dialog.show())
+		}
+
+		mailboxDetails
+			? show(mailboxDetails)
+			: locator.mailModel.getUserMailboxDetails().then(mailbox => show(mailbox))
+
+
+	} else {
+		const message = lang.get("premiumOffer_msg", {"{1}": formatPrice(1, true)})
+		const title = lang.get("upgradeReminderTitle_msg")
+
+		Dialog.reminder(title, message, lang.getInfoLink("premiumProBusiness_link")).then(confirm => {
+			if (confirm) {
+				showUpgradeWizard()
+			}
+		})
+	}
+}
+
+/**
+ * Create and show a new mail editor with an invite message
+ * @param mailboxDetails
+ * @returns {*}
+ */
+export function writeInviteMail(mailboxDetails?: MailboxDetail) {
+	const show = mailbox => {
+		const username = logins.getUserController().userGroupInfo.name;
+		const body = lang.get("invitationMailBody_msg", {
+			'{registrationLink}': "https://mail.tutanota.com/signup",
+			'{username}': username,
+			'{githubLink}': "https://github.com/tutao/tutanota"
+		})
+		newMailEditorFromTemplate(mailbox, {}, lang.get("invitationMailSubject_msg"), body, null, false).then(dialog => dialog.show())
+	}
+
+	mailboxDetails
+		? show(mailboxDetails)
+		: locator.mailModel.getUserMailboxDetails().then(mailbox => show(mailbox))
 }

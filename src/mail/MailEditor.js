@@ -590,9 +590,18 @@ export class MailEditor {
 		})
 	}
 
-	_setMailData(previousMail: ?Mail, confidential: ?boolean, conversationType: ConversationTypeEnum, previousMessageId: ?string, senderMailAddress: string,
-	             toRecipients: MailAddress[], ccRecipients: MailAddress[], bccRecipients: MailAddress[], attachments: TutanotaFile[], subject: string,
-	             body: string, replyTos: EncryptedMailAddress[]): Promise<void> {
+	_setMailData(previousMail: ?Mail,
+	             confidential: ?boolean,
+	             conversationType: ConversationTypeEnum,
+	             previousMessageId: ?string,
+	             senderMailAddress: string,
+	             toRecipients: MailAddress[],
+	             ccRecipients: MailAddress[],
+	             bccRecipients: MailAddress[],
+	             attachments: TutanotaFile[],
+	             subject: string,
+	             body: string,
+	             replyTos: EncryptedMailAddress[]): Promise<void> {
 		this._previousMail = previousMail
 		this.conversationType = conversationType
 		this.previousMessageId = previousMessageId
