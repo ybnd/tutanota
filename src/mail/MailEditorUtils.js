@@ -1,5 +1,7 @@
+// @flow
+
 import m from "mithril"
-import type {Attachment} from "./SendMailModel"
+import type {Attachment, RecipientField} from "./SendMailModel"
 import {SendMailModel} from "./SendMailModel"
 import {findAllAndRemove, remove} from "../api/common/utils/ArrayUtils"
 import {debounce, downcast, neverNull} from "../api/common/utils/Utils"
@@ -29,6 +31,12 @@ import {load} from "../api/main/Entity"
 import {CustomerPropertiesTypeRef} from "../api/entities/sys/CustomerProperties"
 import {client} from "../misc/ClientDetector"
 import {getTimeZone} from "../calendar/CalendarUtils"
+import type {ConversationTypeEnum} from "../api/common/TutanotaConstants"
+import {ConversationType, FeatureType} from "../api/common/TutanotaConstants"
+import {ContactEditor} from "../contacts/ContactEditor"
+import {lazyContactListId} from "../contacts/ContactUtils"
+import {createNewContact, getDisplayText} from "./MailUtils"
+import {Bubble} from "../gui/base/BubbleTextField"
 
 export function chooseAndAttachFile(model: SendMailModel, boundingRect: ClientRect, fileTypes?: Array<string>): Promise<?$ReadOnlyArray<FileReference | DataFile>> {
 	return showFileChooserForAttachments(boundingRect, fileTypes)
@@ -52,22 +60,19 @@ export function showFileChooserForAttachments(boundingRect: ClientRect, fileType
 		})
 }
 
-export function createPasswordField(model: SendMailModel, recipientInfo: RecipientInfo): TextFieldAttrs {
+export function createPasswordField(model: SendMailModel, recipient: RecipientInfo): TextFieldAttrs {
 
-	const address = recipientInfo.mailAddress
+	const password = model.getPassword(recipient)
 
-	const password = model.getPassword(address) ||
-		(recipientInfo.contact && recipientInfo.contact.presharedPassword) || ""
-
-	const passwordIndicator = new PasswordIndicator(() => getPasswordStrengthForUser(password, recipientInfo, model.getMailboxDetails())
+	const passwordIndicator = new PasswordIndicator(() => getPasswordStrengthForUser(password, recipient, model.getMailboxDetails())
 		/ 0.8)
 
 	return {
-		label: () => lang.get("passwordFor_label", {"{1}": address}),
+		label: () => lang.get("passwordFor_label", {"{1}": recipient.mailAddress}),
 		helpLabel: () => m(passwordIndicator),
-		value: () => recipientInfo.contact && recipientInfo.contact.presharedPassword || "",
+		value: () => password,
 		type: Type.ExternalPassword,
-		oninput: (val) => model.setPassword(recipientInfo, val)
+		oninput: (val) => model.setPassword(recipient, val)
 	}
 }
 
@@ -78,10 +83,10 @@ export type InlineImageReference = {
 
 export function createInlineImage(file: FileReference | DataFile): InlineImageReference {
 	// Let'S assume it's DataFile for now... Editor bar is available for apps but image button is not
-	const dataFile: DataFile = downcast(f)
+	const dataFile: DataFile = downcast(file)
 	const cid = Math.random().toString(30).substring(2)
-	f.cid = cid
-	const blob = new Blob([dataFile.data], {type: f.mimeType})
+	file.cid = cid
+	const blob = new Blob([dataFile.data], {type: file.mimeType})
 	const objectUrl = URL.createObjectURL(blob)
 	return {
 		cid: cid,
@@ -109,7 +114,10 @@ export function createAttachmentButtonAttrs(model: SendMailModel, attrs: MailEdi
 					            if (file.cid) {
 						            const imageElement = attrs.inlineImageElements
 						                                      .find((e) => e.getAttribute("cid") === file.cid)
-						            imageElement && imageElement.remove() || remove(attrs.inlineImageElements, imageElement)
+						            if (imageElement) {
+							            imageElement.remove()
+							            remove(attrs.inlineImageElements, imageElement)
+						            }
 					            }
 					            m.redraw()
 				            }
@@ -144,12 +152,90 @@ export function getSupportMailSignature(): string {
 		+ `<br>User agent:<br> ${navigator.userAgent}`
 }
 
+export function createRecipientInfoBubble(model: SendMailModel, recipient: RecipientInfo, field: RecipientField): Bubble<RecipientInfo> {
+	console.log("CREATING BUBBLE", recipient, field)
+	const buttonAttrs = attachDropdown({
+			label: () => getDisplayText(recipient.name, recipient.mailAddress, false),
+			type: ButtonType.TextBubble,
+			isSelected: () => false,
+			color: ButtonColors.Elevated
+		},
+		() => recipient.resolveContactPromise
+			? recipient.resolveContactPromise.then(
+				contact => createRecipientInfoBubbleContextButtons(model, recipient, field))
+			: Promise.resolve(createRecipientInfoBubbleContextButtons(model, recipient, field)),
+		undefined, 250)
+
+
+	return new Bubble(recipient, buttonAttrs, recipient.mailAddress)
+}
+
+export function createRecipientInfoBubbleContextButtons(model: SendMailModel, recipient: RecipientInfo, field: RecipientField): Array<ButtonAttrs | string> {
+	const canEditBubbleRecipient = model.user().isInternalUser() && !model.logins().isEnabled(FeatureType.DisableContacts)
+	const previousMail = model.getPreviousMail()
+	const canRemoveBubble = !previousMail || !previousMail.restrictions || previousMail.restrictions.participantGroupInfos.length === 0
+	return [
+		recipient.mailAddress,
+		canEditBubbleRecipient
+			? recipient.contact && recipient.contact._id
+			// TODO making and editing contacts doesn't update the model and/or the view properly
+			? {
+				label: () => lang.get("editContact_label"),
+				type: ButtonType.Secondary,
+				click: () => new ContactEditor(recipient.contact).show()
+			}
+			: {
+				label: () => lang.get("createContact_action"),
+				type: ButtonType.Secondary,
+				click: () => {
+					// contact list
+					lazyContactListId(model.logins())
+						.getAsync()
+						.then(contactListId => {
+							const newContact = createNewContact(model.logins().getUserController().user, recipient.mailAddress, recipient.name)
+							new ContactEditor(newContact, contactListId, (newContactId => model.contactReceiver(recipient, field, newContactId))).show()
+						})
+				}
+			}
+			: "",
+		canRemoveBubble
+			? {
+				label: "remove_action",
+				type: ButtonType.Secondary,
+				click: () => {
+					model.removeRecipient(recipient, field, true)
+				}
+			}
+			: ""
+	]
+}
+
+export function conversationTypeString(conversationType: ConversationTypeEnum): string {
+	let key
+	switch (conversationType) {
+		case ConversationType.NEW:
+			key = "newMail_action"
+			break
+		case ConversationType.REPLY:
+			key = "reply_action"
+			break
+		case ConversationType.FORWARD:
+			key = "forward_action"
+			break
+		default:
+			key = "emptyString_msg"
+	}
+
+	return lang.get(key)
+}
+
+
 function _downloadAttachment(attachment: Attachment) {
 	{
 		let promise = Promise.resolve()
 		if (attachment._type === 'FileReference') {
 			promise = fileApp.open(downcast(attachment))
-		} else if (file._type === "DataFile") {
+		} else if (attachment._type === "DataFile") {
 			promise = fileController.open(downcast(attachment))
 		} else {
 			promise = fileController.downloadAndOpen(((attachment: any): TutanotaFile), true)
@@ -191,4 +277,4 @@ function _cleanupInlineAttachmentsDontUseThisOne(domElement: HTMLElement, inline
 	findAllAndRemove(inlineImageElements, (imageElement) => elementsToRemove.includes(imageElement))
 }
 
-export const cleanupInlineAttachments = debounce(50, (e, i, a) => _cleanupInlineAttachmentsDontUseThisOne(e, i, a))
+export const cleanupInlineAttachments = debounce(50, (e: HTMLElement, i: Array<HTMLElement>, a: Array<Attachment>) => _cleanupInlineAttachmentsDontUseThisOne(e, i, a))

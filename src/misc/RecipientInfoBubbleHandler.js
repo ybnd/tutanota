@@ -1,4 +1,5 @@
 //@flow
+import stream from "mithril/stream/stream.js"
 import type {BubbleHandler} from "../gui/base/BubbleTextField"
 import {Bubble} from "../gui/base/BubbleTextField"
 import {isMailAddress} from "./FormatValidator"
@@ -17,20 +18,20 @@ import type {RecipientInfo} from "../api/common/RecipientInfo"
 export interface RecipientInfoBubbleFactory {
 	// Create a Recipient Info Bubble or none if invalid (ie. mailaddress already exists)
 	createBubble(name: ?string, mailAddress: string, contact: ?Contact): ?Bubble<RecipientInfo>,
-
-	// needed to tell SendMailModel when a bubble is deleted without telling RecipientInfoBubbleHandler about SendMailModel
-	// or changing the interface of BubbleHandler
-	deleteBubble?: (bubble: Bubble<RecipientInfo>) => void
 }
 
 export class RecipientInfoBubbleHandler implements BubbleHandler<RecipientInfo, ContactSuggestion> {
 
 	suggestionHeight: number;
+	onBubbleCreated: Stream<?Bubble<RecipientInfo>>;
+	onBubbleDeleted: Stream<?Bubble<RecipientInfo>>;
 	_bubbleFactory: RecipientInfoBubbleFactory;
 
 	constructor(bubbleFactory: RecipientInfoBubbleFactory) {
 		this._bubbleFactory = bubbleFactory
 		this.suggestionHeight = ContactSuggestionHeight
+		this.onBubbleCreated = stream(null)
+		this.onBubbleDeleted = stream(null)
 	}
 
 	getSuggestions(text: string): Promise<ContactSuggestion[]> {
@@ -72,7 +73,9 @@ export class RecipientInfoBubbleHandler implements BubbleHandler<RecipientInfo, 
 	}
 
 	createBubbleFromSuggestion(suggestion: ContactSuggestion): ?Bubble<RecipientInfo> {
-		return this._bubbleFactory.createBubble(suggestion.name, suggestion.mailAddress, suggestion.contact)
+		const bubble = this._bubbleFactory.createBubble(suggestion.name, suggestion.mailAddress, suggestion.contact)
+		this.onBubbleCreated(bubble)
+		return bubble
 	}
 
 	createBubblesFromText(text: string): Bubble<RecipientInfo>[] {
@@ -87,9 +90,10 @@ export class RecipientInfoBubbleHandler implements BubbleHandler<RecipientInfo, 
 				if (!bubble) {
 					// if text is copy pasted in then we may have already generated some bubbles, in which case the factory may or may not
 					// need to know that we will be discarding them all (in the case of MailEditorBubbleFactory it does need to know)
-					bubbles.forEach(b => this._bubbleFactory.deleteBubble && this._bubbleFactory.deleteBubble(b))
+					bubbles.forEach(b => this.onBubbleDeleted(bubble))
 					return [] // if one recipient is invalid, we do not return any valid ones because all invalid text would be deleted otherwise
 				} else {
+					this.onBubbleCreated(bubble)
 					bubbles.push(bubble)
 				}
 			}
@@ -98,7 +102,7 @@ export class RecipientInfoBubbleHandler implements BubbleHandler<RecipientInfo, 
 	}
 
 	bubbleDeleted(bubble: Bubble<RecipientInfo>): void {
-		this._bubbleFactory.deleteBubble && this._bubbleFactory.deleteBubble(bubble)
+		this.onBubbleDeleted(bubble)
 	}
 
 	/**

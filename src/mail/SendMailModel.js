@@ -35,7 +35,7 @@ import type {Mail} from "../api/entities/tutanota/Mail"
 import {MailTypeRef} from "../api/entities/tutanota/Mail"
 import type {Contact} from "../api/entities/tutanota/Contact"
 import {ContactTypeRef} from "../api/entities/tutanota/Contact"
-import {stringToCustomId} from "../api/common/EntityFunctions"
+import {isSameId, stringToCustomId} from "../api/common/EntityFunctions"
 import {FileNotFoundError} from "../api/common/error/FileNotFoundError"
 import type {LoginController} from "../api/main/LoginController"
 import {logins} from "../api/main/LoginController"
@@ -45,12 +45,12 @@ import {MailModel} from "./MailModel"
 import {LazyContactListId} from "../contacts/ContactUtils"
 import {RecipientNotResolvedError} from "../api/common/error/RecipientNotResolvedError"
 import stream from "mithril/stream/stream.js"
-import type {EntityEventsListener} from "../api/main/EventController"
+import type {EntityEventsListener, EntityUpdateData} from "../api/main/EventController"
 import {EventController, isUpdateForTypeRef} from "../api/main/EventController"
 import {isMailAddress} from "../misc/FormatValidator"
 import {createApprovalMail} from "../api/entities/monitor/ApprovalMail"
 import type {EncryptedMailAddress} from "../api/entities/tutanota/EncryptedMailAddress"
-import {partition, remove} from "../api/common/utils/ArrayUtils"
+import {findAndRemove, remove, replace} from "../api/common/utils/ArrayUtils"
 import type {ContactModel} from "../contacts/ContactModel"
 import type {Language, TranslationKey} from "../misc/LanguageViewModel"
 import {_getSubstitutedLanguageCode, getAvailableLanguageCode, lang, languages} from "../misc/LanguageViewModel"
@@ -59,6 +59,7 @@ import {checkApprovalStatus} from "../misc/LoginUtils"
 import type {IUserController} from "../api/main/UserController"
 import {locator} from "../api/main/MainLocator"
 import {getTemplateLanguages} from "./MailEditorUtils"
+import {easyMatch} from "../api/common/utils/StringUtils"
 
 assertMainOrNode()
 
@@ -108,18 +109,14 @@ export class SendMailModel {
 	_entityEventReceived: EntityEventsListener;
 	_mailChanged: boolean;
 
-	// TODO
-	// These are so that the model can notify the bubble handlers in MailEditorN when recipients are deleted or updated
-	// ideally the bubbles would be a direct representation of the state of the model but the current implementation has them
-	// handling their own state => I started working on some BubbleHandlerN's but i think that that is something to work on after
-	// I've gotten this working as there is a lot to do there
-	onRecipientRemoved: (RecipientInfo, ?RecipientField) => void;
-	onRecipientUpdated: (RecipientInfo, ?RecipientField) => void;
-	onMailChanged: () => void
+	onMailChanged: Stream<boolean>
 
-	recipientsChanged: Stream<void> // TODO calendar view subscribes to this so it knows to update, i want to have it subscribe to onMailChanged or something instead instead
+	recipientsChanged: Stream<void>
 
-	// TODO some methods on this class throw, should probably check if we're catching
+	onRecipientAdded: Stream<?{addedRecipient: RecipientInfo, addedField: RecipientField}>
+	onRecipientContactUpdated: Stream<?{oldRecipient: RecipientInfo, updatedRecipient: RecipientInfo, updatedField: RecipientField}>
+	onRecipientRemoved: Stream<?{removedRecipient: RecipientInfo, removedField: RecipientField}>
+
 	/**
 	 * creates a new empty draft message. calling an init method will fill in all the blank data
 	 * @param logins
@@ -177,11 +174,14 @@ export class SendMailModel {
 		this._eventController.addEntityListener(this._entityEventReceived)
 
 		this._mailChanged = false
-		this.onRecipientRemoved = () => {}
-		this.onRecipientUpdated = () => {}
-		this.onMailChanged = () => {}
+
+		this.onMailChanged = stream(false)
 
 		this.recipientsChanged = stream(undefined)
+
+		this.onRecipientAdded = stream(null)
+		this.onRecipientContactUpdated = stream(null)
+		this.onRecipientRemoved = stream(null)
 	}
 
 	logins(): LoginController {
@@ -212,17 +212,8 @@ export class SendMailModel {
 		return this._mailboxDetails
 	}
 
-	getConversationTypeTranslationKey(): TranslationKey {
-		switch (this._conversationType) {
-			case ConversationType.NEW:
-				return "newMail_action"
-			case ConversationType.REPLY:
-				return "reply_action"
-			case ConversationType.FORWARD:
-				return "forward_action"
-			default:
-				return "emptyString_msg"
-		}
+	getConversationType(): ConversationTypeEnum {
+		return this._conversationType
 	}
 
 	setPassword(recipient: RecipientInfo, password: string) {
@@ -285,7 +276,7 @@ export class SendMailModel {
 
 	setMailChanged(hasChanged: boolean) {
 		this._mailChanged = hasChanged
-		this.onMailChanged() // if this method is called wherever state gets changed, onMailChanged should function properly
+		this.onMailChanged(hasChanged) // if this method is called wherever state gets changed, onMailChanged should function properly
 	}
 
 
@@ -381,11 +372,7 @@ export class SendMailModel {
 		})
 	}
 
-	initFromDraft({draft, attachments, bodyText}: {
-		draft: Mail,
-		attachments: TutanotaFile[],
-		bodyText: string,
-	}): Promise<SendMailModel> {
+	initFromDraft(draft: Mail, attachments: TutanotaFile[], bodyText: string,): Promise<SendMailModel> {
 		let conversationType: ConversationTypeEnum = ConversationType.NEW
 		let previousMessageId: ?string = null
 		let previousMail: ?Mail = null
@@ -458,7 +445,7 @@ export class SendMailModel {
 		this._body = bodyText
 		this._draft = draft || null
 		const {to = [], cc = [], bcc = []} = recipients
-		const makeRecipientInfo = (r: Recipient) => this._createRecipientInfo(r.name, r.address, r.contact, false)
+		const makeRecipientInfo = (r: Recipient) => this._createAndResolveRecipientInfo(r.name, r.address, r.contact, false)
 		this._toRecipients = to.filter(r => isMailAddress(r.address, false))
 		                       .map(makeRecipientInfo)
 		this._ccRecipients = cc.filter(r => isMailAddress(r.address, false))
@@ -466,6 +453,7 @@ export class SendMailModel {
 		this._bccRecipients = bcc.filter(r => isMailAddress(r.address, false))
 		                         .map(makeRecipientInfo)
 
+		console.log(this._toRecipients)
 		this._senderAddress = senderMailAddress || getDefaultSender(this._logins, this._mailboxDetails)
 		this._isConfidential = confidential != null && confidential || !this.user().props.defaultUnconfidential
 		this._attachments = []
@@ -495,14 +483,13 @@ export class SendMailModel {
 	 * @returns {RecipientInfo}
 	 * @private
 	 */
-	_createRecipientInfo(name: ?string, address: string, contact: ?Contact, resolveLazily: boolean): RecipientInfo {
+	_createAndResolveRecipientInfo(name: ?string, address: string, contact: ?Contact, resolveLazily: boolean): RecipientInfo {
 		const ri = createRecipientInfo(address, name, contact)
 		if (!resolveLazily) {
 			if (this._logins.isInternalUserLoggedIn()) {
-				resolveRecipientInfoContact(ri, this._contactModel, this._logins.getUserController().user)
-					.then(() => this.setMailChanged(true))
+				resolveRecipientInfoContact(ri, this._contactModel, this._logins.getUserController().user).then(_ => this.setMailChanged(true))
 			}
-			resolveRecipientInfo(this._mailModel, ri).then(() => this.setMailChanged(true))
+			resolveRecipientInfo(this._mailModel, ri).then().then(_ => this.setMailChanged(true))
 		}
 		return ri
 	}
@@ -520,15 +507,15 @@ export class SendMailModel {
 		}
 	}
 
-	toRecipients(): Array<RecipientInfo> {
+	toRecipients(): $ReadOnlyArray<RecipientInfo> {
 		return this._toRecipients
 	}
 
-	ccRecipients(): Array<RecipientInfo> {
+	ccRecipients(): $ReadOnlyArray<RecipientInfo> {
 		return this._ccRecipients
 	}
 
-	bccRecipients(): Array<RecipientInfo> {
+	bccRecipients(): $ReadOnlyArray<RecipientInfo> {
 		return this._bccRecipients
 	}
 
@@ -537,37 +524,35 @@ export class SendMailModel {
 	 * @param type
 	 * @param recipient
 	 * @param resolveLazily
+	 * @param notify: whether or not to notify onRecipientAdded listeners
 	 * @returns {RecipientInfo}
 	 */
-	addRecipient(type: RecipientField, recipient: Recipient, resolveLazily: boolean = false): ?RecipientInfo {
-		// if a recipient with the same mail address exists then just use that. they will still received multiple emails but the passwords
-		// will sync up
-		// TODO maybe we can isntead not reinsert an existing recipient by checking if it already exists - how should that behaviour work
-		const recipientInfo =
-			this.allRecipients().find(r => r.mailAddress === recipient.address)
-			|| this._createRecipientInfo(recipient.name, recipient.address, recipient.contact, resolveLazily)
+	addRecipient(type: RecipientField, recipient: Recipient, resolveLazily: boolean = false, notify: boolean = true): ?RecipientInfo {
+		const recipientInfo = this.getOrCreateRecipient(type, recipient, resolveLazily)
+		return this.addRecipientInfo(type, recipientInfo, resolveLazily, notify)
+	}
 
+	addRecipientInfo(type: RecipientField, recipientInfo: RecipientInfo, resolveLazily: boolean = false, notify: boolean = true): ?RecipientInfo {
 		this.getRecipientList(type).push(recipientInfo)
 		this.setMailChanged(true)
+		if (notify) this.onRecipientAdded({addedRecipient: recipientInfo, addedField: type})
 		return recipientInfo
 	}
 
-	removeRecipient(recipient: RecipientInfo, type: ?RecipientField) {
-		remove(type ? this._recipientList(type) : this.allRecipients(), recipient)
-		this.onRecipientRemoved(recipient, type)
+	getOrCreateRecipient(type: RecipientField, recipient: Recipient, resolveLazily: boolean = false): RecipientInfo {
+		// if a recipient with the same mail address exists then just use that. they will still received multiple emails but the passwords
+		// will sync up
+		// TODO maybe we can isntead not reinsert an existing recipient by checking if it already exists - how should that behaviour work
+		return this.getRecipientList(type).find(r => r.mailAddress === recipient.address)
+			|| this._createAndResolveRecipientInfo(recipient.name, recipient.address, recipient.contact, resolveLazily)
 	}
 
-	_recipientList(type: RecipientField): Array<RecipientInfo> {
-		if (type === "to") {
-			return this._toRecipients
-		} else if (type === "cc") {
-			return this._ccRecipients
-		} else if (type === "bcc") {
-			return this._bccRecipients
-		}
-		throw new Error()
+	removeRecipient(recipient: RecipientInfo, type: RecipientField, notify: boolean = true): boolean {
+		const didRemove = findAndRemove(this.getRecipientList(type), r => recipient.mailAddress === r.mailAddress)
+		this.setMailChanged(didRemove)
+		if (didRemove && notify) this.onRecipientRemoved({removedRecipient: recipient, removedField: type})
+		return didRemove
 	}
-
 
 	dispose() {
 		this._eventController.removeEntityListener(this._entityEventReceived)
@@ -577,7 +562,7 @@ export class SendMailModel {
 	 * @param files
 	 * @throws UserError in the case that any files were too big to attach. Small enough files will still have been attached
 	 */
-	getAttachments(): $ReadOnlyArray<Attachment> {
+	getAttachments(): Array<Attachment> {
 		return this._attachments
 	}
 
@@ -641,6 +626,7 @@ export class SendMailModel {
 		return this.allRecipients().some(r => isExternal(r))
 	}
 
+	// TODO We still need to check on the state of invalid text in the bubble text field before sending (not here but in the mail editor)
 	/**
 	 * @reject {RecipientsNotFoundError}
 	 * @reject {TooManyRequestsError}
@@ -836,11 +822,14 @@ export class SendMailModel {
 				})
 			} else if (
 				contact._id
-				&& isExternalAndConfidential
-				&& contact.presharedPassword !== this.getPassword(r).trim()) {
-				contact.presharedPassword = this.getPassword(r).trim()
+				&& isExternalAndConfidential) {
+				// TODO now this will send an update for every recipient even if the password hasn't changed
+				// we should have a diff here of some OG state but first i need to pin down the best place to create that
+				//	&& contact.presharedPassword !== this.getPassword(r).trim()) {
+				//contact.presharedPassword = this.getPassword(r).trim()
 				return update(contact)
 			} else {
+				return Promise.resolve()
 			}
 		}))
 	}
@@ -874,34 +863,68 @@ export class SendMailModel {
 		})
 	}
 
+	// Called by the ContactEditorDialog created by the bubble handler in MailEditorN upon clicking save
+	contactReceiver(oldRecipient: RecipientInfo, field: RecipientField, contactElementId: string) {
+		const recipients = this.getRecipientList(field)
+		const emailAddress = oldRecipient.mailAddress
+
+		LazyContactListId.getAsync().then(contactListId => {
+			const id: IdTuple = [contactListId, contactElementId]
+			console.log("LOAD", id)
+			load(ContactTypeRef, id).then(updatedContact => {
+				console.log("LOADED", id, updatedContact)
+				if (!updatedContact.mailAddresses.find(ma => easyMatch(ma.address, emailAddress))) {
+					// the mail address was removed, so remove the recipient
+					remove(recipients, oldRecipient)
+					this.onRecipientRemoved({removedRecipient: oldRecipient, removedField: field})
+				} else {
+					const newRecipient = createRecipientInfo(emailAddress, null, updatedContact)
+					replace(recipients, oldRecipient, newRecipient)
+					this.onRecipientContactUpdated({oldRecipient, updatedRecipient: newRecipient, updatedField: field})
+				}
+			})
+		})
+	}
+
 	// TODO Figure out if this will break the CalendarEventViewModel which may or may not expect the recipients not to change
 	_handleEntityEvent(update: EntityUpdateData): Promise<void> {
 		const {operation, instanceId, instanceListId} = update
 		let contactId: IdTuple = [neverNull(instanceListId), instanceId]
 
-		if (isUpdateForTypeRef(ContactTypeRef, update) && this.allRecipients().find((r) => r.contact && r.contact._id === contactId)) {
+		if (isUpdateForTypeRef(ContactTypeRef, update)) {
 			if (operation === OperationType.UPDATE) {
 				load(ContactTypeRef, contactId).then((contact) => {
 
-					// TODO remember what the point of partition is here
-					let [linked, notLinked] = partition(this.allRecipients(), r => r.contact && r.contact._id === contact._id || false)
-					linked.forEach(r => {
-						// if the mail address no longer exists on the contact then delete the recipient so as to avoid mistakeys
-						if (!contact.mailAddresses.includes(r.mailAddress)) {
-							this.removeRecipient(r)
-						} else {
-							// else just modify the recipient
-							// the bubbletextfields will be updated on call to setMailChanged (for now)
-							r.name = `${contact.firstName} ${contact.lastName}`
-							r.contact = contact
-						}
-					})
+					for (const fieldType of ["to", "cc", "bcc"]) {
+						const matching = this.getRecipientList(fieldType).filter(recipient => recipient.contact
+							&& isSameId(recipient.contact._id, contact._id))
+						matching.forEach(recipient => {
+							// if the mail address no longer exists on the contact then delete the recipient
+							if (!contact.mailAddresses.find(ma => easyMatch(ma.address, recipient.mailAddress))) {
+								this.removeRecipient(recipient, fieldType, true)
+							} else {
+								// else just modify the recipient
+								recipient.name = `${contact.firstName} ${contact.lastName}`
+								recipient.contact = contact
+								this.onRecipientContactUpdated({
+									oldRecipient: recipient,
+									updatedRecipient: recipient,
+									updatedField: fieldType
+								})
+							}
+						})
+					}
 				})
 			} else if (operation === OperationType.DELETE) {
-				const filterFun = recipient => recipient.contact && recipient.contact._id === contactId || false
-				this._toRecipients = this._toRecipients.filter(r => filterFun)
-				this._ccRecipients = this._ccRecipients.filter(r => filterFun)
-				this._bccRecipients = this._bccRecipients.filter(r => filterFun)
+
+				for (const fieldType of ["to", "cc", "bcc"]) {
+					const recipients = this.getRecipientList(fieldType)
+					const filterFun = recipient => recipient.contact && isSameId(recipient.contact._id, contactId) || false
+					const toDelete = recipients.filter(filterFun)
+					for (const r of toDelete) {
+						this.removeRecipient(r, fieldType, true)
+					}
+				}
 			}
 			this.setMailChanged(true)
 		}
