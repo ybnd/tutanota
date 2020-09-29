@@ -68,6 +68,7 @@ import {FileOpenError} from "../api/common/error/FileOpenError"
 import {downcast, neverNull} from "../api/common/utils/Utils"
 import {showUpgradeWizard} from "../subscription/UpgradeSubscriptionWizard"
 import type {Contact} from "../api/entities/tutanota/Contact"
+import {worker} from "../api/main/WorkerClient"
 
 // TODO maybe make a MailEditorViewModel which can do some of the linking up that's put inside of the attrs
 export type MailEditorAttrs = {
@@ -766,4 +767,9 @@ export function writeInviteMail(mailboxDetails?: MailboxDetail) {
 	mailboxDetails
 		? show(mailboxDetails)
 		: locator.mailModel.getUserMailboxDetails().then(mailbox => show(mailbox))
+}
+
+
+function defaultSendMailModel(mailboxDetails: MailboxDetail): SendMailModel {
+	return new SendMailModel(worker, logins, locator.mailModel, locator.contactModel, locator.eventController, mailboxDetails)
 }

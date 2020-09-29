@@ -2,7 +2,6 @@
 import type {ConversationTypeEnum, MailMethodEnum} from "../api/common/TutanotaConstants"
 import {ConversationType, MAX_ATTACHMENT_SIZE, OperationType, ReplyType} from "../api/common/TutanotaConstants"
 import {load, setup, update} from "../api/main/Entity"
-import {worker} from "../api/main/WorkerClient"
 import type {RecipientInfo} from "../api/common/RecipientInfo"
 import {isExternal} from "../api/common/RecipientInfo"
 import {
@@ -38,7 +37,6 @@ import {ContactTypeRef} from "../api/entities/tutanota/Contact"
 import {isSameId, stringToCustomId} from "../api/common/EntityFunctions"
 import {FileNotFoundError} from "../api/common/error/FileNotFoundError"
 import type {LoginController} from "../api/main/LoginController"
-import {logins} from "../api/main/LoginController"
 import type {MailAddress} from "../api/entities/tutanota/MailAddress"
 import type {MailboxDetail} from "./MailModel"
 import {MailModel} from "./MailModel"
@@ -57,9 +55,9 @@ import {_getSubstitutedLanguageCode, getAvailableLanguageCode, lang, languages} 
 import {RecipientsNotFoundError} from "../api/common/error/RecipientsNotFoundError"
 import {checkApprovalStatus} from "../misc/LoginUtils"
 import type {IUserController} from "../api/main/UserController"
-import {locator} from "../api/main/MainLocator"
 import {getTemplateLanguages} from "./MailEditorUtils"
 import {easyMatch} from "../api/common/utils/StringUtils"
+import {WorkerClient} from "../api/main/WorkerClient"
 
 assertMainOrNode()
 
@@ -75,14 +73,11 @@ export function mailAddressToRecipient({address, name}: MailAddress): Recipient 
 export type Attachment = TutanotaFile | DataFile | FileReference
 export type RecipientField = "to" | "cc" | "bcc"
 
-export function defaultSendMailModel(mailboxDetails: MailboxDetail): SendMailModel {
-	return new SendMailModel(logins, locator.mailModel, locator.contactModel, locator.eventController, mailboxDetails)
-}
-
 /**
  * Model which allows sending mails interactively - including resolving of recipients and handling of drafts.
  */
 export class SendMailModel {
+	_worker: WorkerClient;
 	_logins: LoginController;
 	_mailModel: MailModel;
 	_contactModel: ContactModel;
@@ -125,8 +120,9 @@ export class SendMailModel {
 	 * @param eventController
 	 * @param mailboxDetails
 	 */
-	constructor(logins: LoginController, mailModel: MailModel, contactModel: ContactModel, eventController: EventController,
+	constructor(worker: WorkerClient, logins: LoginController, mailModel: MailModel, contactModel: ContactModel, eventController: EventController,
 	            mailboxDetails: MailboxDetail) {
+		this._worker = worker
 		this._logins = logins
 		this._mailModel = mailModel
 		this._contactModel = contactModel
@@ -595,21 +591,21 @@ export class SendMailModel {
 	}
 
 	_updateDraft(body: string, attachments: ?$ReadOnlyArray<Attachment>, draft: Mail) {
-		return worker
-			.updateMailDraft(this.getSubject(), body, this._senderAddress, this.getSenderName(), this._toRecipients,
-				this._ccRecipients, this._bccRecipients, attachments, this.isConfidential(), draft)
-			.catch(LockedError, (e) => {
-				console.log("updateDraft: operation is still active", e)
-				throw new UserError("operationStillActive_msg")
-			})
-			.catch(NotFoundError, () => {
-				console.log("draft has been deleted, creating new one")
-				return this._createDraft(body, attachments, downcast(draft.method))
-			})
+		return this._worker
+		           .updateMailDraft(this.getSubject(), body, this._senderAddress, this.getSenderName(), this._toRecipients,
+			           this._ccRecipients, this._bccRecipients, attachments, this.isConfidential(), draft)
+		           .catch(LockedError, (e) => {
+			           console.log("updateDraft: operation is still active", e)
+			           throw new UserError("operationStillActive_msg")
+		           })
+		           .catch(NotFoundError, () => {
+			           console.log("draft has been deleted, creating new one")
+			           return this._createDraft(body, attachments, downcast(draft.method))
+		           })
 	}
 
 	_createDraft(body: string, attachments: ?$ReadOnlyArray<Attachment>, mailMethod: MailMethodEnum): Promise<Mail> {
-		return worker.createMailDraft(this.getSubject(), body,
+		return this._worker.createMailDraft(this.getSubject(), body,
 			this._senderAddress, this.getSenderName(), this._toRecipients, this._ccRecipients, this._bccRecipients, this._conversationType,
 			this._previousMessageId, attachments, this.isConfidential(), this._replyTos, mailMethod)
 	}
@@ -689,7 +685,7 @@ export class SendMailModel {
 							      return maybeSendMail.then(confirmed => {
 								      if (confirmed) {
 									      const sendPromise = this._updateContacts(resolvedRecipients)
-									                              .then(() => worker.sendMailDraft(
+									                              .then(() => this._worker.sendMailDraft(
 										                              neverNull(this._draft),
 										                              resolvedRecipients,
 										                              this._selectedNotificationLanguage,
