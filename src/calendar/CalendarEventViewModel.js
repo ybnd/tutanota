@@ -60,6 +60,7 @@ import type {Mail} from "../api/entities/tutanota/Mail"
 import {logins} from "../api/main/LoginController"
 import {locator} from "../api/main/MainLocator"
 import {ProgrammingError} from "../api/common/error/ProgrammingError"
+import {worker} from "../api/main/WorkerClient"
 
 const TIMESTAMP_ZERO_YEAR = 1970
 
@@ -923,7 +924,7 @@ export function createCalendarEventViewModel(date: Date, calendars: Map<Id, Cale
 		calendarUpdateDistributor,
 		calendarModel,
 		mailboxDetail,
-		(mailboxDetail) => new SendMailModel(logins, locator.mailModel, locator.contactModel, locator.eventController, mailboxDetail),
+		(mailboxDetail) => new SendMailModel(worker, logins, locator.mailModel, locator.contactModel, locator.eventController, mailboxDetail),
 		date,
 		getTimeZone(),
 		calendars,

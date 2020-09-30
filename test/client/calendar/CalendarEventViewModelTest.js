@@ -43,6 +43,7 @@ import type {Mail} from "../../../src/api/entities/tutanota/Mail"
 import {createMail} from "../../../src/api/entities/tutanota/Mail"
 import {createContact} from "../../../src/api/entities/tutanota/Contact"
 import {ProgrammingError} from "../../../src/api/common/error/ProgrammingError"
+import {worker} from "../../../src/api/main/WorkerClient"
 
 const calendarGroupId = "0"
 const now = new Date(2020, 4, 25, 13, 40)
@@ -92,10 +93,9 @@ o.spec("CalendarEventViewModel", function () {
 			addEntityListener: noOp,
 			removeEntityListener: noOp,
 		})
-		inviteModel = new SendMailModel(loginController, mailModel, contactModel, eventController, mailboxDetail)
-		updateModel = new SendMailModel(loginController, mailModel, contactModel, eventController, mailboxDetail)
-		cancelModel = new SendMailModel(loginController, mailModel, contactModel, eventController, mailboxDetail)
-		responseModel = new SendMailModel(loginController, mailModel, contactModel, eventController, mailboxDetail)
+		updateModel = new SendMailModel(worker, loginController, mailModel, contactModel, eventController, mailboxDetail)
+		cancelModel = new SendMailModel(worker, loginController, mailModel, contactModel, eventController, mailboxDetail)
+		responseModel = new SendMailModel(worker, loginController, mailModel, contactModel, eventController, mailboxDetail)
 		const sendFactory = (_, purpose) => {
 			return {
 				invite: inviteModel,

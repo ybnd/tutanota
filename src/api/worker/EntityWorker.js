@@ -14,10 +14,10 @@ import {
 	TypeRef
 } from "../common/EntityFunctions"
 import {_service} from "./rest/ServiceRestClient"
+import type {RootInstance} from "../entities/sys/RootInstance"
 import {RootInstanceTypeRef} from "../entities/sys/RootInstance"
 import {assertWorkerOrNode} from "../Env"
 import {locator} from "./WorkerLocator"
-import type {RootInstance} from "../entities/sys/RootInstance"
 import type {EntityRestInterface} from "./rest/EntityRestClient"
 
 assertWorkerOrNode()
@@ -37,7 +37,6 @@ export function erase<T>(instance: T): Promise<void> {
 export function load<T>(typeRef: TypeRef<T>, id: Id | IdTuple, queryParams: ?Params, extraHeaders?: Params): Promise<T> {
 	return _loadEntity(typeRef, id, queryParams, locator.cache, extraHeaders)
 }
-
 
 /**
  * load multiple does not guarantee order or completeness of returned elements.

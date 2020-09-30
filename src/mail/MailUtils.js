@@ -207,7 +207,6 @@ export function getDefaultSignature() {
 		+ htmlSanitizer.sanitize(lang.get("defaultEmailSignature_msg", {"{1}": lang.getInfoLink("homePage_link")}), true).text;
 }
 
-
 export function parseMailtoUrl(mailtoUrl: string): {to: MailAddress[], cc: MailAddress[], bcc: MailAddress[], subject: string, body: string} {
 	let url = new URL(mailtoUrl)
 	let toRecipients = []

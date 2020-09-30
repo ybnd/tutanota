@@ -119,6 +119,7 @@ import {EventBanner} from "./EventBanner"
 import {checkApprovalStatus} from "../misc/LoginUtils"
 import {getEventFromFile} from "../calendar/CalendarInvites"
 import type {CalendarEvent} from "../api/entities/tutanota/CalendarEvent"
+import {newMailEditorFromDraft} from "./MailEditorN"
 
 assertMainOrNode()
 
@@ -1179,16 +1180,8 @@ export class MailViewer {
 			if (sendAllowed) {
 				return locator.mailModel.getMailboxDetailsForMail(this.mail)
 				              .then((mailboxDetails) => {
-					              let editor: MailEditor = new MailEditor(mailboxDetails)
-					              return editor.initFromDraft({
-						              draftMail: this.mail,
-						              attachments: this._attachments,
-						              bodyText: this._getMailBody(),
-						              blockExternalContent: this._contentBlocked,
-						              inlineImages: this._inlineImages
-					              }).then(() => {
-						              editor.show()
-					              })
+					              newMailEditorFromDraft(this.mail, this._attachments, this._getMailBody(), this._contentBlocked, this._inlineImages, mailboxDetails)
+						              .then(editorDialog => editorDialog.show())
 				              })
 			}
 		})

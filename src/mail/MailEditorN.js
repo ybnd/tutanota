@@ -4,7 +4,7 @@ import stream from "mithril/stream/stream.js"
 
 import {Editor} from "../gui/base/Editor"
 import type {RecipientField, Recipients} from "./SendMailModel"
-import {defaultSendMailModel, mailAddressToRecipient, SendMailModel} from "./SendMailModel"
+import {mailAddressToRecipient, SendMailModel} from "./SendMailModel"
 import {Dialog} from "../gui/base/Dialog"
 import {lang} from "../misc/LanguageViewModel"
 import type {MailboxDetail} from "./MailModel"

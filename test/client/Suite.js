@@ -27,7 +27,8 @@
 // import "./gui/ColorTest"
 
 import "./mail/SendMailModelTest"
-//
+import o from "ospec/ospec.js"
+
 // node(() => {
 // 	require("./desktop/DesktopUtilsTest.js")
 // 	require("./desktop/DesktopConfigTest")
@@ -47,7 +48,6 @@ import "./mail/SendMailModelTest"
 // 	require("./desktop/DesktopCryptoFacadeTest.js")
 // 	require("./desktop/DesktopContextMenuTest.js")
 // })()
-//
-// o.run()
+o.run()
 
 

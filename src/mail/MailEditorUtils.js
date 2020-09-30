@@ -26,8 +26,6 @@ import {attachDropdown} from "../gui/base/DropdownN"
 import {Icons} from "../gui/base/icons/Icons"
 import {formatStorageSize} from "../misc/Formatter"
 import type {MailEditorAttrs} from "./MailEditorN"
-import {logins} from "../api/main/LoginController"
-import {load} from "../api/main/Entity"
 import {CustomerPropertiesTypeRef} from "../api/entities/sys/CustomerProperties"
 import {client} from "../misc/ClientDetector"
 import {getTimeZone} from "../calendar/CalendarUtils"
@@ -37,6 +35,8 @@ import {ContactEditor} from "../contacts/ContactEditor"
 import {lazyContactListId} from "../contacts/ContactUtils"
 import {createNewContact, getDisplayText} from "./MailUtils"
 import {Bubble} from "../gui/base/BubbleTextField"
+import {EntityClient} from "../api/main/EntityClient"
+import type {LoginController} from "../api/main/LoginController"
 
 export function chooseAndAttachFile(model: SendMailModel, boundingRect: ClientRect, fileTypes?: Array<string>): Promise<?$ReadOnlyArray<FileReference | DataFile>> {
 	return showFileChooserForAttachments(boundingRect, fileTypes)
@@ -134,14 +134,14 @@ export function createAttachmentButtonAttrs(model: SendMailModel, attrs: MailEdi
 	            })
 }
 
-export function getTemplateLanguages(sortedLanguages: Array<Language>): Promise<Array<Language>> {
-	return logins.getUserController().loadCustomer()
-	             .then((customer) => load(CustomerPropertiesTypeRef, neverNull(customer.properties)))
-	             .then((customerProperties) => {
-		             return sortedLanguages.filter(sL =>
-			             customerProperties.notificationMailTemplates.find((nmt) => nmt.language === sL.code))
-	             })
-	             .catch(() => [])
+export function getTemplateLanguages(sortedLanguages: Array<Language>, entityClient: EntityClient, loginController: LoginController): Promise<Array<Language>> {
+	return loginController.getUserController().loadCustomer()
+	                      .then((customer) => entityClient.load(CustomerPropertiesTypeRef, neverNull(customer.properties)))
+	                      .then((customerProperties) => {
+		                      return sortedLanguages.filter(sL =>
+			                      customerProperties.notificationMailTemplates.find((nmt) => nmt.language === sL.code))
+	                      })
+	                      .catch(() => [])
 }
 
 export function getSupportMailSignature(): string {

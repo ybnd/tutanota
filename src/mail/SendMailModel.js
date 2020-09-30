@@ -1,7 +1,7 @@
 // @flow
 import type {ConversationTypeEnum, MailMethodEnum} from "../api/common/TutanotaConstants"
 import {ConversationType, MAX_ATTACHMENT_SIZE, OperationType, ReplyType} from "../api/common/TutanotaConstants"
-import {load, setup, update} from "../api/main/Entity"
+import {EntityClient} from "../api/main/EntityClient"
 import type {RecipientInfo} from "../api/common/RecipientInfo"
 import {isExternal} from "../api/common/RecipientInfo"
 import {
@@ -57,13 +57,23 @@ import {checkApprovalStatus} from "../misc/LoginUtils"
 import type {IUserController} from "../api/main/UserController"
 import {getTemplateLanguages} from "./MailEditorUtils"
 import {easyMatch} from "../api/common/utils/StringUtils"
-import {WorkerClient} from "../api/main/WorkerClient"
+import type {WorkerClient} from "../api/main/WorkerClient"
 
 assertMainOrNode()
 
 export type Recipient = {name: ?string, address: string, contact?: ?Contact}
 export type RecipientList = $ReadOnlyArray<Recipient>
 export type Recipients = {to?: RecipientList, cc?: RecipientList, bcc?: RecipientList}
+
+export function makeRecipient(address: string, name: ?string, contact: ?Contact): Recipient {
+	return {name, address, contact}
+}
+
+export function makeRecipients(to: RecipientList, cc: RecipientList, bcc: RecipientList): Recipients {
+	return {
+		to, cc, bcc
+	}
+}
 
 // Because MailAddress does not have contact of the right type (event when renamed on Recipient) MailAddress <: Recipient does not hold
 export function mailAddressToRecipient({address, name}: MailAddress): Recipient {
@@ -77,7 +87,8 @@ export type RecipientField = "to" | "cc" | "bcc"
  * Model which allows sending mails interactively - including resolving of recipients and handling of drafts.
  */
 export class SendMailModel {
-	_worker: WorkerClient;
+	_worker: WorkerClient
+	_entityClient: EntityClient;
 	_logins: LoginController;
 	_mailModel: MailModel;
 	_contactModel: ContactModel;
@@ -112,8 +123,10 @@ export class SendMailModel {
 	onRecipientContactUpdated: Stream<?{oldRecipient: RecipientInfo, updatedRecipient: RecipientInfo, updatedField: RecipientField}>
 	onRecipientRemoved: Stream<?{removedRecipient: RecipientInfo, removedField: RecipientField}>
 
+
 	/**
 	 * creates a new empty draft message. calling an init method will fill in all the blank data
+	 * @param worker
 	 * @param logins
 	 * @param mailModel
 	 * @param contactModel
@@ -123,6 +136,7 @@ export class SendMailModel {
 	constructor(worker: WorkerClient, logins: LoginController, mailModel: MailModel, contactModel: ContactModel, eventController: EventController,
 	            mailboxDetails: MailboxDetail) {
 		this._worker = worker
+		this._entityClient = new EntityClient(worker)
 		this._logins = logins
 		this._mailModel = mailModel
 		this._contactModel = contactModel
@@ -138,7 +152,7 @@ export class SendMailModel {
 		this._toRecipients = []
 		this._ccRecipients = []
 		this._bccRecipients = []
-		this._senderAddress = getDefaultSender(this._logins, this._mailboxDetails)
+		this._senderAddress = this._getDefaultSender()
 		this._isConfidential = !userProps.defaultUnconfidential
 		this._attachments = []
 		this._replyTos = []
@@ -151,7 +165,7 @@ export class SendMailModel {
 		// then we see if the user has custom notification templates,
 		// in which case we replace the list with just the templates that the user has specified
 		this._availableNotificationTemplateLanguages = languages.slice().sort((a, b) => lang.get(a.textId).localeCompare(lang.get(b.textId)))
-		getTemplateLanguages(this._availableNotificationTemplateLanguages)
+		getTemplateLanguages(this._availableNotificationTemplateLanguages, this._entityClient, this._logins)
 			.then((filteredLanguages) => {
 				if (filteredLanguages.length > 0) {
 					const languageCodes = filteredLanguages.map(l => l.code)
@@ -170,11 +184,8 @@ export class SendMailModel {
 		this._eventController.addEntityListener(this._entityEventReceived)
 
 		this._mailChanged = false
-
 		this.onMailChanged = stream(false)
-
 		this.recipientsChanged = stream(undefined)
-
 		this.onRecipientAdded = stream(null)
 		this.onRecipientContactUpdated = stream(null)
 		this.onRecipientRemoved = stream(null)
@@ -248,8 +259,18 @@ export class SendMailModel {
 		this.setMailChanged(true)
 	}
 
+	/**
+	 * Will set the sender address only if the sender is available as an address
+	 * @param senderAddress
+	 */
 	selectSender(senderAddress: string) {
+		// TODO validate this as a valid sender
 		this._senderAddress = senderAddress
+		this.setMailChanged(true)
+	}
+
+	getSender(): string {
+		return this._senderAddress
 	}
 
 	getPasswordStrength(recipientInfo: RecipientInfo) {
@@ -276,6 +297,32 @@ export class SendMailModel {
 	}
 
 
+	/**
+	 *
+	 * @param recipients
+	 * @param subject
+	 * @param bodyText
+	 * @param nondefaultSignature: a value of "" will be used as the signature, null or undefined will revert to the default for the user
+	 * @param confidential
+	 * @param senderMailAddress
+	 * @returns {Promise<SendMailModel>}
+	 */
+	initWithTemplate(
+		recipients: Recipients,
+		subject: string,
+		bodyText: string,
+		confidential: ?boolean,
+		senderMailAddress?: string): Promise<SendMailModel> {
+		return this._init({
+			conversationType: ConversationType.NEW,
+			subject,
+			bodyText,
+			recipients,
+			confidential,
+			senderMailAddress
+		})
+	}
+
 	initAsResponse({
 		               previousMail, conversationType, senderMailAddress, recipients, attachments, subject, bodyText, replyTos,
 		               addSignature
@@ -298,53 +345,27 @@ export class SendMailModel {
 			}
 		}
 		let previousMessageId: ?string = null
-		return load(ConversationEntryTypeRef, previousMail.conversationEntry)
-			.then(ce => {
-				previousMessageId = ce.messageId
-			})
-			.catch(NotFoundError, e => {
-				console.log("could not load conversation entry", e);
-			})
-			.then(() => {
-				return this.init({
-					conversationType,
-					subject,
-					bodyText,
-					recipients,
-					senderMailAddress,
-					confidential: previousMail.confidential,
-					attachments,
-					replyTos,
-					previousMail,
-					previousMessageId
-				})
-			})
-	}
-
-	/**
-	 *
-	 * @param recipients
-	 * @param subject
-	 * @param bodyText
-	 * @param nondefaultSignature: a value of "" will be used as the signature, null or undefined will revert to the default for the user
-	 * @param confidential
-	 * @param senderMailAddress
-	 * @returns {Promise<SendMailModel>}
-	 */
-	initWithTemplate(
-		recipients: Recipients,
-		subject: string,
-		bodyText: string,
-		confidential: ?boolean,
-		senderMailAddress?: string): Promise<SendMailModel> {
-		return this.init({
-			conversationType: ConversationType.NEW,
-			subject,
-			bodyText,
-			recipients,
-			confidential: confidential || undefined,
-			senderMailAddress
-		})
+		return this._entityClient.load(ConversationEntryTypeRef, previousMail.conversationEntry)
+		           .then(ce => {
+			           previousMessageId = ce.messageId
+		           })
+		           .catch(NotFoundError, e => {
+			           console.log("could not load conversation entry", e);
+		           })
+		           .then(() => {
+			           return this._init({
+				           conversationType,
+				           subject,
+				           bodyText,
+				           recipients,
+				           senderMailAddress,
+				           confidential: previousMail.confidential,
+				           attachments,
+				           replyTos,
+				           previousMail,
+				           previousMessageId
+			           })
+		           })
 	}
 
 	initWithMailtoUrl(mailtoUrl: string, confidential: boolean): Promise<SendMailModel> {
@@ -359,7 +380,7 @@ export class SendMailModel {
 		let signature = getEmailSignature()
 		const bodyText = this._logins.getUserController.isInternalUser() && signature ? body + signature : body
 
-		return this.init({
+		return this._init({
 			conversationType: ConversationType.NEW,
 			subject,
 			bodyText,
@@ -373,13 +394,13 @@ export class SendMailModel {
 		let previousMessageId: ?string = null
 		let previousMail: ?Mail = null
 
-		return load(ConversationEntryTypeRef, draft.conversationEntry).then(ce => {
+		return this._entityClient.load(ConversationEntryTypeRef, draft.conversationEntry).then(ce => {
 			conversationType = downcast(ce.conversationType)
 			if (ce.previous) {
-				return load(ConversationEntryTypeRef, ce.previous).then(previousCe => {
+				return this._entityClient.load(ConversationEntryTypeRef, ce.previous).then(previousCe => {
 					previousMessageId = previousCe.messageId
 					if (previousCe.mail) {
-						return load(MailTypeRef, previousCe.mail).then(mail => {
+						return this._entityClient.load(MailTypeRef, previousCe.mail).then(mail => {
 							previousMail = mail
 						})
 					}
@@ -394,7 +415,7 @@ export class SendMailModel {
 				cc: ccRecipients.map(mailAddressToRecipient),
 				bcc: bccRecipients.map(mailAddressToRecipient),
 			}
-			return this.init({
+			return this._init({
 				conversationType: ConversationType.NEW,
 				subject,
 				bodyText,
@@ -411,26 +432,26 @@ export class SendMailModel {
 	}
 
 
-	init({
-		     conversationType,
-		     subject,
-		     bodyText,
-		     draft,
-		     recipients,
-		     senderMailAddress,
-		     confidential,
-		     attachments,
-		     replyTos,
-		     previousMail,
-		     previousMessageId,
-	     }: {
+	_init({
+		      conversationType,
+		      subject,
+		      bodyText,
+		      draft,
+		      recipients,
+		      senderMailAddress,
+		      confidential,
+		      attachments,
+		      replyTos,
+		      previousMail,
+		      previousMessageId,
+	      }: {
 		conversationType: ConversationTypeEnum,
 		subject: string,
 		bodyText: string,
 		recipients: Recipients,
+		confidential: ?boolean,
 		draft?: ?Mail,
 		senderMailAddress?: string,
-		confidential?: boolean,
 		attachments?: $ReadOnlyArray<TutanotaFile>,
 		replyTos?: EncryptedMailAddress[],
 		previousMail?: ?Mail,
@@ -449,9 +470,8 @@ export class SendMailModel {
 		this._bccRecipients = bcc.filter(r => isMailAddress(r.address, false))
 		                         .map(makeRecipientInfo)
 
-		console.log(this._toRecipients)
-		this._senderAddress = senderMailAddress || getDefaultSender(this._logins, this._mailboxDetails)
-		this._isConfidential = confidential != null && confidential || !this.user().props.defaultUnconfidential
+		this._senderAddress = senderMailAddress || this._getDefaultSender()
+		this._isConfidential = confidential == null ? !this.user().props.defaultUnconfidential : confidential
 		this._attachments = []
 		if (attachments) this.attachFiles(attachments)
 		this._replyTos = (replyTos || []).map(ema => {
@@ -467,6 +487,10 @@ export class SendMailModel {
 
 		this._mailChanged = false
 		return Promise.resolve(this)
+	}
+
+	_getDefaultSender(): string {
+		return getDefaultSender(this._logins, this._mailboxDetails)
 	}
 
 
@@ -578,6 +602,8 @@ export class SendMailModel {
 		if (tooBigFiles.length > 0) {
 			throw new UserError(() => lang.get("tooBigAttachment_msg") + tooBigFiles.join(", "))
 		}
+
+		this.setMailChanged(true)
 	}
 
 	removeAttachment(file: Attachment): void {
@@ -588,6 +614,10 @@ export class SendMailModel {
 
 	getSenderName() {
 		return getSenderNameForUser(this._mailboxDetails, this._logins.getUserController())
+	}
+
+	getDraft(): ?$ReadOnly<Mail> {
+		return this._draft
 	}
 
 	_updateDraft(body: string, attachments: ?$ReadOnlyArray<Attachment>, draft: Mail) {
@@ -736,7 +766,7 @@ export class SendMailModel {
 			: this._updateDraft(body, attachments, _draft)
 		).then((draft) => {
 			this._draft = draft
-			return Promise.map(draft.attachments, fileId => load(FileTypeRef, fileId)).then(attachments => {
+			return Promise.map(draft.attachments, fileId => this._entityClient.load(FileTypeRef, fileId)).then(attachments => {
 				this._attachments = [] // attachFiles will push to existing files but we want to overwrite them
 				this.attachFiles(attachments)
 				this._mailChanged = false
@@ -753,8 +783,8 @@ export class SendMailModel {
 			_ownerGroup: this._logins.getUserController().user.userGroup.group,
 			text: `Subject: ${this.getSubject()}<br>${body}`,
 		})
-		return setup(listId, m)
-			.catch(NotAuthorizedError, e => console.log("not authorized for approval message"))
+		return this._entityClient.setup(listId, m)
+		           .catch(NotAuthorizedError, e => console.log("not authorized for approval message"))
 	}
 
 	getAvailableNotificationTemplateLanguages(): Array<Language> {
@@ -774,7 +804,7 @@ export class SendMailModel {
 		let props = this._logins.getUserController().props
 		if (props.notificationMailLanguage !== this._selectedNotificationLanguage) {
 			props.notificationMailLanguage = this._selectedNotificationLanguage
-			update(props)
+			this._entityClient.update(props)
 		}
 	}
 
@@ -794,7 +824,7 @@ export class SendMailModel {
 			} else {
 				return Promise.resolve()
 			}
-			return update(this._previousMail).catch(NotFoundError, e => {
+			return this._entityClient.update(this._previousMail).catch(NotFoundError, e => {
 				// ignore
 			})
 		} else {
@@ -814,7 +844,7 @@ export class SendMailModel {
 					contact.presharedPassword = this.getPassword(r).trim()
 				}
 				return LazyContactListId.getAsync().then(listId => {
-					return setup(listId, contact)
+					return this._entityClient.setup(listId, contact)
 				})
 			} else if (
 				contact._id
@@ -823,7 +853,7 @@ export class SendMailModel {
 				// we should have a diff here of some OG state but first i need to pin down the best place to create that
 				//	&& contact.presharedPassword !== this.getPassword(r).trim()) {
 				//contact.presharedPassword = this.getPassword(r).trim()
-				return update(contact)
+				return this._entityClient.update(contact)
 			} else {
 				return Promise.resolve()
 			}
@@ -867,7 +897,7 @@ export class SendMailModel {
 		LazyContactListId.getAsync().then(contactListId => {
 			const id: IdTuple = [contactListId, contactElementId]
 			console.log("LOAD", id)
-			load(ContactTypeRef, id).then(updatedContact => {
+			this._entityClient.load(ContactTypeRef, id).then(updatedContact => {
 				console.log("LOADED", id, updatedContact)
 				if (!updatedContact.mailAddresses.find(ma => easyMatch(ma.address, emailAddress))) {
 					// the mail address was removed, so remove the recipient
@@ -889,7 +919,7 @@ export class SendMailModel {
 
 		if (isUpdateForTypeRef(ContactTypeRef, update)) {
 			if (operation === OperationType.UPDATE) {
-				load(ContactTypeRef, contactId).then((contact) => {
+				this._entityClient.load(ContactTypeRef, contactId).then((contact) => {
 
 					for (const fieldType of ["to", "cc", "bcc"]) {
 						const matching = this.getRecipientList(fieldType).filter(recipient => recipient.contact
