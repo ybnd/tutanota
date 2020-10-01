@@ -19,7 +19,6 @@ import {assertNotNull, downcast, neverNull} from "../api/common/utils/Utils"
 import {
 	createRecipientInfo,
 	getDefaultSender,
-	getEmailSignature,
 	getEnabledMailAddressesWithUser,
 	getMailboxName,
 	getSenderNameForUser,
@@ -302,7 +301,6 @@ export class SendMailModel {
 	 * @param recipients
 	 * @param subject
 	 * @param bodyText
-	 * @param nondefaultSignature: a value of "" will be used as the signature, null or undefined will revert to the default for the user
 	 * @param confidential
 	 * @param senderMailAddress
 	 * @returns {Promise<SendMailModel>}
@@ -324,8 +322,7 @@ export class SendMailModel {
 	}
 
 	initAsResponse({
-		               previousMail, conversationType, senderMailAddress, recipients, attachments, subject, bodyText, replyTos,
-		               addSignature
+		               previousMail, conversationType, senderMailAddress, recipients, attachments, subject, bodyText, replyTos
 	               }: {
 		previousMail: Mail,
 		conversationType: ConversationTypeEnum,
@@ -335,15 +332,8 @@ export class SendMailModel {
 		subject: string,
 		bodyText: string,
 		replyTos: EncryptedMailAddress[],
-		addSignature: boolean,
 	}): Promise<SendMailModel> {
-		if (addSignature) {
-			bodyText = "<br/><br/><br/>" + bodyText
-			let signature = getEmailSignature()
-			if (this._logins.getUserController().isInternalUser() && signature) {
-				bodyText = signature + bodyText
-			}
-		}
+
 		let previousMessageId: ?string = null
 		return this._entityClient.load(ConversationEntryTypeRef, previousMail.conversationEntry)
 		           .then(ce => {
@@ -368,28 +358,40 @@ export class SendMailModel {
 		           })
 	}
 
+	// TODO should we initialize an empty model on failure to parse instead?
+	/**
+	 * Create a new SendMailModel from a mailToUrl
+	 * @param mailtoUrl
+	 * @param confidential
+	 * @returns {Promise<SendMailModel>}
+	 * @throw Error if the URL cannot be parsed
+	 */
 	initWithMailtoUrl(mailtoUrl: string, confidential: boolean): Promise<SendMailModel> {
+		let mailTo
+		try {
+			mailTo = parseMailtoUrl(mailtoUrl)
+		} catch (e) {
+			throw new Error(e.message)
+		}
 
-		const {to, cc, bcc, subject, body} = parseMailtoUrl(mailtoUrl)
+		const {to, cc, bcc, subject, body} = mailTo
+
 		const recipients: Recipients = {
 			to: to.map(mailAddressToRecipient),
 			cc: cc.map(mailAddressToRecipient),
 			bcc: bcc.map(mailAddressToRecipient),
 		}
 
-		let signature = getEmailSignature()
-		const bodyText = this._logins.getUserController.isInternalUser() && signature ? body + signature : body
-
 		return this._init({
 			conversationType: ConversationType.NEW,
 			subject,
-			bodyText,
+			bodyText: body,
 			confidential,
 			recipients,
 		})
 	}
 
-	initFromDraft(draft: Mail, attachments: TutanotaFile[], bodyText: string,): Promise<SendMailModel> {
+	initWithDraft(draft: Mail, attachments: TutanotaFile[], bodyText: string,): Promise<SendMailModel> {
 		let conversationType: ConversationTypeEnum = ConversationType.NEW
 		let previousMessageId: ?string = null
 		let previousMail: ?Mail = null
@@ -474,7 +476,9 @@ export class SendMailModel {
 		this._isConfidential = confidential == null ? !this.user().props.defaultUnconfidential : confidential
 		this._attachments = []
 		if (attachments) this.attachFiles(attachments)
+
 		this._replyTos = (replyTos || []).map(ema => {
+
 			const ri = createRecipientInfo(ema.address, ema.name, null)
 			if (this._logins.isInternalUserLoggedIn()) {
 				resolveRecipientInfoContact(ri, this._contactModel, this._logins.getUserController().user)
@@ -482,6 +486,7 @@ export class SendMailModel {
 			}
 			return ri
 		})
+
 		this._previousMail = previousMail || null
 		this._previousMessageId = previousMessageId || null
 

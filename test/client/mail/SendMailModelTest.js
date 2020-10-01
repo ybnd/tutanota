@@ -4,8 +4,9 @@ import o from "ospec/ospec.js"
 import en from "../../../src/translations/en"
 import type {IUserController} from "../../../src/api/main/UserController"
 import type {LoginController} from "../../../src/api/main/LoginController"
-import type {MailModel} from "../../../src/mail/MailModel"
+import type {MailboxDetail, MailModel} from "../../../src/mail/MailModel"
 import type {Contact} from "../../../src/api/entities/tutanota/Contact"
+import {createContact} from "../../../src/api/entities/tutanota/Contact"
 import type {ContactModel} from "../../../src/contacts/ContactModel"
 import {downcast} from "../../../src/api/common/utils/Utils"
 import type {TutanotaProperties} from "../../../src/api/entities/tutanota/TutanotaProperties"
@@ -22,23 +23,39 @@ import {ConversationType} from "../../../src/api/common/TutanotaConstants"
 import {lang} from "../../../src/misc/LanguageViewModel"
 import type {Customer} from "../../../src/api/entities/sys/Customer"
 import {mockAttribute, spy} from "../../api/TestUtils"
+import type {User} from "../../../src/api/entities/sys/User"
+import {createUser} from "../../../src/api/entities/sys/User"
+import {isTutanotaMailAddress, RecipientInfoType} from "../../../src/api/common/RecipientInfo"
+import type {Mail} from "../../../src/api/entities/tutanota/Mail"
+import {createMail} from "../../../src/api/entities/tutanota/Mail"
+import type {EventController} from "../../../src/api/main/EventController"
+import {createMailAddress} from "../../../src/api/entities/tutanota/MailAddress"
 
-/*
-mailModel:   resolveRecipientInfo(mail) -> getRecipientKeyData
-
-contactModel: resolveRecipientInfoContact(contact) -> searchForContacts
-
-eventController:   addEntityListener
-		  removeEntityListener
-
- */
+type TestIdGenerator = {
+	newId: () => Id,
+	newListId: () => Id,
+	newIdTuple: () => IdTuple
+}
+let testIdGenerator: TestIdGenerator
 
 function mockWorker(): WorkerClient {
 	return downcast({
-		createMailDraft(...args) {},
-		updateMailDraft(...args) {},
-		sendMailDraft(...args) {},
-		entityRequest(...args) {}
+		createMailDraft(draft: Mail, ...args): Promise<Mail> {
+			console.log(args)
+			return Promise.resolve(draft)
+		},
+		updateMailDraft(draft: Mail, ...args): Promise<Mail> {
+			console.log(args)
+			return Promise.resolve(draft)
+		},
+		sendMailDraft(...args): Promise<void> {
+			console.log(args)
+			return Promise.resolve()
+		},
+		entityRequest(...args): Promise<any> {
+			console.log(args)
+			return Promise.resolve()
+		}
 	})
 }
 
@@ -50,8 +67,9 @@ function mockLoginController(userController: IUserController, internalLoggedIn: 
 	})
 }
 
-function mockUserController(props: TutanotaProperties, customer: Customer): IUserController {
+function mockUserController(user: User, props: TutanotaProperties, customer: Customer): IUserController {
 	return downcast({
+		user,
 		loadCustomer: () => Promise.resolve(customer),
 		props
 	})
@@ -84,9 +102,15 @@ class ContactModelMock implements ContactModel {
 	}
 }
 
+function mockEntity(typeRef: TypeRef, id: Id | IdTuple, attrs: Object): any {
+	return Object.assign({_type: typeRef, _id: id}, attrs)
+}
+
+const ADDRESS1 = "address1@test.com"
+const ADDRESS2 = "address2@test.com"
+
 
 const DEFAULT_SENDER_FOR_TESTING = "test@tutanota.de"
-
 const INTERNAL_RECIPIENT_1 = {
 	name: "test1",
 	address: "test1@tutanota.de",
@@ -104,11 +128,27 @@ o.spec("SendMailModel", () => {
 	})
 	// the global worker is used in various other places silently, like in call to update from _updateContacts
 	// TODO find out where the worked is used
-	let worker, logins, eventController, mailModel, contactModel, mailboxDetails, userController, model
+	let worker: WorkerClient, logins: LoginController, eventController: EventController, mailModel: MailModel, contactModel: ContactModel,
+		mailboxDetails: MailboxDetail, userController: IUserController, model: SendMailModel
 	let customer: Customer
 
 	o.beforeEach(() => {
-		const worker = mockWorker()
+
+		testIdGenerator = {
+			currentIdValue: 0,
+			currentListIdValue: 0,
+			newId(): Id {
+				return (this.currentIdValue++).toString()
+			},
+			newListId(): Id {
+				return (this.currentListIdValue++).toString()
+			},
+			newIdTuple(): IdTuple {
+				return [this.getListId(), this.getId()]
+			}
+		}
+
+		worker = mockWorker()
 		customer = downcast({})
 
 		const tutanotaProperties = createTutanotaProperties(downcast({
@@ -117,9 +157,12 @@ o.spec("SendMailModel", () => {
 			notificationMailLanguage: "en",
 			noAutomaticContacts: false,
 			userGroupInfo: createGroupInfo({}),
+			// emailSignatureType: EmailSignatureType.EMAIL_SIGNATURE_TYPE_DEFAULT,
+			// customEmailSignature: "CUSTOM TEST SIGNATURE"
 		}))
 
-		userController = mockUserController(tutanotaProperties, customer)
+		const mockUser = createUser({})
+		userController = mockUserController(mockUser, tutanotaProperties, customer)
 		logins = mockLoginController(userController)
 
 		eventController = downcast({
@@ -131,6 +174,7 @@ o.spec("SendMailModel", () => {
 
 		contactModel = new ContactModelMock([])
 
+
 		mailboxDetails = {
 			mailbox: createMailBox(),
 			folders: [],
@@ -138,17 +182,33 @@ o.spec("SendMailModel", () => {
 			mailGroup: createGroup(),
 			mailboxGroupRoot: createMailboxGroupRoot()
 		}
-
 		model = new SendMailModel(worker, logins, mailModel, contactModel, downcast(eventController), mailboxDetails)
 
 		mockAttribute(model, model._getDefaultSender, () => DEFAULT_SENDER_FOR_TESTING)
+
+		mockAttribute(model, model._createAndResolveRecipientInfo, (name, address, contact, resolveLazily) => {
+			return {
+				type: isTutanotaMailAddress(address) ? RecipientInfoType.INTERNAL : RecipientInfoType.EXTERNAL,
+				mailAddress: address,
+				name: name,
+				contact: contact || createContact({
+					firstName: name,
+					mailAddresses: [address]
+				}),
+				resolveContactPromise: null
+			}
+		})
+
+		mockAttribute(model._entityClient, model._entityClient.load, (typeRef, id, params) => {
+			return Promise.resolve({_type: typeRef, _id: id})
+		})
 	})
 
 
 	o.spec("initialization", () => {
 		o("initWithTemplate empty", async () => {
 
-			const initializedModel = await model.initWithTemplate({}, "", "", false, null)
+			const initializedModel = await model.initWithTemplate({}, "", "", false, undefined)
 
 			o(model.getConversationType()).equals(ConversationType.NEW)
 			o(model.getSubject()).equals("")
@@ -173,19 +233,124 @@ o.spec("SendMailModel", () => {
 				DEFAULT_SENDER_FOR_TESTING
 			)
 
-			// o(model.getConversationType()).equals(ConversationType.NEW)
-			// o(model.getSubject()).equals(SUBJECT_LINE_1)
-			// o(model.getBody()).equals(BODY_TEXT_1)
-			// o(model.getDraft()).equals(null)
-			// o(model.allRecipients().length).equals(1)
-			// // TODO check recipient values
-			// o(model.getSender()).equals(DEFAULT_SENDER_FOR_TESTING)
-			// o(model.isConfidential()).equals(true)("isConfidential returns true if there are no external recipients regardless of the value of confidential")
-			// o(model.getAttachments().length).equals(0)
-			//
-			// o(model.hasMailChanged()).equals(false)("initialization should not flag mail changed")
+			o(initializedModel.getConversationType()).equals(ConversationType.NEW)
+			o(initializedModel.getSubject()).equals(SUBJECT_LINE_1)
+			o(initializedModel.getBody()).equals(BODY_TEXT_1)
+			o(initializedModel.getDraft()).equals(null)
+			o(initializedModel.allRecipients().length).equals(1)
+			// TODO check recipient values
+			o(initializedModel.getSender()).equals(DEFAULT_SENDER_FOR_TESTING)
+			o(initializedModel.isConfidential()).equals(true)("isConfidential returns true if there are no external recipients regardless of the value of confidential")
+			o(initializedModel.getAttachments().length).equals(0)
+
+			o(initializedModel.hasMailChanged()).equals(false)("initialization should not flag mail changed")
+		})
+
+		o("initFromMailToURL with invalid URL", () => {
+			const url = ""
+
+			o(() => model.initWithMailtoUrl(url, false)).throws(Error)
+		})
+
+		o("initFromMailToURL with valid empty URL", async () => {
+			const url = "mailto:"
+
+			await model.initWithMailtoUrl(url, false)
+
+			o(model.toRecipients().length).equals(0)
+			o(model.ccRecipients().length).equals(0)
+			o(model.bccRecipients().length).equals(0)
+			o(model.getSubject()).equals("")
+			o(model.getBody()).equals("")
+			o(model.getBody()).equals("")
+		})
+
+		o("initFromMailToURL with valid URL", async () => {
+			const url = "mailto:bed-free@tutanota.de?subject=This%20is%20the%20subject&cc=map-free@tutanota.de&body=This%20is%20the%20body%0D%0AKind%20regards%20someone"
+
+			await model.initWithMailtoUrl(url, false)
+
+			o(model.toRecipients().length).equals(1)
+			o(model.toRecipients()[0].mailAddress).equals("bed-free@tutanota.de")
+			o(model.ccRecipients().length).equals(1)
+			o(model.ccRecipients()[0].mailAddress).equals("map-free@tutanota.de")
+			o(model.bccRecipients().length).equals(0)
+			o(model.getSubject()).equals("This is the subject")
+			o(model.getBody()).equals("This is the body<br>Kind regards someone")
+		})
+
+		o("initWithDraft with blank data", async () => {
+
+			const draftMail = createMail({
+				confidential: false,
+				sender: createMailAddress(),
+				toRecipients: [],
+				ccRecipients: [],
+				bccRecipients: [],
+				subject: "",
+				replyTos: []
+			})
+
+			// TODO node does NOT like this for some reason, it works fine in chrome
+			const initializedModel = await model.initWithDraft(draftMail, [], BODY_TEXT_1)
+
+			o(initializedModel.getConversationType()).equals(ConversationType.NEW)
+			o(initializedModel.getSubject()).equals(draftMail.subject)
+			o(initializedModel.getBody()).equals(BODY_TEXT_1)
+			o(initializedModel.getDraft()).equals(draftMail)
+			o(initializedModel.allRecipients().length).equals(0)
+			// TODO check recipient values
+			o(initializedModel.getSender()).equals(DEFAULT_SENDER_FOR_TESTING)
+			o(initializedModel.isConfidential()).equals(true)("isConfidential returns true if there are no external recipients regardless of the value of confidential")
+			o(initializedModel.getAttachments().length).equals(0)
+			o(initializedModel.hasMailChanged()).equals(false)("initialization should not flag mail changed")
+		})
+
+		o("initWithDraft with some data", async () => {
+			const draftMail = createMail({
+				confidential: true,
+				sender: createMailAddress(),
+				toRecipients: [createMailAddress({address: ""}), createMailAddress({address: ADDRESS1})],
+				ccRecipients: [createMailAddress({address: ADDRESS2})],
+				bccRecipients: [],
+				subject: SUBJECT_LINE_1,
+				replyTos: []
+			})
+
+			// TODO node does NOT like this for some reason, it works fine in chrome
+			const initializedModel = await model.initWithDraft(draftMail, [], BODY_TEXT_1)
+
+			o(initializedModel.getConversationType()).equals(ConversationType.NEW)
+			o(initializedModel.getSubject()).equals(draftMail.subject)
+			o(initializedModel.getBody()).equals(BODY_TEXT_1)
+			o(initializedModel.getDraft()).equals(draftMail)
+			o(initializedModel.allRecipients().length).equals(2)("Only MailAddresses with a valid address will be accepted as recipients")
+			o(initializedModel.toRecipients().length).equals(1)
+			o(initializedModel.ccRecipients().length).equals(1)
+			o(initializedModel.bccRecipients().length).equals(0)
+			// TODO check recipient values
+			o(initializedModel.getSender()).equals(DEFAULT_SENDER_FOR_TESTING)
+			o(initializedModel.isConfidential()).equals(true)("isConfidential returns true if there are no external recipients regardless of the value of confidential")
+			o(initializedModel.getAttachments().length).equals(0)
+			o(initializedModel.hasMailChanged()).equals(false)("initialization should not flag mail changed")
 		})
 	})
+
+	o("isConfidential", async () => {
+		await model.initWithTemplate({}, "", "", false, "")
+
+		o(model.isConfidential()).equals(true)
+
+		model._toRecipients.push(downcast({type: RecipientInfoType.INTERNAL}))
+		o(model.isConfidential()).equals(true)
+
+		model._toRecipients.push(downcast({type: RecipientInfoType.EXTERNAL}))
+		o(model.isConfidential()).equals(false)
+
+		model.setConfidential(true)
+		o(model.isConfidential()).equals(true)
+	})
+
 })
 
 /* To Test

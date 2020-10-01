@@ -11,6 +11,7 @@ import type {MailboxDetail} from "./MailModel"
 import {checkApprovalStatus} from "../misc/LoginUtils"
 import {
 	getDefaultSender,
+	getEmailSignature,
 	getEnabledMailAddressesWithUser,
 	parseMailtoUrl,
 	replaceCidsWithInlineImages,
@@ -91,7 +92,7 @@ export type MailEditorAttrs = {
 }
 
 export function createMailEditorAttrs(model: SendMailModel, doBlockExternalContent: boolean, doFocusEditorOnLoad: boolean, inlineImages?: Promise<InlineImages>): MailEditorAttrs {
-	const attrs = {
+	return {
 		model,
 		body: stream(""),
 		objectUrls: [],
@@ -105,7 +106,6 @@ export function createMailEditorAttrs(model: SendMailModel, doBlockExternalConte
 		_focusEditorOnLoad: () => {},
 		_onSend: () => {}
 	}
-	return attrs
 }
 
 
@@ -514,6 +514,15 @@ export function newResponseMailEditor(args: ResponseMailParameters, mailboxDetai
 			bcc: bccRecipients.map(mailAddressToRecipient)
 		}
 
+		let body = bodyText
+		if (addSignature) {
+			body = "<br/><br/><br/>" + bodyText
+			let signature = getEmailSignature(logins)
+			if (logins.getUserController().isInternalUser() && signature) {
+				body = signature + body
+			}
+		}
+
 		return defaultSendMailModel(mailbox).initAsResponse({
 			previousMail,
 			conversationType,
@@ -521,9 +530,8 @@ export function newResponseMailEditor(args: ResponseMailParameters, mailboxDetai
 			recipients,
 			attachments,
 			subject,
-			bodyText,
+			bodyText: body,
 			replyTos,
-			addSignature,
 		}).then(model => {
 			return _createMailEditorDialog(model, blockExternalContent, inlineImages)
 		})
@@ -535,7 +543,7 @@ export function newResponseMailEditor(args: ResponseMailParameters, mailboxDetai
 }
 
 export function newMailEditorFromDraft(draft: Mail, attachments: Array<TutanotaFile>, bodyText: string, blockExternalContent: boolean, inlineImages?: Promise<InlineImages>, mailboxDetails?: MailboxDetail): Promise<Dialog> {
-	const init = mailbox => defaultSendMailModel(mailbox).initFromDraft(draft, attachments, bodyText)
+	const init = mailbox => defaultSendMailModel(mailbox).initWithDraft(draft, attachments, bodyText)
 	                                                     .then(model => _createMailEditorDialog(model, blockExternalContent, inlineImages))
 
 	return mailboxDetails
@@ -555,7 +563,7 @@ export function newMailtoUrlMailEditor(mailtoUrl: string, confidential: boolean,
 			bcc: mailTo.bcc.map(mailAddressToRecipient)
 		}
 
-		return newMailEditorFromTemplate(mailbox, recipients, subject, body, null, confidential)
+		return newMailEditorFromTemplate(mailbox, recipients, subject, body, confidential)
 	}
 
 	return mailboxDetails
@@ -569,7 +577,6 @@ export function newMailEditorFromTemplate(
 	recipients: Recipients,
 	subject: string,
 	bodyText: string,
-	nondefaultSignature: ?string,
 	confidential: ?boolean,
 	senderMailAddress?: string): Promise<Dialog> {
 
@@ -728,7 +735,7 @@ export function writeSupportMail(subject: string = "", mailboxDetails?: MailboxD
 			const recipients = {
 				to: [{name: null, address: "premium@tutao.de"}]
 			}
-			newMailEditorFromTemplate(mailbox, recipients, "", "<br/>", getSupportMailSignature()).then(dialog => dialog.show())
+			newMailEditorFromTemplate(mailbox, recipients, "", "<br/>" + getSupportMailSignature()).then(dialog => dialog.show())
 		}
 
 		mailboxDetails
@@ -761,7 +768,7 @@ export function writeInviteMail(mailboxDetails?: MailboxDetail) {
 			'{username}': username,
 			'{githubLink}': "https://github.com/tutao/tutanota"
 		})
-		newMailEditorFromTemplate(mailbox, {}, lang.get("invitationMailSubject_msg"), body, null, false).then(dialog => dialog.show())
+		newMailEditorFromTemplate(mailbox, {}, lang.get("invitationMailSubject_msg"), body, false).then(dialog => dialog.show())
 	}
 
 	mailboxDetails
